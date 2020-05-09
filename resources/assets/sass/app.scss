@@ -8,11 +8,169 @@
 // Loading
 @import "loading";
 
-.navbar-laravel {
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-}
-
 body {
     font-family: -apple-system, SF UI Text, Arial, PingFang SC, Hiragino Sans GB, Microsoft YaHei, WenQuanYi Micro Hei, sans-serif;
+    color: #333;
+    font-size: 14px;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+div, span {
+    outline: 0;
+}
+
+em, i {
+    font-style: normal;
+}
+
+dd, dl, dt, li, ol, ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.z-row {
+    text-rendering: optimizespeed;
+    display: flex;
+    align-items: stretch;
+    flex-flow: row wrap
+}
+
+.z-row.gap .z-1,.z-row.gap .z-3,.z-row.gap .z-4,.z-row.gap .z-6,.z-row.gap .z-8,.z-row.gap .z-12,.z-row.gap .z-16,.z-row.gap .z-18,.z-row.gap .z-20,.z-row.gap .z-21,.z-row.gap .z-col {
+    padding: .35rem .5rem
+}
+
+.z-row>.z-row {
+    width: 100%
+}
+
+.z-1,.z-3,.z-4,.z-6,.z-8,.z-12,.z-16,.z-18,.z-20,.z-21,.z-col {
+    display: inline-block;
+    zoom: 1;
+    box-sizing: border-box;
+    vertical-align: top;
+    text-rendering: auto
+}
+
+.z-1 {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    max-width: 100%
+}
+
+.z-3 {
+    width: 12.5%;
+    max-width: 12.5%
+}
+
+.z-4 {
+    width: 16.6667%;
+    max-width: 16.6667%
+}
+
+.z-6 {
+    width: 25%
+}
+
+.z-8 {
+    width: 33.3333%
+}
+
+.z-12 {
+    width: 50%
+}
+
+.z-16 {
+    width: 66.6667%
+}
+
+.z-18 {
+    width: 75%
+}
+
+.z-20 {
+    width: 83.3333%
+}
+
+.z-21 {
+    width: 87.5%
+}
+
+.w-box {
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box;
+    * {
+        -webkit-box-sizing: content-box;
+        box-sizing: content-box;
+    }
+}
+
+.w-main {
+    position: absolute;
+    color: #000000;
+    top: 0;
+    left: 0;
+    min-width: 100%;
+    min-height: 100%;
+    padding: 0;
+    margin: 0;
+    background: no-repeat center;
+    background-size: cover;
+
+    .w-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 40px;
+        font-size: 14px;
+        background-color: rgba(255, 255, 255, 0.9);
+        z-index: 12;
+        color: #606266;
+        height: 32px;
+        line-height: 34px;
+        .nav-row {
+            margin: 0 32px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            &:before,
+            &:after {
+                display: table;
+                content: "";
+            }
+            &:after {
+                clear: both;
+            }
+            span {
+                margin: 0 12px 0 0;
+                cursor: pointer;
+            }
+            span + span {
+                padding-left: 12px;
+                border-left: 1px solid #ccc;
+            }
+            .icon {
+                font-size: 16px;
+                margin-right: 2px;
+            }
+            .w-nav-left {
+                white-space: nowrap;
+                padding-right: 24px;
+            }
+            .w-nav-flex {
+                flex: 1;
+            }
+            .w-nav-right {
+                white-space: nowrap;
+                overflow: hidden;
+                overflow-x: auto;
+                -webkit-backface-visibility: hidden;
+                -webkit-overflow-scrolling: touch;
+                -webkit-perspective: 1000;
+            }
+        }
+    }
 }
