@@ -1,18 +1,18 @@
 <template>
     <div class="w-main team">
 
-        <v-title>团队-轻量级的团队在线协作</v-title>
+        <v-title>{{$L('团队')}}-{{$L('轻量级的团队在线协作')}}</v-title>
 
         <w-header value="team"></w-header>
 
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
-                    <i class="ft icon"></i>同事列表
+                    <i class="ft icon"></i> {{$L('同事列表')}}
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover"><i class="ft icon"></i>添加同事</span>
+                    <span class="ft hover"><i class="ft icon"></i> {{$L('添加同事')}}</span>
                 </div>
             </div>
         </div>

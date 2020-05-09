@@ -123,6 +123,9 @@ export default {
                         //
                         if (typeof this.privateLanguageData[this.privateLanguageType] === "object") {
                             let temp = this.privateLanguageData[this.privateLanguageType][text];
+                            if (temp === null) {
+                                return text;
+                            }
                             if (typeof temp !== 'undefined') {
                                 return temp;
                             }

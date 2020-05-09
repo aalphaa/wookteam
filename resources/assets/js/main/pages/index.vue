@@ -1,17 +1,32 @@
 <template>
     <div class="w-box index">
 
-        <v-title>轻量级的团队在线协作</v-title>
+        <v-title>{{$L('轻量级的团队在线协作')}}</v-title>
 
         <div class="header">
             <div class="z-row">
                 <div class="header-col-sub">
                     <h2>
                         <img src="../../../statics/images/logo4.png">
-                        <span>轻量级的团队在线协作</span>
+                        <span>{{$L('轻量级的团队在线协作')}}</span>
                     </h2>
                 </div>
-                <div class="z-1"></div>
+                <div class="z-1">
+                    <dl>
+                        <dd>
+                            <Dropdown class="right-info" trigger="hover" @on-click="setLanguage" transfer>
+                                <div>
+                                    <Icon class="right-globe" type="md-globe" size="26"/>
+                                    <Icon type="md-arrow-dropdown"/>
+                                </div>
+                                <Dropdown-menu slot="list">
+                                    <Dropdown-item name="zh" :selected="getLanguage() === 'zh'">中文</Dropdown-item>
+                                    <Dropdown-item name="en" :selected="getLanguage() === 'en'">English</Dropdown-item>
+                                </Dropdown-menu>
+                            </Dropdown>
+                        </dd>
+                    </dl>
+                </div>
             </div>
         </div>
 
@@ -28,9 +43,9 @@
                             </CarouselItem>
                         </Carousel>
                     </div>
-                    <div class="z-8"><h3>酷团队协作工具就从这里开始</h3>
+                    <div class="z-8"><h3>{{$L('酷团队协作工具就从这里开始')}}</h3>
                         <div class="bl inline-block">
-                            <span class="start" @click="loginShow=true">立即登陆</span>
+                            <span class="start" @click="loginShow=true">{{$L('立即登陆')}}</span>
                         </div>
                     </div>
                 </div>
@@ -38,36 +53,36 @@
             <div class="second">
                 <div class="bg"></div>
                 <div class="z-row">
-                    <div class="z-6"><a href="#W_link1"><i class="ft icon">&#xe753;</i>待办四象限</a></div>
-                    <div class="z-6"><a href="#W_link2"><i class="ft icon">&#xe6b8;</i>项目管理</a></div>
-                    <div class="z-6"><a href="#W_link3"><i class="ft icon">&#xe915;</i>在线知识库</a></div>
-                    <div class="z-6"><a href="#W_link4"><i class="ft icon">&#xe706;</i>日程管理</a></div>
+                    <div class="z-6"><a href="#W_link1"><i class="ft icon">&#xe753;</i>{{$L('待办四象限')}}</a></div>
+                    <div class="z-6"><a href="#W_link2"><i class="ft icon">&#xe6b8;</i>{{$L('项目管理')}}</a></div>
+                    <div class="z-6"><a href="#W_link3"><i class="ft icon">&#xe915;</i>{{$L('在线知识库')}}</a></div>
+                    <div class="z-6"><a href="#W_link4"><i class="ft icon">&#xe706;</i>{{$L('日程管理')}}</a></div>
                 </div>
             </div>
         </div>
 
         <div class="z-row block">
             <div class="z-6">
-                <div class="wrap-left" id="W_link1"><i class="ft icon">&#xe753;</i>待办四象限：突出事情优先级，帮助员工合理安排时间，提高工作效率。</div>
+                <div class="wrap-left" id="W_link1"><i class="ft icon">&#xe753;</i>{{$L('待办四象限：突出事情优先级，帮助员工合理安排时间，提高工作效率。')}}</div>
             </div>
             <div class="z-18"><img src="../../../statics/images/index/todo.jpg"/></div>
         </div>
         <div class="z-row block">
             <div class="z-18"><img src="../../../statics/images/index/project.jpg"/></div>
             <div class="z-6">
-                <div class="wrap-right" id="W_link2"><i class="ft icon">&#xe6b8;</i>项目管理：自定义项目看板，可视化任务安排。</div>
+                <div class="wrap-right" id="W_link2"><i class="ft icon">&#xe6b8;</i>{{$L('项目管理：自定义项目看板，可视化任务安排。')}}</div>
             </div>
         </div>
         <div class="z-row block">
             <div class="z-6">
-                <div class="wrap-left" id="W_link3"><i class="ft icon">&#xe915;</i>在线知识库：在线流程图，在线文档，以及可视化的目录编排，文档管理无忧。</div>
+                <div class="wrap-left" id="W_link3"><i class="ft icon">&#xe915;</i>{{$L('在线知识库：在线流程图，在线文档，以及可视化的目录编排，文档管理无忧。')}}</div>
             </div>
             <div class="z-18"><img src="../../../statics/images/index/wiki.jpg"/></div>
         </div>
         <div class="z-row block">
             <div class="z-18"><img src="../../../statics/images/index/week.jpg"/></div>
             <div class="z-6">
-                <div class="wrap-right" id="W_link4"><i class="ft icon">&#xe706;</i>日程管理：可视化日程管理，快速搞定工作计划，了解工作宏观安排</div>
+                <div class="wrap-right" id="W_link4"><i class="ft icon">&#xe706;</i>{{$L('日程管理：可视化日程管理，快速搞定工作计划，了解工作宏观安排。')}}</div>
             </div>
         </div>
 
@@ -75,24 +90,24 @@
 
         <Modal
             v-model="loginShow"
-            title="用户登录"
+            :title="$L('用户登录')"
             :closable="false"
             :mask-closable="false">
-            <Form ref="login" :model="formInline" :rules="ruleInline">
+            <Form ref="login" :model="formLogin" :rules="ruleLogin">
                 <FormItem prop="username">
-                    <Input type="text" v-model="formInline.username" placeholder="用户名">
+                    <Input type="text" v-model="formLogin.username" :placeholder="$L('用户名')">
                         <Icon type="ios-person-outline" slot="prepend"></Icon>
                     </Input>
                 </FormItem>
-                <FormItem prop="password">
-                    <Input type="password" v-model="formInline.password" placeholder="密码">
+                <FormItem prop="userpass">
+                    <Input type="password" v-model="formLogin.userpass" :placeholder="$L('密码')">
                         <Icon type="ios-lock-outline" slot="prepend"></Icon>
                     </Input>
                 </FormItem>
             </Form>
             <div slot="footer">
-                <Button type="default" @click="loginShow=false">取消</Button>
-                <Button type="primary" :loading="loadIng > 0" @click="onLogin">登录</Button>
+                <Button type="default" @click="loginShow=false">{{$L('取消')}}</Button>
+                <Button type="primary" :loading="loadIng > 0" @click="onLogin">{{$L('登录')}}</Button>
             </div>
         </Modal>
     </div>
@@ -144,11 +159,25 @@
                         }
                     }
                 }
-                .header-1 {
-                    flex-grow: 1;
-                    flex-shrink: 1;
-                    flex-basis: 0;
-                    max-width: 100%;
+                .z-1 {
+                    dl {
+                        position: absolute;
+                        right: 20px;
+                        top: 0;
+                        font-size: 14px;
+                        dd {
+                            line-height: 50px;
+                            color: #fff;
+                            cursor: pointer;
+                            margin-right: 1px;
+                            .right-info {
+                                cursor: pointer;
+                                .right-globe {
+                                    vertical-align: middle;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -294,20 +323,23 @@
             return {
                 loadIng: 0,
                 loginShow: false,
-                formInline: {
+                formLogin: {
                     username: '',
-                    password: ''
+                    userpass: ''
                 },
-                ruleInline: {
-                    username: [
-                        { required: true, message: '请填写用户名！', trigger: 'blur' }
-                    ],
-                    password: [
-                        { required: true, message: '请填写登录密码！', trigger: 'blur' },
-                        { type: 'string', min: 6, message: '密码长度不能少于6位！', trigger: 'blur' }
-                    ]
-                }
+                ruleLogin: {}
             }
+        },
+        created() {
+            this.ruleLogin = {
+                username: [
+                    { required: true, message: this.$L('请填写用户名！'), trigger: 'blur' }
+                ],
+                userpass: [
+                    { required: true, message: this.$L('请填写登录密码！'), trigger: 'blur' },
+                    { type: 'string', min: 6, message: this.$L('密码长度不能少于6位！'), trigger: 'blur' }
+                ]
+            };
         },
         mounted() {
 
@@ -323,14 +355,31 @@
                 this.$refs.login.validate((valid) => {
                     if (valid) {
                         this.loadIng++;
-                        setTimeout(() => {
-                            this.loadIng--;
-                            this.$Message.success('登录成功');
-                            this.loginShow = false;
-                            this.goForward({path: '/todo'}, true);
-                        }, 3000);
-                    } else {
-                        this.$Message.error('请填写正确的信息！');
+                        $A.ajax({
+                            url: $A.urlApi('users/login'),
+                            data: this.formLogin,
+                            complete: () => {
+                                this.loadIng--;
+                            },
+                            success: (res) => {
+                                if (res.ret === 1) {
+                                    $A.token(res.data.token);
+                                    $A.storage("userInfo", res.data);
+                                    $A.triggerUserInfoListener(res.data);
+                                    //
+                                    this.loadIng--;
+                                    this.loginShow = false;
+                                    this.$refs.login.resetFields();
+                                    this.$Message.success(this.$L('登录成功'));
+                                    this.goForward({path: '/todo'}, true);
+                                } else {
+                                    this.$Modal.error({
+                                        title: "温馨提示",
+                                        content: res.msg
+                                    });
+                                }
+                            }
+                        })
                     }
                 })
             }

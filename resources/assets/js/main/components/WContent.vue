@@ -12,7 +12,8 @@
         right: 0;
         bottom: 0;
         overflow: auto;
-        background-image: url("../../../statics/images/bg1.jpg");
+        background: url("../../../statics/images/bg1.jpg") no-repeat center;
+        background-size: cover;
 
         .w-container {
             min-height: 500px;

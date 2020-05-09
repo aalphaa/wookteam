@@ -4,27 +4,80 @@
             <div class="w-header-row-left">
                 <ul>
                     <li :class="value==='todo'?'active':''">
-                        <a href="javascript:void(0)" @click="tabPage('todo')"><i class="ft icon">&#xe89e;</i>待办</a>
+                        <a href="javascript:void(0)" @click="tabPage('todo')"><i class="ft icon">&#xe89e;</i>{{$L('待办')}}</a>
                     </li><li :class="value==='project'?'active':''">
-                        <a href="javascript:void(0)" @click="tabPage('project')"><i class="ft icon">&#xe6b8;</i>项目</a>
+                        <a href="javascript:void(0)" @click="tabPage('project')"><i class="ft icon">&#xe6b8;</i>{{$L('项目')}}</a>
                     </li><li :class="value==='doc'?'active':''">
-                        <a href="javascript:void(0)" @click="tabPage('doc')"><i class="ft icon">&#xe915;</i>知识库</a>
+                        <a href="javascript:void(0)" @click="tabPage('doc')"><i class="ft icon">&#xe915;</i>{{$L('知识库')}}</a>
                     </li><li :class="value==='team'?'active':''">
-                        <a href="javascript:void(0)" @click="tabPage('team')"><i class="ft icon">&#xe90d;</i>同事</a>
+                        <a href="javascript:void(0)" @click="tabPage('team')"><i class="ft icon">&#xe90d;</i>{{$L('同事')}}</a>
                     </li>
                 </ul>
             </div>
             <div class="w-header-row-flex"></div>
             <div class="w-header-row-right">
-                <div class="user-info">
-                    <span class="username">欢迎您，{{userInfo.username || "尊敬的会员"}}!</span>
-                    <ul>
-                        <li><span class="ft hover">个人中心</span></li>
-                        <li @click="logout"><span class="ft hover">退出登录</span></li>
-                    </ul>
-                </div>
+                <Dropdown class="right-info" trigger="hover" @on-click="setRightSelect" placement="bottom-end" transfer>
+                   <div>
+                       <span class="username">{{$L('欢迎您')}}, {{(userInfo.nickname || userInfo.username) || $L('尊敬的会员')}}</span>
+                       <Icon type="md-arrow-dropdown"/>
+                   </div>
+                    <Dropdown-menu slot="list">
+                        <Dropdown-item name="user">{{$L('个人中心')}}</Dropdown-item>
+                        <Dropdown-item name="out">{{$L('退出登录')}}</Dropdown-item>
+                    </Dropdown-menu>
+                </Dropdown>
+                <Dropdown class="right-info" trigger="hover" @on-click="setLanguage" transfer>
+                    <div>
+                        <Icon class="right-globe" type="md-globe" size="24"/>
+                        <Icon type="md-arrow-dropdown"/>
+                    </div>
+                    <Dropdown-menu slot="list">
+                        <Dropdown-item name="zh" :selected="getLanguage() === 'zh'">中文</Dropdown-item>
+                        <Dropdown-item name="en" :selected="getLanguage() === 'en'">English</Dropdown-item>
+                    </Dropdown-menu>
+                </Dropdown>
             </div>
         </div>
+        <Drawer v-model="userDrawer" width="70%">
+            <Tabs value="name1">
+                <TabPane :label="$L('个人资料')" name="name1">
+                    <Form ref="formDatum" :model="formDatum" :rules="ruleDatum" :label-width="80">
+                        <FormItem :label="$L('头像')" prop="userimg">
+                            <ImgUpload v-model="formDatum.userimg"></ImgUpload>
+                        </FormItem>
+                        <FormItem :label="$L('昵称')" prop="nickname">
+                            <Input v-model="formDatum.nickname"></Input>
+                        </FormItem>
+                        <FormItem :label="$L('职位/职称')" prop="profession">
+                            <Input v-model="formDatum.profession"></Input>
+                        </FormItem>
+                        <FormItem>
+                            <Button :loading="loadIng > 0" type="primary" @click="handleSubmit('formDatum')">{{$L('提交')}}</Button>
+                            <Button :loading="loadIng > 0" @click="handleReset('formDatum')" style="margin-left: 8px">{{$L('重置')}}</Button>
+                        </FormItem>
+                    </Form>
+                </TabPane>
+                <!--<TabPane :label="$L('偏好设置')" name="name2"></TabPane>
+                <TabPane :label="$L('我创建的任务')" name="name3"></TabPane>-->
+                <TabPane :label="$L('账号密码')" name="name4">
+                    <Form ref="formPass" :model="formPass" :rules="rulePass" :label-width="100">
+                        <FormItem :label="$L('旧密码')" prop="oldpass">
+                            <Input v-model="formPass.oldpass"></Input>
+                        </FormItem>
+                        <FormItem :label="$L('新密码')" prop="newpass">
+                            <Input v-model="formPass.newpass"></Input>
+                        </FormItem>
+                        <FormItem :label="$L('确认新密码')" prop="checkpass">
+                            <Input v-model="formPass.checkpass"></Input>
+                        </FormItem>
+                        <FormItem>
+                            <Button :loading="loadIng > 0" type="primary" @click="handleSubmit('formPass')">{{$L('提交')}}</Button>
+                            <Button :loading="loadIng > 0" @click="handleReset('formPass')" style="margin-left: 8px">{{$L('重置')}}</Button>
+                        </FormItem>
+                    </Form>
+                </TabPane>
+            </Tabs>
+        </Drawer>
     </div>
 </template>
 
@@ -59,7 +112,6 @@
                 overflow-x: auto;
                 -webkit-backface-visibility: hidden;
                 -webkit-overflow-scrolling: touch;
-                -webkit-perspective: 1000;
                 li {
                     line-height: 40px;
                     color: #fff;
@@ -88,39 +140,14 @@
                 white-space: nowrap;
                 text-align: right;
                 line-height: 40px;
-                .user-info {
+                .right-info {
                     display: inline-block;
                     position: relative;
-                    margin-right: 6px;
+                    margin-left: 12px;
                     cursor: pointer;
-                    &:hover {
-                        color: #f0f0f0 !important;
-                        ul {
-                            display: block;
-                        }
-                    }
-                    ul {
-                        display: none;
-                        position: absolute;
-                        background: #fff;
-                        border: 1px solid #eee;
-                        right: 0;
-                        top: 38px;
-                        width: 84px;
-                        text-align: center;
-                        border-radius: 2px;
-                        li {
-                            height: 36px;
-                            line-height: 36px;
-                            color: #666;
-                            border-bottom: 1px solid #eee;
-                            &:last-child {
-                                border-bottom: 0;
-                            }
-                            &:hover {
-                                color: #0396f2;
-                            }
-                        }
+                    .right-globe {
+                        vertical-align: top;
+                        margin-top: 8px;
                     }
                 }
             }
@@ -128,32 +155,163 @@
     }
 </style>
 <script>
+    import ImgUpload from "./ImgUpload";
     export default {
         name: 'WHeader',
+        components: {ImgUpload},
         props: {
             value: {
             },
         },
         data() {
             return {
-                userInfo: $A.jsonParse($A.storage("userInfo")),
+                loadIng: 0,
+                userInfo: {},
+                userDrawer: false,
+
+                formDatum: {
+                    userimg: '',
+                    nickname: '',
+                    profession: ''
+                },
+                ruleDatum: { },
+
+                formPass: {
+                    oldpass: '',
+                    newpass: '',
+                    checkpass: '',
+                },
+                rulePass: { }
             }
         },
+        created() {
+            this.ruleDatum = {
+                nickname: [
+                    { required: true, message: this.$L('请输入昵称'), trigger: 'blur' },
+                    { type: 'string', min: 2, message: this.$L('昵称长度至少2位'), trigger: 'blur' }
+                ]
+            };
+            this.rulePass = {
+                oldpass: [
+                    { required: true, message: this.$L('请输入旧密码'), trigger: 'blur' },
+                    { type: 'string', min: 6, message: this.$L('密码长度至少6位'), trigger: 'blur' }
+                ],
+                newpass: [
+                    {
+                        validator: (rule, value, callback) => {
+                            if (value === '') {
+                                callback(new Error(this.$L('请输入新密码')));
+                            } else {
+                                if (this.formPass.checkpass !== '') {
+                                    this.$refs.formPass.validateField('checkpass');
+                                }
+                                callback();
+                            }
+                        },
+                        required: true,
+                        trigger: 'blur'
+                    },
+                    { type: 'string', min: 6, message: this.$L('密码长度至少6位'), trigger: 'blur' }
+                ],
+                checkpass: [
+                    {
+                        validator: (rule, value, callback) => {
+                            if (value === '') {
+                                callback(new Error(this.$L('请输入确认新密码')));
+                            } else if (value !== this.formPass.newpass) {
+                                callback(new Error(this.$L('两次密码输入不一致!')));
+                            } else {
+                                callback();
+                            }
+                        },
+                        required: true,
+                        trigger: 'blur'
+                    }
+                ],
+            };
+        },
         mounted() {
-
+            this.userInfo = $A.getUserInfo((res) => {
+                this.userInfo = res;
+                this.$set(this.formDatum, 'userimg', res.userimg)
+                this.$set(this.formDatum, 'nickname', res.nickname)
+                this.$set(this.formDatum, 'profession', res.profession)
+            }, true);
         },
         methods: {
             tabPage(path) {
                 this.goForward({path: '/' + path});
             },
+            setRightSelect(act) {
+                switch (act) {
+                    case 'user':
+                        this.userDrawer = true;
+                        break;
+
+                    case 'out':
+                        this.logout();
+                        break;
+                }
+            },
             logout() {
                 this.$Modal.confirm({
-                    title: '退出登录',
-                    content: '<p>您确定要退出登录吗？</p>',
+                    title: this.$L('退出登录'),
+                    content: this.$L('您确定要退出登录吗？'),
                     onOk: () => {
-                        this.goForward({path: '/'}, true);
+                        $A.userLogout();
                     },
                 });
+            },
+            handleSubmit(name) {
+                this.$refs[name].validate((valid) => {
+                    if (valid) {
+                        switch (name) {
+                            case "formDatum": {
+                                this.loadIng++;
+                                $A.aAjax({
+                                    url: 'users/editdata',
+                                    data: this.formDatum,
+                                    complete: () => {
+                                        this.loadIng--;
+                                    },
+                                    success: (res) => {
+                                        if (res.ret === 1) {
+                                            $A.getUserInfo(true);
+                                            this.$Message.success(this.$L('修改成功'));
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                        }
+                                    }
+                                });
+                                break;
+                            }
+                            case "formPass": {
+                                this.loadIng++;
+                                $A.aAjax({
+                                    url: 'users/editpass',
+                                    data: this.formPass,
+                                    complete: () => {
+                                        this.loadIng--;
+                                    },
+                                    success: (res) => {
+                                        if (res.ret === 1) {
+                                            this.$Message.success(this.$L('修改成功，请重新登录！'));
+                                            this.userDrawer = false;
+                                            this.$refs[name].resetFields();
+                                            $A.userLogout();
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                        }
+                                    }
+                                });
+                                break;
+                            }
+                        }
+                    }
+                })
+            },
+            handleReset(name) {
+                this.$refs[name].resetFields();
             }
         },
     }

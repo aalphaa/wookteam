@@ -35,7 +35,7 @@
     </div>
 </div>
 
-<script src="{{ mix('js/main.js') }}?__={{ $version }}"></script>
+<script src="{{ mix('js/app.js') }}?__={{ $version }}"></script>
 
 </body>
 </html>

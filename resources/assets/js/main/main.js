@@ -1,59 +1,180 @@
-import Vue from 'vue'
-import App from './App.vue'
-import routes from './routes'
-import VueRouter from 'vue-router'
-import ViewUI from 'view-design';
-import Language from '../_modules/language'
+/**
+ * 页面专用
+ */
 
-import '../common'
+import '../../sass/main.scss';
 
-Vue.use(VueRouter);
-Vue.use(ViewUI);
-Vue.use(Language);
+(function (window) {
 
-import Title from '../_components/Title.vue'
-Vue.component('VTitle', Title);
+    let apiUrl = window.location.origin + '/api/';
+    let $ = window.$A;
 
-const router = new VueRouter({routes});
+    $.extend({
 
-//进度条配置
-ViewUI.LoadingBar.config({
-    color: '#3fcc25',
-    failedColor: '#ff0000'
-});
-router.beforeEach((to, from, next) => {
-    ViewUI.LoadingBar.start();
-    next();
-});
-router.afterEach((to, from, next) => {
-    ViewUI.LoadingBar.finish();
-});
+        fillUrl(str) {
+            if (str.substring(0, 2) === "//" ||
+                str.substring(0, 7) === "http://" ||
+                str.substring(0, 8) === "https://" ||
+                str.substring(0, 6) === "ftp://" ||
+                str.substring(0, 1) === "/") {
+                return str;
+            }
+            return window.location.origin + '/' + str;
+        },
 
-//加载函数
-Vue.prototype.goForward = function(location, isReplace) {
-    if (typeof location === 'string') location = {name: location};
-    if (isReplace === true) {
-        this.$router.replace(location);
-    }else{
-        this.$router.push(location);
-    }
-};
+        aUrl(str) {
+            if (str.substring(0, 2) === "//" ||
+                str.substring(0, 7) === "http://" ||
+                str.substring(0, 8) === "https://" ||
+                str.substring(0, 6) === "ftp://" ||
+                str.substring(0, 1) === "/") {
+                return str;
+            }
+            return apiUrl + str;
+        },
 
-//返回函数
-Vue.prototype.goBack = function(number) {
-    window.history.go(typeof number==='number'?number:-1)
-};
+        aAjax(params) {
+            if (typeof params !== 'object') return false;
+            if (typeof params.success === 'undefined') params.success = () => { };
+            params.url = this.aUrl(params.url);
+            //
+            let beforeCall = params.beforeSend;
+            params.beforeSend = () => {
+                $A.aAjaxLoad++;
+                $A(".w-spinner").show();
+                //
+                if (typeof beforeCall == "function") {
+                    beforeCall();
+                }
+            };
+            //
+            let completeCall = params.complete;
+            params.complete = () => {
+                $A.aAjaxLoad--;
+                if ($A.aAjaxLoad <= 0) {
+                    $A(".w-spinner").hide();
+                }
+                //
+                if (typeof completeCall == "function") {
+                    completeCall();
+                }
+            };
+            //
+            let callback = params.success;
+            params.success = (data, status, xhr) => {
+                if (typeof data === 'object') {
+                    if (data.ret === -1 && params.checkRole !== false) {
+                        //身份丢失
+                        $A.app.$Modal.error({
+                            title: '温馨提示',
+                            content: data.msg,
+                            onOk: () => {
+                                $A.token("");
+                                $A.userLogout();
+                            }
+                        });
+                        return;
+                    }
+                    if (data.ret === -2 && params.role !== false) {
+                        //没有权限
+                        $A.app.$Modal.error({
+                            title: '权限不足',
+                            content: data.msg ? data.msg : "你没有相关的权限查看或编辑！"
+                        });
+                    }
+                }
+                if (typeof callback === "function") {
+                    callback(data, status, xhr);
+                }
+            };
+            //
+            $A.ajax(params);
+        },
+        aAjaxLoad: 0,
 
-Vue.prototype.$A = $A;
+        /**
+         * 编辑器参数配置
+         * @returns {{modules: {toolbar: *[]}}}
+         */
+        editorOption() {
+            return {
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'size': ['small', false, 'large', 'huge'] }],
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'align': [] }]
+                    ]
+                }
+            };
+        },
 
-Vue.config.productionTip = false;
+        /**
+         * 获取用户信息（并保存）
+         * @param callback          网络请求获取到用户信息回调（监听用户信息发生变化）
+         * @param onlyListener      只监听不重新网络请求获取
+         * @returns Object
+         */
+        getUserInfo(callback, onlyListener) {
+            if (typeof callback === 'function' || (typeof callback === "boolean" && callback === true)) {
+                if (onlyListener === true) {
+                    typeof callback === "function" && callback($A.jsonParse($A.storage("userInfo")));
+                    $A.setOnUserInfoListener(callback);
+                } else {
+                    $A.aAjax({
+                        url: 'users/info',
+                        error: () => {
+                            this.userLogout();
+                        },
+                        success: (res) => {
+                            if (res.ret === 1) {
+                                $A.token(res.data.token);
+                                $A.storage("userInfo", res.data);
+                                $A.triggerUserInfoListener(res.data);
+                                //
+                                typeof callback === "function" && callback(res.data);
+                            }
+                            $A.setOnUserInfoListener(callback);
+                        }
+                    });
+                }
+            }
+            return $A.jsonParse($A.storage("userInfo"));
+        },
 
-const app = new Vue({
-    el: '#app',
-    router,
-    template: '<App/>',
-    components: { App }
-});
+        /**
+         * 打开登录页面
+         */
+        userLogout() {
+            $A.token("");
+            $A.storage("userInfo", {});
+            $A.triggerUserInfoListener({});
+            if (typeof $A.app === "object") {
+                $A.app.goForward({path: '/'}, true);
+            } else {
+                window.location.href = window.location.origin;
+            }
+        },
 
-$A.app = app;
+        /**
+         * 监听用户信息发生变化
+         * @param callback
+         */
+        setOnUserInfoListener(callback) {
+            if (typeof callback === "function") {
+                $A.__userInfoListener.push(callback);
+            }
+        },
+        triggerUserInfoListener(userInfo) {
+            $A.__userInfoListener.forEach((callback) => {
+                typeof callback === "function" && callback(userInfo);
+            });
+        },
+        __userInfoListener: [],
 
+    });
+
+    window.$A = $;
+})(window);

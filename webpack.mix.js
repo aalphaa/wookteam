@@ -16,7 +16,7 @@ const mix = require('laravel-mix');
 mix.copy('resources/assets/statics/public',     'public');
 
 //生成vue页面js
-mix.js('resources/assets/js/main/main.js',      'js/main.js');
+mix.js('resources/assets/js/main/app.js',       'js/app.js');
 
 //生成css样式文件
 mix.sass('resources/assets/sass/app.scss',      'css');

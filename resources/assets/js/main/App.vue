@@ -5,11 +5,14 @@
                 <router-view class="child-view"></router-view>
             </keep-alive>
         </transition>
+        <w-spinner></w-spinner>
     </div>
 </template>
 
 <script>
+    import WSpinner from "./components/WSpinner";
     export default {
+        components: {WSpinner},
         data () {
             return {
                 transitionName: null,
