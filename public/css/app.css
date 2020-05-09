@@ -1,0 +1,163 @@
+/* latin-ext */
+
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 300;
+  src: local("Raleway Light"), local("Raleway-Light"), url(/fonts/ZKwULyCG95tk6mOqHQfRBAsYbbCjybiHxArTLjt7FRU.woff2?d41d8cd98f00b204e9800998ecf8427e) format("woff2");
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* latin */
+
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 300;
+  src: local("Raleway Light"), local("Raleway-Light"), url(/fonts/-_Ctzj9b56b8RgXW8FAriQzyDMXhdD8sAj6OAJTFsBI.woff2?d41d8cd98f00b204e9800998ecf8427e) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
+
+/* latin-ext */
+
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 400;
+  src: local("Raleway"), local("Raleway-Regular"), url(/fonts/YZaO6llzOP57DpTBv2GnyFKPGs1ZzpMvnHX-7fPOuAc.woff2?d41d8cd98f00b204e9800998ecf8427e) format("woff2");
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* latin */
+
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 400;
+  src: local("Raleway"), local("Raleway-Regular"), url(/fonts/QAUlVt1jXOgQavlW5wEfxQLUuEpTyoUstqEm5AMlJo4.woff2?d41d8cd98f00b204e9800998ecf8427e) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
+
+/* latin-ext */
+
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 600;
+  src: local("Raleway SemiBold"), local("Raleway-SemiBold"), url(/fonts/STBOO2waD2LpX45SXYjQBQsYbbCjybiHxArTLjt7FRU.woff2?d41d8cd98f00b204e9800998ecf8427e) format("woff2");
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* latin */
+
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 600;
+  src: local("Raleway SemiBold"), local("Raleway-SemiBold"), url(/fonts/xkvoNo9fC8O2RDydKj12bwzyDMXhdD8sAj6OAJTFsBI.woff2?d41d8cd98f00b204e9800998ecf8427e) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
+
+.app-view-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99999;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-view-loading > div {
+  text-align: center;
+}
+
+.app-view-loading > div > div {
+  color: #ccc;
+  margin: 0;
+  font: 11px verdana;
+  line-height: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.app-view-loading > div > span {
+  display: inline-block;
+  vertical-align: middle;
+  width: 8px;
+  height: 8px;
+  margin: 2px;
+  background: #007DB6;
+  border-radius: 8px;
+  -webkit-animation: app-view-loadanim 1s infinite alternate;
+          animation: app-view-loadanim 1s infinite alternate;
+}
+
+.app-view-loading > div > span:nth-of-type(2) {
+  background: #008FB2;
+  -webkit-animation-delay: 0.2s;
+          animation-delay: 0.2s;
+}
+
+.app-view-loading > div > span:nth-of-type(3) {
+  background: #009B9E;
+  -webkit-animation-delay: 0.4s;
+          animation-delay: 0.4s;
+}
+
+.app-view-loading > div > span:nth-of-type(4) {
+  background: #00A77D;
+  -webkit-animation-delay: 0.6s;
+          animation-delay: 0.6s;
+}
+
+.app-view-loading > div > span:nth-of-type(5) {
+  background: #00B247;
+  -webkit-animation-delay: 0.8s;
+          animation-delay: 0.8s;
+}
+
+.app-view-loading > div > span:nth-of-type(6) {
+  background: #5AB027;
+  -webkit-animation-delay: 1.0s;
+          animation-delay: 1.0s;
+}
+
+.app-view-loading > div > span:nth-of-type(7) {
+  background: #A0B61E;
+  -webkit-animation-delay: 1.2s;
+          animation-delay: 1.2s;
+}
+
+@-webkit-keyframes app-view-loadanim {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes app-view-loadanim {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.navbar-laravel {
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  font-family: -apple-system, SF UI Text, Arial, PingFang SC, Hiragino Sans GB, Microsoft YaHei, WenQuanYi Micro Hei, sans-serif;
+}
+
