@@ -13,7 +13,9 @@ Vue.use(ViewUI);
 Vue.use(Language);
 
 import Title from '../_components/Title.vue'
+import UseridInput from './components/UseridInput'
 Vue.component('VTitle', Title);
+Vue.component('UseridInput', UseridInput);
 
 const router = new VueRouter({routes});
 

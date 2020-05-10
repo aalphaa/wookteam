@@ -1,0 +1,134 @@
+<template>
+    <div class="project-complete">
+        <!-- 列表 -->
+        <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
+        <!-- 分页 -->
+        <Page class="pageBox" :total="listTotal" :current="listPage" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total></Page>
+    </div>
+</template>
+
+<style lang="scss" scoped>
+    .project-complete {
+        .tableFill {
+            margin: 20px;
+        }
+    }
+</style>
+<script>
+    export default {
+        name: 'ProjectComplete',
+        props: {
+            projectid: {
+                default: 0
+            },
+        },
+        data () {
+            return {
+                loadIng: 0,
+
+                columns: [],
+
+                lists: [],
+                listPage: 1,
+                listTotal: 0,
+                noDataText: "数据加载中.....",
+            }
+        },
+        created() {
+            this.columns = [{
+                "title": "任务名称",
+                "key": 'title',
+                "minWidth": 100,
+            }, {
+                "title": "创建人",
+                "key": 'createuser',
+                "minWidth": 80,
+            }, {
+                "title": "账号",
+                "key": 'username',
+                "minWidth": 80,
+            }, {
+                "title": "归档时间",
+                "minWidth": 160,
+                render: (h, params) => {
+                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.archiveddate));
+                }
+            }, {
+                "title": "操作",
+                "key": 'action',
+                "width": 80,
+                "align": 'center',
+                render: (h, params) => {
+                    return h('Button', {
+                        props: {
+                            type: 'primary',
+                            size: 'small'
+                        },
+                        on: {
+                            click: () => {
+
+                            }
+                        }
+                    }, '取消归档');
+                }
+            }];
+        },
+        mounted() {
+            this.listPage = 1;
+            this.getLists();
+        },
+
+        watch: {
+            projectid() {
+                this.listPage = 1;
+                this.getLists();
+            }
+        },
+
+        methods: {
+            setPage(page) {
+                this.listPage = page;
+                this.getLists();
+            },
+
+            setPageSize(size) {
+                if (Math.max($A.runNum(this.listPageSize), 10) != size) {
+                    this.listPageSize = size;
+                    this.getLists();
+                }
+            },
+
+            getLists() {
+                if (this.projectid == 0) {
+                    this.lists = [];
+                    this.listTotal = 0;
+                    this.noDataText = "没有相关的数据";
+                    return;
+                }
+                this.loadIng++;
+                $A.aAjax({
+                    url: 'project/task/lists',
+                    data: {
+                        page: Math.max(this.listPage, 1),
+                        pagesize: Math.max($A.runNum(this.listPageSize), 10),
+                        projectid: this.projectid,
+                        archived: 1,
+                    },
+                    complete: () => {
+                        this.loadIng--;
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.lists = res.data.lists;
+                            this.listTotal = res.data.total;
+                        } else {
+                            this.lists = [];
+                            this.listTotal = 0;
+                            this.noDataText = res.msg;
+                        }
+                    }
+                });
+            },
+        }
+    }
+</script>

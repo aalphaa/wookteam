@@ -196,6 +196,24 @@ class Users
     }
 
     /**
+     * username 获取 基本信息
+     * @param string $username           用户名
+     * @return array
+     */
+    public static function username2basic($username)
+    {
+        if (empty($username)) {
+            return [];
+        }
+        $fields = ['username', 'nickname', 'userimg', 'profession'];
+        $userInfo = DBCache::table('users')->where('username', $username)->select($fields)->cacheMinutes(1)->first();
+        if ($userInfo) {
+            $userInfo['userimg'] = Users::userimg($userInfo['userimg']);
+        }
+        return $userInfo ?: [];
+    }
+
+    /**
      * 用户头像，不存在时返回默认
      * @param string|int $var 头像地址 或 会员ID
      * @return \Illuminate\Contracts\Routing\UrlGenerator|string

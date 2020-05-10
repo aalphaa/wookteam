@@ -8,38 +8,295 @@
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
-                    <span class="ft hover"><i class="ft icon"></i> {{$L('新建项目')}}</span>
+                    <span class="ft hover" @click="addShow=true"><i class="ft icon">&#xE740;</i> {{$L('新建项目')}}</span>
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover"><i class="ft icon"></i> {{$L('收藏的项目')}}</span>
-                    <span class="ft hover"><i class="ft icon"></i> {{$L('参与的项目')}}</span>
-                    <span class="ft hover"><i class="ft icon"></i> {{$L('我创建的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('myfavor')"><i class="ft icon">&#xE720;</i> {{$L('收藏的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('myjoin')"><i class="ft icon">&#xE75E;</i> {{$L('参与的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('mycreate')"><i class="ft icon">&#xE764;</i> {{$L('我创建的项目')}}</span>
                 </div>
             </div>
         </div>
 
-        <w-content></w-content>
+        <w-content>
+            <!-- 列表 -->
+            <ul class="project-list">
+                <li v-for="(item, index) in lists">
+                    <div class="project-item" @click="handleProject('open', item)">
+                        <div class="project-head">
+                            <div v-if="item.loadIng === true" class="project-loading">
+                                <w-loading></w-loading>
+                            </div>
+                            <div class="project-title">{{item.title}}</div>
+                            <div class="project-setting">
+                                <Dropdown class="right-info" trigger="click" @on-click="handleProject($event, item)" transfer>
+                                    <Icon class="project-setting-icon" type="md-settings" size="16"/>
+                                    <Dropdown-menu slot="list">
+                                        <Dropdown-item name="favor">{{$L('收藏')}}</Dropdown-item>
+                                        <Dropdown-item v-if="item.isowner" name="rename">{{$L('重命名')}}</Dropdown-item>
+                                        <Dropdown-item v-if="item.isowner" name="transfer">{{$L('移交项目')}}</Dropdown-item>
+                                        <Dropdown-item v-if="item.isowner" name="delete">{{$L('删除')}}</Dropdown-item>
+                                        <Dropdown-item name="out">{{$L('退出')}}</Dropdown-item>
+                                    </Dropdown-menu>
+                                </Dropdown>
+                            </div>
+                        </div>
+                        <div class="project-num">
+                            <div class="project-complete"><em>{{item.complete}}</em>已完成数</div>
+                            <div class="project-num-line"></div>
+                            <div class="project-unfinished"><em>{{item.unfinished}}</em>未完成数</div>
+                        </div>
+                        <div class="project-bottom">
+                            <div class="project-iconbtn" @click.stop="handleProject('complete', item)">
+                                <Icon class="project-iconbtn-icon1" type="md-checkmark-circle-outline" size="24" />
+                                <div class="project-iconbtn-text">已完成任务</div>
+                            </div>
+                            <div class="project-iconbtn" @click.stop="handleProject('member', item)">
+                                <Icon class="project-iconbtn-icon2" type="md-people" size="24" />
+                                <div class="project-iconbtn-text">成员管理</div>
+                            </div>
+                            <div class="project-iconbtn" @click.stop="handleProject('statistics', item)">
+                                <Icon class="project-iconbtn-icon3" type="md-stats" size="24" />
+                                <div class="project-iconbtn-text">项目统计</div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            <!-- 分页 -->
+            <Page v-if="listTotal > 0" class="pageBox" :total="listTotal" :current="listPage" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total></Page>
+        </w-content>
 
+        <Modal
+            v-model="addShow"
+            :title="$L('添加团队成员')"
+            :closable="false"
+            :mask-closable="false">
+            <Form ref="add" :model="formAdd" :rules="ruleAdd" :label-width="80">
+                <FormItem prop="title" :label="$L('项目名称')">
+                    <Input type="text" v-model="formAdd.title"></Input>
+                </FormItem>
+                <FormItem prop="labels" :label="$L('项目模板')">
+                    <Select v-model="formAdd.template" @on-change="(res) => {$set(formAdd, 'labels', labelLists[res].value)}">
+                        <Option v-for="(item, index) in labelLists" :value="index" :key="index">{{ item.label }}</Option>
+                    </Select>
+                </FormItem>
+                <FormItem :label="$L('项目流程')">
+                    <div style="line-height:38px">
+                        <span v-for="(item, index) in formAdd.labels">
+                            <span v-if="index > 0">&gt;</span>
+                            <Tag @on-close="() => { formAdd.labels.splice(index, 1)}" closable size="large" color="primary">{{item}}</Tag>
+                        </span>
+                    </div>
+                    <div v-if="formAdd.labels.length > 0" style="margin-top:4px;"></div>
+                    <div style="margin-bottom:-16px">
+                        <Button icon="ios-add" type="dashed" @click="addLabels">添加流程</Button>
+                    </div>
+                </FormItem>
+            </Form>
+            <div slot="footer">
+                <Button type="default" @click="addShow=false">{{$L('取消')}}</Button>
+                <Button type="primary" :loading="loadIng > 0" @click="onAdd">{{$L('添加')}}</Button>
+            </div>
+        </Modal>
+
+        <Drawer v-model="projectDrawerShow" width="75%">
+            <Tabs v-model="projectDrawerTab">
+                <TabPane :label="$L('已完成任务')" name="complete">
+                    <project-complete :projectid="handleProjectId"></project-complete>
+                </TabPane>
+                <TabPane :label="$L('成员管理')" name="member">
+                    <project-users :projectid="handleProjectId"></project-users>
+                </TabPane>
+                <TabPane :label="$L('项目统计')" name="statistics"></TabPane>
+                <TabPane :label="$L('收藏的项目')" name="myfavor"></TabPane>
+                <TabPane :label="$L('参与的项目')" name="myjoin"></TabPane>
+                <TabPane :label="$L('创建的项目')" name="mycreate"></TabPane>
+            </Tabs>
+        </Drawer>
     </div>
 </template>
 
 <style lang="scss" scoped>
     .project {
+        ul.project-list {
+            padding: 5px;
+            max-width: 2000px;
+            li {
+                float: left;
+                width: 25%;
+                display: flex;
+                @media (max-width: 1400px) {
+                    width: 33.33%;
+                }
+                @media (max-width: 1080px) {
+                    width: 50%;
+                }
+                @media (max-width: 640px) {
+                    width: 100%;
+                }
+                .project-item {
+                    flex: 1;
+                    margin: 10px;
+                    width: 100%;
+                    height: 280px;
+                    padding: 20px;
+                    background-color: #ffffff;
+                    border-radius: 4px;
+                    display: flex;
+                    flex-direction: column;
+                    .project-head{
+                        display: flex;
+                        flex-direction: row;
+                        .project-loading {
+                            width: 18px;
+                            height: 18px;
+                            margin-right: 6px;
+                            margin-top: 3px;
+                        }
+                        .project-title{
+                            flex: 1;
+                            font-size: 16px;
+                            padding-right: 6px;
+                            overflow:hidden;
+                            text-overflow:ellipsis;
+                            white-space:nowrap;
+                            color: #333333;
+                        }
+                        .project-setting{
+                            .project-setting-icon {
+                                cursor: pointer;
+                                color: #333333;
+                            }
+                        }
+                    }
+                    .project-num {
+                        flex: 1;
+                        padding: 24px 0;
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        .project-complete,
+                        .project-unfinished {
+                            flex: 1;
+                            text-align: center;
+                            font-size: 14px;
+                            color: #999999;
+                            em {
+                                display: block;
+                                font-size: 32px;
+                                color: #0396f2;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                                max-width: 120px;
+                                margin: 0 auto;
+                            }
+                        }
+                        .project-num-line {
+                            width: 1px;
+                            height: 90%;
+                            background-color: #e8e8e8;
+                        }
+                    }
+                    .project-bottom {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        border-top: 1px solid #efefef;
+                        padding: 6px 0;
+                        .project-iconbtn {
+                            flex: 1;
+                            text-align: center;
+                            cursor: pointer;
+                            &:hover {
+                                .project-iconbtn-text {
+                                    color: #0396f2;
+                                }
+                            }
+                            .project-iconbtn-icon1 {
+                                margin: 12px 0;
+                                color: #ff7a7a;
+                            }
+                            .project-iconbtn-icon2 {
+                                margin: 12px 0;
+                                color: #764df8;
+                            }
+                            .project-iconbtn-icon3 {
+                                margin: 12px 0;
+                                color: #ffca65;
+                            }
+                            .project-iconbtn-text {
+                                color: #999999;
+                            }
+                        }
+                    }
+                }
+            }
+            &:before,
+            &:after {
+                display: table;
+                content: "";
+            }
+            &:after {
+                clear: both;
+            }
+        }
     }
 </style>
 <script>
     import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
+    import WLoading from "../components/WLoading";
+    import ProjectComplete from "../components/project/complete";
+    import ProjectUsers from "../components/project/users";
     export default {
-        components: {WContent, WHeader},
+        components: {ProjectUsers, ProjectComplete, WLoading, WContent, WHeader},
         data () {
             return {
+                loadIng: 0,
 
+                addShow: false,
+                formAdd: {
+                    title: '',
+                    labels: [],
+                    template: 0,
+                },
+                ruleAdd: {},
+
+                labelLists: [{
+                    label: '空白模板',
+                    value: [],
+                }, {
+                    label: '软件开发',
+                    value: ['产品规划','前端开发','后端开发','测试','发布','其它'],
+                }, {
+                    label: '产品开发',
+                    value: ['产品计划', '正在设计', '正在研发', '测试', '准备发布', '发布成功'],
+                }],
+
+                lists: [],
+                listPage: 1,
+                listTotal: 0,
+
+                projectDrawerShow: false,
+                projectDrawerTab: 'complete',
+
+                handleProjectId: 0,
             }
         },
+        created() {
+            this.ruleAdd = {
+                title: [
+                    { required: true, message: this.$L('请填写项目名称！'), trigger: 'change' },
+                    { type: 'string', min: 2, message: this.$L('项目名称至少2个字！'), trigger: 'change' }
+                ]
+            };
+        },
         mounted() {
-
+            this.listPage = 1;
+            this.getLists();
         },
         computed: {
 
@@ -48,7 +305,351 @@
 
         },
         methods: {
+            setPage(page) {
+                this.listPage = page;
+                this.getLists();
+            },
 
+            setPageSize(size) {
+                if (Math.max($A.runNum(this.listPageSize), 10) != size) {
+                    this.listPageSize = size;
+                    this.getLists();
+                }
+            },
+
+            getLists() {
+                this.loadIng++;
+                $A.aAjax({
+                    url: 'project/lists',
+                    data: {
+                        page: Math.max(this.listPage, 1),
+                        pagesize: Math.max($A.runNum(this.listPageSize), 10),
+                    },
+                    complete: () => {
+                        this.loadIng--;
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.lists = res.data.lists;
+                            this.listTotal = res.data.total;
+                        }else{
+                            this.lists = [];
+                            this.listTotal = 0;
+                        }
+                    }
+                });
+            },
+
+            addLabels() {
+                this.labelsValue = "";
+                this.$Modal.confirm({
+                    render: (h) => {
+                        return h('div', [
+                            h('div', {
+                                style: {
+                                    fontSize: '16px',
+                                    fontWeight: '500',
+                                    marginBottom: '20px',
+                                }
+                            }, '添加流程'),
+                            h('Input', {
+                                props: {
+                                    value: this.labelsValue,
+                                    autofocus: true,
+                                    placeholder: '请输入流程名称，多个请用空格分隔。'
+                                },
+                                on: {
+                                    input: (val) => {
+                                        this.labelsValue = val;
+                                    }
+                                }
+                            })
+                        ])
+                    },
+                    onOk: () => {
+                        if (this.labelsValue) {
+                            let array = $A.trim(this.labelsValue).split(" ");
+                            array.forEach((name) => {
+                                if ($A.trim(name)) {
+                                    this.formAdd.labels.push($A.trim(name));
+                                }
+                            });
+                        }
+                    },
+                })
+            },
+
+            onAdd() {
+                this.$refs.add.validate((valid) => {
+                    if (valid) {
+                        this.loadIng++;
+                        $A.aAjax({
+                            url: 'project/add',
+                            data: this.formAdd,
+                            complete: () => {
+                                this.loadIng--;
+                            },
+                            success: (res) => {
+                                if (res.ret === 1) {
+                                    this.addShow = false;
+                                    this.$Message.success(res.msg);
+                                    this.$refs.add.resetFields();
+                                    this.$set(this.formAdd, 'template', 0);
+                                    //
+                                    this.listPage = 1;
+                                    this.getLists();
+                                }else{
+                                    this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                }
+                            }
+                        });
+                    }
+                });
+            },
+
+            handleProject(event, item) {
+                this.handleProjectId = item.id;
+                switch (event) {
+                    case 'favor': {
+                        this.favorProject(item);
+                        break;
+                    }
+                    case 'rename': {
+                        this.renameProject(item);
+                        break;
+                    }
+                    case 'transfer': {
+                        this.transferProject(item);
+                        break;
+                    }
+                    case 'delete': {
+                        this.deleteProject(item);
+                        break;
+                    }
+                    case 'out': {
+                        this.outProject(item);
+                        break;
+                    }
+
+                    case 'open': {
+                        break;
+                    }
+                    case 'complete':
+                    case 'member':
+                    case 'statistics':
+                    case 'myfavor':
+                    case 'myjoin':
+                    case 'mycreate': {
+                        this.projectDrawerShow = true;
+                        this.projectDrawerTab = event;
+                        break;
+                    }
+                }
+            },
+
+            favorProject(item) {
+                this.$set(item, 'loadIng', true);
+                $A.aAjax({
+                    url: 'project/favor',
+                    data: {
+                        id: item.id,
+                    },
+                    complete: () => {
+                        this.$set(item, 'loadIng', false);
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.$Message.success(res.msg);
+                        }else{
+                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                        }
+                    }
+                });
+            },
+
+            renameProject(item) {
+                this.renameValue = "";
+                this.$Modal.confirm({
+                    render: (h) => {
+                        return h('div', [
+                            h('div', {
+                                style: {
+                                    fontSize: '16px',
+                                    fontWeight: '500',
+                                    marginBottom: '20px',
+                                }
+                            }, '重命名项目'),
+                            h('Input', {
+                                props: {
+                                    value: this.renameValue,
+                                    autofocus: true,
+                                    placeholder: '请输入新的项目名称'
+                                },
+                                on: {
+                                    input: (val) => {
+                                        this.renameValue = val;
+                                    }
+                                }
+                            })
+                        ])
+                    },
+                    loading: true,
+                    onOk: () => {
+                        if (this.renameValue) {
+                            this.$set(item, 'loadIng', true);
+                            let title = this.renameValue;
+                            $A.aAjax({
+                                url: 'project/rename',
+                                data: {
+                                    projectid: item.id,
+                                    title: title,
+                                },
+                                complete: () => {
+                                    this.$set(item, 'loadIng', false);
+                                },
+                                error: () => {
+                                    this.$Modal.remove();
+                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                },
+                                success: (res) => {
+                                    this.$Modal.remove();
+                                    setTimeout(() => {
+                                        if (res.ret === 1) {
+                                            this.$Message.success(res.msg);
+                                            this.$set(item, 'title', title);
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                        }
+                                    }, 350);
+                                }
+                            });
+                        } else {
+                            this.$Modal.remove();
+                        }
+                    },
+                });
+            },
+
+            transferProject(item) {
+                this.transferValue = "";
+                this.$Modal.confirm({
+                    render: (h) => {
+                        return h('div', [
+                            h('div', {
+                                style: {
+                                    fontSize: '16px',
+                                    fontWeight: '500',
+                                    marginBottom: '20px',
+                                }
+                            }, '移交项目'),
+                            h('UseridInput', {
+                                props: {
+                                    value: this.transferValue,
+                                    autofocus: true,
+                                    placeholder: '请输入昵称/用户名搜索'
+                                },
+                                on: {
+                                    input: (val) => {
+                                        this.transferValue = val;
+                                    }
+                                }
+                            })
+                        ])
+                    },
+                    loading: true,
+                    onOk: () => {
+                        if (this.transferValue) {
+                            this.$set(item, 'loadIng', true);
+                            let username = this.transferValue;
+                            $A.aAjax({
+                                url: 'project/transfer',
+                                data: {
+                                    projectid: item.id,
+                                    username: username,
+                                },
+                                complete: () => {
+                                    this.$set(item, 'loadIng', false);
+                                },
+                                error: () => {
+                                    this.$Modal.remove();
+                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                },
+                                success: (res) => {
+                                    this.$Modal.remove();
+                                    setTimeout(() => {
+                                        if (res.ret === 1) {
+                                            this.$Message.success(res.msg);
+                                            this.getLists();
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                        }
+                                    }, 350);
+                                }
+                            });
+                        } else {
+                            this.$Modal.remove();
+                        }
+                    },
+                });
+            },
+
+            deleteProject(item) {
+                this.$Modal.confirm({
+                    title: '删除项目',
+                    content: '你确定要删除此项目吗？',
+                    loading: true,
+                    onOk: () => {
+                        $A.aAjax({
+                            url: 'project/delete?projectid=' + item.id,
+                            error: () => {
+                                this.$Modal.remove();
+                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                            },
+                            success: (res) => {
+                                this.$Modal.remove();
+                                setTimeout(() => {
+                                    if (res.ret === 1) {
+                                        this.$Message.success(res.msg);
+                                        //
+                                        this.getLists();
+                                    }else{
+                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                    }
+                                }, 350);
+                            }
+                        });
+                    }
+                });
+            },
+
+            outProject(item) {
+                this.$Modal.confirm({
+                    title: '退出项目',
+                    content: '你确定要退出此项目吗？',
+                    loading: true,
+                    onOk: () => {
+                        $A.aAjax({
+                            url: 'project/out?projectid=' + item.id,
+                            error: () => {
+                                this.$Modal.remove();
+                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                            },
+                            success: (res) => {
+                                this.$Modal.remove();
+                                setTimeout(() => {
+                                    if (res.ret === 1) {
+                                        this.$Message.success(res.msg);
+                                        //
+                                        this.getLists();
+                                    }else{
+                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                    }
+                                }, 350);
+                            }
+                        });
+                    }
+                });
+            }
         },
     }
 </script>

@@ -95,12 +95,12 @@
             :mask-closable="false">
             <Form ref="login" :model="formLogin" :rules="ruleLogin">
                 <FormItem prop="username">
-                    <Input type="text" v-model="formLogin.username" :placeholder="$L('用户名')">
+                    <Input type="text" v-model="formLogin.username" :placeholder="$L('用户名')" @on-enter="onLogin">
                         <Icon type="ios-person-outline" slot="prepend"></Icon>
                     </Input>
                 </FormItem>
                 <FormItem prop="userpass">
-                    <Input type="password" v-model="formLogin.userpass" :placeholder="$L('密码')">
+                    <Input type="password" v-model="formLogin.userpass" :placeholder="$L('密码')" @on-enter="onLogin">
                         <Icon type="ios-lock-outline" slot="prepend"></Icon>
                     </Input>
                 </FormItem>
@@ -333,11 +333,12 @@
         created() {
             this.ruleLogin = {
                 username: [
-                    { required: true, message: this.$L('请填写用户名！'), trigger: 'blur' }
+                    { required: true, message: this.$L('请填写用户名！'), trigger: 'change' },
+                    { type: 'string', min: 2, message: this.$L('用户名长度至少2位！'), trigger: 'change' }
                 ],
                 userpass: [
-                    { required: true, message: this.$L('请填写登录密码！'), trigger: 'blur' },
-                    { type: 'string', min: 6, message: this.$L('密码长度不能少于6位！'), trigger: 'blur' }
+                    { required: true, message: this.$L('请填写登录密码！'), trigger: 'change' },
+                    { type: 'string', min: 6, message: this.$L('用户名长度至少6位！'), trigger: 'change' }
                 ]
             };
         },

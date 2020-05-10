@@ -134,16 +134,19 @@
             }, {
                 "title": "昵称",
                 "minWidth": 80,
+                "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.nickname || '-');
                 }
             }, {
-                "title": "账号",
+                "title": "用户名",
                 "key": 'username',
                 "minWidth": 80,
+                "ellipsis": true,
             }, {
                 "title": "职位/职称",
-                "minWidth": 80,
+                "minWidth": 100,
+                "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.profession || '-');
                 }
@@ -192,6 +195,10 @@
                                         onOk: () => {
                                             $A.aAjax({
                                                 url: 'users/team/delete?id=' + params.row.id,
+                                                error: () => {
+                                                    this.$Modal.remove();
+                                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                                },
                                                 success: (res) => {
                                                     this.$Modal.remove();
                                                     setTimeout(() => {
@@ -217,11 +224,12 @@
             //
             this.ruleAdd = {
                 username: [
-                    { required: true, message: this.$L('请填写用户名！'), trigger: 'blur' }
+                    { required: true, message: this.$L('请填写用户名！'), trigger: 'change' },
+                    { type: 'string', min: 2, message: this.$L('用户名长度至少2位！'), trigger: 'change' }
                 ],
                 userpass: [
-                    { required: true, message: this.$L('请填写登录密码！'), trigger: 'blur' },
-                    { type: 'string', min: 6, message: this.$L('密码长度不能少于6位！'), trigger: 'blur' }
+                    { required: true, message: this.$L('请填写登录密码！'), trigger: 'change' },
+                    { type: 'string', min: 6, message: this.$L('密码长度至少6位！'), trigger: 'change' }
                 ]
             };
         },

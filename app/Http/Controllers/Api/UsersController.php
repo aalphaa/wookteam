@@ -81,6 +81,36 @@ class UsersController extends Controller
     }
 
     /**
+     * 搜索会员列表
+     */
+    public function searchinfo()
+    {
+        $keys = Request::input('where');
+        $whereArr = [];
+        $whereFunc = null;
+        if ($keys['usernameequal'])     $whereArr[] = ['username', '=', $keys['usernameequal']];
+        if ($keys['identity'])          $whereArr[] = ['identity', 'like', '%,' . $keys['identity'] . ',%'];
+        if ($keys['noidentity'])        $whereArr[] = ['identity', 'not like', '%,' . $keys['noidentity'] . ',%'];
+        if ($keys['username']) {
+            $whereFunc = function($query) use ($keys) {
+                $query->where('username', 'like', '%' . $keys['username'] . '%')->orWhere('nickname', 'like', '%' . $keys['username'] . '%');
+            };
+        }
+        //
+        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession'])->where($whereArr)->where($whereFunc)->orderBy('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 200));
+        $lists = Base::getPageList($lists);
+        if ($lists['total'] == 0) {
+            return Base::retError('未搜索到任何相关的会员');
+        }
+        foreach ($lists['lists'] AS $key => $item) {
+            $lists['lists'][$key]['userimg'] = Base::fillUrl($item['userimg']);
+            $lists['lists'][$key]['identitys'] = explode(",", trim($item['identity'], ","));
+            $lists['lists'][$key]['setting'] = Base::string2array($item['setting']);
+        }
+        return Base::retSuccess('success', $lists);
+    }
+
+    /**
      * 修改资料
      * @return array|mixed
      */

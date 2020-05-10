@@ -187,20 +187,20 @@
         created() {
             this.ruleDatum = {
                 nickname: [
-                    { required: true, message: this.$L('请输入昵称'), trigger: 'blur' },
-                    { type: 'string', min: 2, message: this.$L('昵称长度至少2位'), trigger: 'blur' }
+                    { required: true, message: this.$L('请输入昵称！'), trigger: 'change' },
+                    { type: 'string', min: 2, message: this.$L('昵称长度至少2位！'), trigger: 'change' }
                 ]
             };
             this.rulePass = {
                 oldpass: [
-                    { required: true, message: this.$L('请输入旧密码'), trigger: 'blur' },
-                    { type: 'string', min: 6, message: this.$L('密码长度至少6位'), trigger: 'blur' }
+                    { required: true, message: this.$L('请输入旧密码！'), trigger: 'change' },
+                    { type: 'string', min: 6, message: this.$L('密码长度至少6位！'), trigger: 'change' }
                 ],
                 newpass: [
                     {
                         validator: (rule, value, callback) => {
                             if (value === '') {
-                                callback(new Error(this.$L('请输入新密码')));
+                                callback(new Error(this.$L('请输入新密码！')));
                             } else {
                                 if (this.formPass.checkpass !== '') {
                                     this.$refs.formPass.validateField('checkpass');
@@ -209,15 +209,15 @@
                             }
                         },
                         required: true,
-                        trigger: 'blur'
+                        trigger: 'change'
                     },
-                    { type: 'string', min: 6, message: this.$L('密码长度至少6位'), trigger: 'blur' }
+                    { type: 'string', min: 6, message: this.$L('密码长度至少6位！'), trigger: 'change' }
                 ],
                 checkpass: [
                     {
                         validator: (rule, value, callback) => {
                             if (value === '') {
-                                callback(new Error(this.$L('请输入确认新密码')));
+                                callback(new Error(this.$L('请输入确认新密码！')));
                             } else if (value !== this.formPass.newpass) {
                                 callback(new Error(this.$L('两次密码输入不一致!')));
                             } else {
@@ -225,7 +225,7 @@
                             }
                         },
                         required: true,
-                        trigger: 'blur'
+                        trigger: 'change'
                     }
                 ],
             };
