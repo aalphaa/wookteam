@@ -140,3 +140,32 @@
         }
     }
 }
+
+.tableFill {
+    .ivu-table {
+        table {
+            width: 100% !important;
+            .ivu-table-cell {
+                display: block;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                padding-left: 12px;
+                padding-right: 12px;
+                > div {
+                    max-width: 100%;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    vertical-align: middle;
+                    .ivu-tooltip-rel {
+                        vertical-align: middle;
+                    }
+                }
+            }
+        }
+    }
+}
+.pageBox {
+    text-align: center;
+}

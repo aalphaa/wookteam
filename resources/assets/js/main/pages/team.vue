@@ -8,36 +8,226 @@
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
-                    <i class="ft icon"></i> {{$L('同事列表')}}
+                    <i class="ft icon">&#xE90D;</i> {{$L('团队成员')}}
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover"><i class="ft icon"></i> {{$L('添加同事')}}</span>
+                    <span class="ft hover" @click="addShow=true"><i class="ft icon">&#xE740;</i> {{$L('添加团队成员')}}</span>
                 </div>
             </div>
         </div>
 
-        <w-content></w-content>
+        <w-content>
+            <div class="team-main">
+                <div class="team-body">
+                    <!-- 列表 -->
+                    <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
+                    <!-- 分页 -->
+                    <Page class="pageBox" :total="listTotal" :current="listPage" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total></Page>
+                </div>
+            </div>
+        </w-content>
+
+        <Modal
+            v-model="addShow"
+            :title="$L('添加团队成员')"
+            :closable="false"
+            :mask-closable="false">
+            <Form ref="add" :model="formAdd" :rules="ruleAdd" :label-width="80">
+                <FormItem prop="userimg" :label="$L('头像')">
+                    <ImgUpload v-model="formAdd.userimg"></ImgUpload>
+                </FormItem>
+                <FormItem prop="nickname" :label="$L('昵称')">
+                    <Input type="text" v-model="formAdd.nickname"></Input>
+                </FormItem>
+                <FormItem prop="profession" :label="$L('职位/职称')">
+                    <Input v-model="formAdd.profession"></Input>
+                </FormItem>
+                <FormItem prop="username" :label="$L('用户名')">
+                    <Input type="text" v-model="formAdd.username" :placeholder="$L('添加后不可修改')"></Input>
+                </FormItem>
+                <FormItem prop="userpass" :label="$L('登录密码')">
+                    <Input type="password" v-model="formAdd.userpass" :placeholder="$L('最少6位数')"></Input>
+                </FormItem>
+            </Form>
+            <div slot="footer">
+                <Button type="default" @click="addShow=false">{{$L('取消')}}</Button>
+                <Button type="primary" :loading="loadIng > 0" @click="onAdd">{{$L('添加')}}</Button>
+            </div>
+        </Modal>
 
     </div>
 </template>
 
 <style lang="scss" scoped>
     .team {
+        .team-main {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            .team-body {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                height: 100%;
+                min-height: 500px;
+                background: #fefefe;
+                border-radius: 3px;
+                .tableFill {
+                    margin: 20px;
+                    background-color: #ffffff;
+                }
+            }
+        }
     }
 </style>
 <script>
     import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
+    import ImgUpload from "../components/ImgUpload";
     export default {
-        components: {WContent, WHeader},
+        components: {ImgUpload, WContent, WHeader},
         data () {
             return {
+                loadIng: 0,
 
+                columns: [],
+
+                lists: [],
+                listPage: 1,
+                listTotal: 0,
+                noDataText: "数据加载中.....",
+
+                addShow: false,
+                formAdd: {
+                    userimg: '',
+                    profession: '',
+                    username: '',
+                    nickname: '',
+                    userpass: ''
+                },
+                ruleAdd: {}
             }
         },
+        created() {
+            let isAdmin = $A.identity('admin');
+            this.columns = [{
+                "title": "头像",
+                "minWidth": 50,
+                "maxWidth": 100,
+                render: (h, params) => {
+                    return h('img', {
+                        style: {
+                            width: "36px",
+                            height: "36px",
+                            verticalAlign: "middle",
+                            objectFit: "cover",
+                            borderRadius: "50%"
+                        },
+                        attrs: {
+                            src: params.row.userimg
+                        },
+                    });
+                }
+            }, {
+                "title": "昵称",
+                "minWidth": 80,
+                render: (h, params) => {
+                    return h('span', params.row.nickname || '-');
+                }
+            }, {
+                "title": "账号",
+                "key": 'username',
+                "minWidth": 80,
+            }, {
+                "title": "职位/职称",
+                "minWidth": 80,
+                render: (h, params) => {
+                    return h('span', params.row.profession || '-');
+                }
+            }, {
+                "title": "加入时间",
+                "minWidth": 160,
+                render: (h, params) => {
+                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.regdate));
+                }
+            }, {
+                "title": "操作",
+                "key": 'action',
+                "width": isAdmin ? 160 : 80,
+                "align": 'center',
+                render: (h, params) => {
+                    let array = [];
+                    array.push(h('Button', {
+                        props: {
+                            type: 'primary',
+                            size: 'small'
+                        },
+                        on: {
+                            click: () => {
+                                this.$Modal.info({
+                                    title: '会员信息',
+                                    content: `<p>昵称: ${params.row.nickname || '-'}</p><p>职位/职称: ${params.row.profession || '-'}</p>`
+                                });
+                            }
+                        }
+                    }, '查看'));
+                    if (isAdmin) {
+                        array.push(h('Button', {
+                            props: {
+                                type: 'warning',
+                                size: 'small'
+                            },
+                            style: {
+                                marginLeft: '5px'
+                            },
+                            on: {
+                                click: () => {
+                                    this.$Modal.confirm({
+                                        title: '删除团队成员',
+                                        content: '你确定要删除此团队成员吗？',
+                                        loading: true,
+                                        onOk: () => {
+                                            $A.aAjax({
+                                                url: 'users/team/delete?id=' + params.row.id,
+                                                success: (res) => {
+                                                    this.$Modal.remove();
+                                                    setTimeout(() => {
+                                                        if (res.ret === 1) {
+                                                            this.$Message.success(res.msg);
+                                                            //
+                                                            this.getLists();
+                                                        }else{
+                                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                                        }
+                                                    }, 350);
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }, '删除'));
+                    }
+                    return h('div', array);
+                }
+            }];
+            //
+            this.ruleAdd = {
+                username: [
+                    { required: true, message: this.$L('请填写用户名！'), trigger: 'blur' }
+                ],
+                userpass: [
+                    { required: true, message: this.$L('请填写登录密码！'), trigger: 'blur' },
+                    { type: 'string', min: 6, message: this.$L('密码长度不能少于6位！'), trigger: 'blur' }
+                ]
+            };
+        },
         mounted() {
-
+            this.listPage = 1;
+            this.getLists();
         },
         computed: {
 
@@ -46,7 +236,68 @@
 
         },
         methods: {
+            setPage(page) {
+                this.listPage = page;
+                this.getLists();
+            },
 
+            setPageSize(size) {
+                if (Math.max($A.runNum(this.listPageSize), 10) != size) {
+                    this.listPageSize = size;
+                    this.getLists();
+                }
+            },
+
+            getLists() {
+                this.loadIng++;
+                $A.aAjax({
+                    url: 'users/team/lists',
+                    data: {
+                        page: Math.max(this.listPage, 1),
+                        pagesize: Math.max($A.runNum(this.listPageSize), 10),
+                    },
+                    complete: () => {
+                        this.loadIng--;
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.lists = res.data.lists;
+                            this.listTotal = res.data.total;
+                        }else{
+                            this.lists = [];
+                            this.listTotal = 0;
+                            this.noDataText = res.msg;
+                        }
+                    }
+                });
+            },
+
+            onAdd() {
+                this.$refs.add.validate((valid) => {
+                    if (valid) {
+                        this.loadIng++;
+                        $A.aAjax({
+                            url: 'users/team/add',
+                            data: this.formAdd,
+                            complete: () => {
+                                this.loadIng--;
+                            },
+                            success: (res) => {
+                                if (res.ret === 1) {
+                                    this.addShow = false;
+                                    this.$Message.success(res.msg);
+                                    this.$refs.add.resetFields();
+                                    //
+                                    this.listPage = 1;
+                                    this.getLists();
+                                }else{
+                                    this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                }
+                            }
+                        });
+                    }
+                });
+            }
         },
     }
 </script>

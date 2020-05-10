@@ -20,6 +20,7 @@
 </head>
 <body>
 
+@extends('ie')
 <div id="app">
     <div class="app-view-loading">
         <div>

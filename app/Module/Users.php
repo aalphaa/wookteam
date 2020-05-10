@@ -2,6 +2,7 @@
 
 namespace App\Module;
 
+use App\Model\DBCache;
 use DB;
 use Request;
 use Session;
@@ -174,5 +175,40 @@ class Users
         unset($userinfo['encrypt']);
         unset($userinfo['userpass']);
         return $userinfo;
+    }
+
+    /**
+     * userid 获取 基本信息
+     * @param int $userid           会员ID
+     * @return array
+     */
+    public static function userid2basic($userid)
+    {
+        if (empty($userid)) {
+            return [];
+        }
+        $fields = ['username', 'nickname', 'userimg', 'profession'];
+        $userInfo = DBCache::table('users')->where('id', $userid)->select($fields)->cacheMinutes(1)->first();
+        if ($userInfo) {
+            $userInfo['userimg'] = Users::userimg($userInfo['userimg']);
+        }
+        return $userInfo ?: [];
+    }
+
+    /**
+     * 用户头像，不存在时返回默认
+     * @param string|int $var 头像地址 或 会员ID
+     * @return \Illuminate\Contracts\Routing\UrlGenerator|string
+     */
+    public static function userimg($var) {
+        if (Base::isNumber($var)) {
+            if (empty($var)) {
+                $var = "";
+            }else{
+                $userInfo = self::userid2basic($var);
+                $var = $userInfo['userimg'];
+            }
+        }
+        return $var ? Base::fillUrl($var) : url('images/other/avatar.png');
     }
 }

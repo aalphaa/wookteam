@@ -1754,9 +1754,10 @@ class Base
     /**
      * 获取分页详细信息
      * @param LengthAwarePaginator $lists
+     * @param bool $getTotal
      * @return array
      */
-    public static function getPageInfo(LengthAwarePaginator $lists)
+    public static function getPageInfo(LengthAwarePaginator $lists, $getTotal = true)
     {
         return [
             "currentPage" => $lists->currentPage(),
@@ -1767,18 +1768,19 @@ class Base
             "nextPageUrl" => $lists->nextPageUrl(),
             "previousPageUrl" => $lists->previousPageUrl(),
             "perPage" => $lists->perPage(),
-            "total" => $lists->total(),
+            "total" => $getTotal === true ? $lists->total() : -1,
         ];
     }
 
     /**
      * 获取分页数据
      * @param $lists
+     * @param bool $getTotal
      * @return array
      */
-    public static function getPageList($lists)
+    public static function getPageList($lists, $getTotal = true)
     {
-        $data = Base::getPageInfo($lists);
+        $data = Base::getPageInfo($lists, $getTotal);
         $data['lists'] = Base::coll2array($lists);
         return $data;
     }

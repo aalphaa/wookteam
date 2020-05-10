@@ -148,6 +148,8 @@ class UsersController extends Controller
         $newpass = trim(Request::input('newpass'));
         if (strlen($newpass) < 6) {
             return Base::retError('密码设置不能小于6位数！');
+        } elseif (strlen($newpass) > 32) {
+            return Base::retError('密码最多只能设置32位数！');
         }
         if ($oldpass == $newpass) {
             return Base::retError('新旧密码一致！');
@@ -161,5 +163,126 @@ class UsersController extends Controller
         }
         DB::table('users')->where('id', $user['id'])->update(['encrypt' => Base::generatePassword(6), 'userpass'=>Base::md52($newpass)]);
         return Base::retSuccess('修改成功');
+    }
+
+    /**
+     * 团队列表
+     */
+    public function team__lists()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession', 'regdate'])->orderByDesc('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 200));
+        $lists = Base::getPageList($lists);
+        if ($lists['total'] == 0) {
+            return Base::retError('未找到任何相关的团队成员');
+        }
+        foreach ($lists['lists'] AS $key => $item) {
+            $lists['lists'][$key]['userimg'] = Users::userimg($item['userimg']);
+        }
+        return Base::retSuccess('success', $lists);
+    }
+
+    /**
+     * 添加团队成员
+     */
+    public function team__add()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        if (Base::isError(Users::identity('admin'))) {
+            return Base::retError('身份权限不足！', [], -1);
+        }
+        //头像
+        $userimg = Request::input('userimg');
+        if ($userimg) {
+            $userimg = is_array($userimg) ? $userimg[0]['path'] : $userimg;
+        }
+        //昵称
+        $nickname = trim(Request::input('nickname'));
+        if ($nickname) {
+            if (mb_strlen($nickname) < 2) {
+                return Base::retError('昵称不可以少于2个字！');
+            } elseif (mb_strlen($nickname) > 8) {
+                return Base::retError('昵称最多只能设置8个字！');
+            }
+        }
+        //职位/职称
+        $profession = trim(Request::input('profession'));
+        if ($profession) {
+            if (mb_strlen($profession) < 2) {
+                return Base::retError('昵称不可以少于2个字！');
+            } elseif (mb_strlen($profession) > 20) {
+                return Base::retError('昵称最多只能设置20个字！');
+            }
+        }
+        //用户名
+        $username = trim(Request::input('username'));
+        if (strlen($username) < 2) {
+            return Base::retError('用户名不可以少于2个字符！');
+        } elseif (strlen($username) > 12) {
+            return Base::retError('用户名最多只能设置12个字符！');
+        }
+        if (Users::username2id($username) > 0) {
+            return Base::retError('用户名已存在！');
+        }
+        //密码
+        $userpass = trim(Request::input('userpass'));
+        if (strlen($userpass) < 6) {
+            return Base::retError('密码设置不能小于6位数！');
+        } elseif (strlen($userpass) > 32) {
+            return Base::retError('密码最多只能设置32位数！');
+        }
+        //
+        if (DB::table('users')->insert([
+            'userimg' => $userimg ?: '',
+            'nickname' => $nickname ?: '',
+            'profession' => $profession ?: '',
+            'username' => $username,
+            'userpass' => Base::md52($userpass),
+            'regip' => Base::getIp(),
+            'regdate' => Base::time()
+        ])) {
+            return Base::retSuccess('添加成功！');
+        } else {
+            return Base::retError('添加失败！');
+        }
+    }
+
+    /**
+     * 删除团队成员
+     */
+    public function team__delete()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        if (Base::isError(Users::identity('admin'))) {
+            return Base::retError('身份权限不足！', [], -1);
+        }
+        $id = intval(Request::input('id'));
+        if ($user['id'] == $id) {
+            return Base::retError('不能删除自己！');
+        }
+        //
+        if (DB::table('users')->where('id', $id)->delete()) {
+            return Base::retSuccess('删除成功！');
+        } else {
+            return Base::retError('删除失败！');
+        }
     }
 }

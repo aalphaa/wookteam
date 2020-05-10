@@ -32,7 +32,7 @@ export default {
     "不重要不紧急": null,
     "项目": null,
     "知识库": null,
-    "同事": null,
+    "团队": null,
     "欢迎您": null,
     "个人中心": null,
     "退出登录": null,

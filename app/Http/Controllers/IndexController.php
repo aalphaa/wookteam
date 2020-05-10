@@ -16,7 +16,7 @@ use Request;
 class IndexController extends Controller
 {
 
-    private $version = '100001';
+    private $version = '100000';
 
     public function __invoke($method, $action = '', $child = '', $name = '')
     {

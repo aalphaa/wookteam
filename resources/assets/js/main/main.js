@@ -159,6 +159,23 @@ import '../../sass/main.scss';
         },
 
         /**
+         * 权限是否通过
+         * @param role
+         * @returns {boolean}
+         */
+        identity(role) {
+            let userInfo = $A.getUserInfo();
+            let identity = userInfo.identity;
+            let isRole = false;
+            $A.each(identity, (index, res) => {
+                if (res === role) {
+                    isRole = true;
+                }
+            });
+            return isRole;
+        },
+
+        /**
          * 监听用户信息发生变化
          * @param callback
          */

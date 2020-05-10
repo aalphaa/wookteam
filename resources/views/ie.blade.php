@@ -60,27 +60,27 @@ if(strstr($uarowser, 'MSIE 6') || strstr($uarowser, 'MSIE 7') || strstr($uarowse
         <div class="browser_list">
             <span>
                 <a href="http://www.google.cn/chrome/browser/desktop/" target="_blank">
-                <img src="{{ asset('statics/images/browser/chrome.png') }}"><br>chrome
+                <img src="{{ asset('images/browser/chrome.png') }}"><br>chrome
                 </a>
             </span>
             <span>
                 <a href="http://www.firefox.com.cn/download/" target="_blank">
-                    <img src="{{ asset('statics/images/browser/firefox.png') }}"><br>firefox
+                    <img src="{{ asset('images/browser/firefox.png') }}"><br>firefox
                 </a>
             </span>
             <span>
                 <a href="https://www.apple.com/cn/safari/" target="_blank">
-                    <img src="{{ asset('statics/images/browser/safari.png') }}"><br>safari
+                    <img src="{{ asset('images/browser/safari.png') }}"><br>safari
                 </a>
             </span>
             <span>
                 <a href="http://chrome.360.cn/" target="_blank">
-                    <img src="{{ asset('statics/images/browser/360.png') }}"><br>360浏览器
+                    <img src="{{ asset('images/browser/360.png') }}"><br>360浏览器
                 </a>
             </span>
             <span>
                 <a href="http://ie.microsoft.com/" target="_blank">
-                    <img src="{{ asset('statics/images/browser/ie.png') }}"><br>ie9及以上
+                    <img src="{{ asset('images/browser/ie.png') }}"><br>ie9及以上
                 </a>
             </span>
         </div>

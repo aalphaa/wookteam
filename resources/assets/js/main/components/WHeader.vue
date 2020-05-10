@@ -10,13 +10,13 @@
                     </li><li :class="value==='doc'?'active':''">
                         <a href="javascript:void(0)" @click="tabPage('doc')"><i class="ft icon">&#xe915;</i>{{$L('知识库')}}</a>
                     </li><li :class="value==='team'?'active':''">
-                        <a href="javascript:void(0)" @click="tabPage('team')"><i class="ft icon">&#xe90d;</i>{{$L('同事')}}</a>
+                        <a href="javascript:void(0)" @click="tabPage('team')"><i class="ft icon">&#xe90d;</i>{{$L('团队')}}</a>
                     </li>
                 </ul>
             </div>
             <div class="w-header-row-flex"></div>
             <div class="w-header-row-right">
-                <Dropdown class="right-info" trigger="hover" @on-click="setRightSelect" placement="bottom-end" transfer>
+                <Dropdown class="right-info" trigger="click" @on-click="setRightSelect" placement="bottom-end" transfer>
                    <div>
                        <span class="username">{{$L('欢迎您')}}, {{(userInfo.nickname || userInfo.username) || $L('尊敬的会员')}}</span>
                        <Icon type="md-arrow-dropdown"/>
@@ -26,7 +26,7 @@
                         <Dropdown-item name="out">{{$L('退出登录')}}</Dropdown-item>
                     </Dropdown-menu>
                 </Dropdown>
-                <Dropdown class="right-info" trigger="hover" @on-click="setLanguage" transfer>
+                <Dropdown class="right-info" trigger="click" @on-click="setLanguage" transfer>
                     <div>
                         <Icon class="right-globe" type="md-globe" size="24"/>
                         <Icon type="md-arrow-dropdown"/>
