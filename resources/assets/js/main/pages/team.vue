@@ -234,8 +234,7 @@
             };
         },
         mounted() {
-            this.listPage = 1;
-            this.getLists();
+            this.getLists(true);
         },
         computed: {
 
@@ -256,7 +255,10 @@
                 }
             },
 
-            getLists() {
+            getLists(resetLoad) {
+                if (resetLoad === true) {
+                    this.listPage = 1;
+                }
                 this.loadIng++;
                 $A.aAjax({
                     url: 'users/team/lists',
@@ -296,8 +298,7 @@
                                     this.$Message.success(res.msg);
                                     this.$refs.add.resetFields();
                                     //
-                                    this.listPage = 1;
-                                    this.getLists();
+                                    this.getLists(true);
                                 }else{
                                     this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                 }

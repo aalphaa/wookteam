@@ -45,7 +45,7 @@ class ProjectController extends Controller
                 ['project_users.type', '成员'],
                 ['project_users.username', $user['username']]
             ])
-            ->orderByDesc('project_lists.id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 200));
+            ->orderByDesc('project_lists.id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的项目');
@@ -398,7 +398,7 @@ class ProjectController extends Controller
                 ['project_lists.delete', 0],
                 ['project_users.type', '成员'],
             ])
-            ->orderByDesc('project_lists.id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 200));
+            ->orderByDesc('project_lists.id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的成员');
@@ -438,7 +438,7 @@ class ProjectController extends Controller
             ->join('project_task', 'project_lists.id', '=', 'project_task.projectid')
             ->select(['project_task.*'])
             ->where($whereArray)
-            ->orderByDesc($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 200));
+            ->orderByDesc($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的任务');

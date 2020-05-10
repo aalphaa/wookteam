@@ -97,7 +97,7 @@ class UsersController extends Controller
             };
         }
         //
-        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession'])->where($whereArr)->where($whereFunc)->orderBy('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 200));
+        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession'])->where($whereArr)->where($whereFunc)->orderBy('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未搜索到任何相关的会员');
@@ -207,7 +207,7 @@ class UsersController extends Controller
             $user = $user['data'];
         }
         //
-        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession', 'regdate'])->orderByDesc('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 200));
+        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession', 'regdate'])->orderByDesc('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的团队成员');

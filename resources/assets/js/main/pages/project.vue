@@ -104,10 +104,10 @@
         <Drawer v-model="projectDrawerShow" width="75%">
             <Tabs v-model="projectDrawerTab">
                 <TabPane :label="$L('已完成任务')" name="complete">
-                    <project-complete :projectid="handleProjectId"></project-complete>
+                    <project-complete :canload="projectDrawerShow && projectDrawerTab == 'complete'" :projectid="handleProjectId"></project-complete>
                 </TabPane>
                 <TabPane :label="$L('成员管理')" name="member">
-                    <project-users :projectid="handleProjectId"></project-users>
+                    <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
                 </TabPane>
                 <TabPane :label="$L('项目统计')" name="statistics"></TabPane>
                 <TabPane :label="$L('收藏的项目')" name="myfavor"></TabPane>
@@ -295,8 +295,7 @@
             };
         },
         mounted() {
-            this.listPage = 1;
-            this.getLists();
+            this.getLists(true);
         },
         computed: {
 
@@ -317,7 +316,10 @@
                 }
             },
 
-            getLists() {
+            getLists(resetLoad) {
+                if (resetLoad === true) {
+                    this.listPage = 1;
+                }
                 this.loadIng++;
                 $A.aAjax({
                     url: 'project/lists',
@@ -396,8 +398,7 @@
                                     this.$refs.add.resetFields();
                                     this.$set(this.formAdd, 'template', 0);
                                     //
-                                    this.listPage = 1;
-                                    this.getLists();
+                                    this.getLists(true);
                                 }else{
                                     this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                 }

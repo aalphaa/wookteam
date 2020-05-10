@@ -21,9 +21,15 @@
             projectid: {
                 default: 0
             },
+            canload: {
+                type: Boolean,
+                default: true
+            },
         },
         data () {
             return {
+                loadYet: false,
+
                 loadIng: 0,
 
                 columns: [],
@@ -74,14 +80,24 @@
             }];
         },
         mounted() {
-            this.listPage = 1;
-            this.getLists();
+            if (this.canload) {
+                this.loadYet = true;
+                this.getLists(true);
+            }
         },
 
         watch: {
             projectid() {
-                this.listPage = 1;
-                this.getLists();
+                if (this.loadYet) {
+                    this.loadYet = true;
+                    this.getLists(true);
+                }
+            },
+            canload(val) {
+                if (val && !this.loadYet) {
+                    this.loadYet = true;
+                    this.getLists(true);
+                }
             }
         },
 
@@ -98,7 +114,10 @@
                 }
             },
 
-            getLists() {
+            getLists(resetLoad) {
+                if (resetLoad === true) {
+                    this.listPage = 1;
+                }
                 if (this.projectid == 0) {
                     this.lists = [];
                     this.listTotal = 0;
