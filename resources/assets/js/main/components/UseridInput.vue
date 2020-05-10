@@ -1,5 +1,9 @@
 <template>
-    <div v-clickoutside="handleClose">
+    <div v-clickoutside="handleClose" @click="handleClose">
+        <div v-if="multipleLists.length > 0" class="user-id-multiple">
+            <Tag v-for="(item, index) in multipleLists" :key="index" @on-close="() => { multipleLists.splice(index, 1); callMultipleLists() }" closable>{{item.nickname || item.username}}</Tag>
+        </div>
+
         <div class="user-id-input" ref="reference">
             <Input v-model="nickName" :placeholder="placeholder" :disabled="disabled" icon="md-search" @on-click="searchEnter" @on-enter="searchEnter" @on-blur="searchEnter(true)">
                 <div v-if="$slots.prepend !== undefined" slot="prepend"><slot name="prepend"></slot></div>
@@ -30,6 +34,9 @@
     </div>
 </template>
 <style lang="scss" scoped>
+    .user-id-multiple {
+        margin-bottom: 4px;
+    }
     .user-id-input {
         display: inline-block;
         width: 100%;
@@ -133,10 +140,16 @@
             },
             loadstatus: {
                 default: false
-            }
+            },
+            multiple: {
+                type: Boolean,
+                default: false
+            },
         },
         data () {
             return {
+                multipleLists: [],
+
                 userName: '',
                 nickName: '',
                 nickName__: '',
@@ -149,12 +162,6 @@
 
                 columns: [
                     {
-                        "title": "用户名",
-                        "key": "username",
-                        "minWidth": 80,
-                        "ellipsis": true,
-                        "tooltip": true,
-                    }, {
                         "title": "昵称",
                         "key": "nickname",
                         "minWidth": 80,
@@ -163,6 +170,12 @@
                         render: (h, params) => {
                             return h('span', params.row.nickname || '-');
                         }
+                    }, {
+                        "title": "用户名",
+                        "key": "username",
+                        "minWidth": 80,
+                        "ellipsis": true,
+                        "tooltip": true,
                     },
                 ],
                 userLists: [],
@@ -171,6 +184,9 @@
         },
         watch: {
             value (val) {
+                if (this.multiple) {
+                    return;
+                }
                 this.userName = $A.clone(val)
             },
 
@@ -202,12 +218,16 @@
                             success: (res) => {
                                 if (res.ret === 1 && res.data.total > 0) {
                                     let tmpData = res.data.lists[0];
-                                    this.userName = tmpData.username;
-                                    this.seleName = tmpData.nickname || tmpData.username;
-                                    this.nickName = tmpData.nickname || tmpData.username;
-                                    this.nickName__ = tmpData.nickname || tmpData.username;
-                                    this.$emit('input', this.userName);
-                                    this.$emit('change', tmpData);
+                                    if (this.multiple) {
+                                        this.addMultipleLists(tmpData);
+                                    } else {
+                                        this.userName = tmpData.username;
+                                        this.seleName = tmpData.nickname || tmpData.username;
+                                        this.nickName = tmpData.nickname || tmpData.username;
+                                        this.nickName__ = tmpData.nickname || tmpData.username;
+                                        this.$emit('input', this.userName);
+                                        this.$emit('change', tmpData);
+                                    }
                                 }
                             }
                         });
@@ -218,8 +238,10 @@
             nickName(val) {
                 if (val != this.seleName || val == '') {
                     this.userName = '';
-                    this.$emit('input', this.userName);
-                    this.$emit('change', {});
+                    if (!this.multiple) {
+                        this.$emit('input', this.userName);
+                        this.$emit('change', {});
+                    }
                 }
             },
 
@@ -333,20 +355,51 @@
             },
 
             userChange(item) {
-                this.userName = item.username;
-                this.seleName = item.nickname || item.username;
-                this.nickName = item.nickname || item.username;
-                this.nickName__ = item.nickname || item.username;
-                this.skipSearch = true;
-                this.searchShow = false;
-                this.$emit('input', this.userName);
-                this.$emit('change', item);
+                if (this.multiple) {
+                    this.addMultipleLists(item);
+                } else {
+                    this.userName = item.username;
+                    this.seleName = item.nickname || item.username;
+                    this.nickName = item.nickname || item.username;
+                    this.nickName__ = item.nickname || item.username;
+                    this.skipSearch = true;
+                    this.searchShow = false;
+                    this.$emit('input', this.userName);
+                    this.$emit('change', item);
+                }
             },
 
-            handleClose() {
+            handleClose(e) {
+                if (this.multiple && $A(e.target).parents('.user-id-input-table').length > 0) {
+                    return;
+                }
                 if (this.searchShow === true) {
                     this.searchShow = false;
                 }
+            },
+
+            addMultipleLists(item) {
+                let inn = false;
+                this.multipleLists.some((tmp) => {
+                    if (tmp.username == item.username) {
+                        return inn = true;
+                    }
+                })
+                if (!inn) {
+                    this.multipleLists.push(item);
+                    this.callMultipleLists();
+                }
+            },
+
+            callMultipleLists() {
+                let val = '';
+                this.multipleLists.forEach((tmp) => {
+                    if (val) {
+                        val+= ",";
+                    }
+                    val+= tmp.username;
+                });
+                this.$emit('input', val);
             }
         },
         mounted() {

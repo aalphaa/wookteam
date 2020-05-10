@@ -1,5 +1,7 @@
 <template>
     <div class="project-complete">
+        <!-- 按钮 -->
+        <Button :loading="loadIng > 0" type="primary" icon="md-add" @click="addUser">添加成员</Button>
         <!-- 列表 -->
         <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
         <!-- 分页 -->
@@ -9,8 +11,9 @@
 
 <style lang="scss" scoped>
     .project-complete {
+        padding: 0 12px;
         .tableFill {
-            margin: 20px;
+            margin: 12px 0 20px;
         }
     }
 </style>
@@ -43,7 +46,7 @@
         created() {
             this.columns = [{
                 "title": "头像",
-                "minWidth": 50,
+                "minWidth": 60,
                 "maxWidth": 100,
                 render: (h, params) => {
                     return h('img', {
@@ -103,7 +106,36 @@
                         },
                         on: {
                             click: () => {
-
+                                this.$Modal.confirm({
+                                    title: '移出成员',
+                                    content: '你确定要将此成员移出项目吗？',
+                                    loading: true,
+                                    onOk: () => {
+                                        $A.aAjax({
+                                            url: 'project/users/join',
+                                            data: {
+                                                act: 'delete',
+                                                projectid: params.row.projectid,
+                                                username: params.row.username,
+                                            },
+                                            error: () => {
+                                                this.$Modal.remove();
+                                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                            },
+                                            success: (res) => {
+                                                this.$Modal.remove();
+                                                setTimeout(() => {
+                                                    if (res.ret === 1) {
+                                                        this.$Message.success(res.msg);
+                                                        this.getLists();
+                                                    }else{
+                                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                                    }
+                                                }, 350);
+                                            }
+                                        });
+                                    }
+                                });
                             }
                         }
                     }, '删除');
@@ -157,7 +189,7 @@
                 }
                 this.loadIng++;
                 $A.aAjax({
-                    url: 'project/users',
+                    url: 'project/users/lists',
                     data: {
                         page: Math.max(this.listPage, 1),
                         pagesize: Math.max($A.runNum(this.listPageSize), 10),
@@ -178,6 +210,66 @@
                     }
                 });
             },
+
+            addUser() {
+                this.userValue = "";
+                this.$Modal.confirm({
+                    render: (h) => {
+                        return h('div', [
+                            h('div', {
+                                style: {
+                                    fontSize: '16px',
+                                    fontWeight: '500',
+                                    marginBottom: '20px',
+                                }
+                            }, '添加成员'),
+                            h('UseridInput', {
+                                props: {
+                                    value: this.userValue,
+                                    multiple: true,
+                                    placeholder: '请输入昵称/用户名搜索'
+                                },
+                                on: {
+                                    input: (val) => {
+                                        this.userValue = val;
+                                    }
+                                }
+                            })
+                        ])
+                    },
+                    loading: true,
+                    onOk: () => {
+                        if (this.userValue) {
+                            let username = this.userValue;
+                            $A.aAjax({
+                                url: 'project/users/join',
+                                data: {
+                                    act: 'join',
+                                    projectid: this.projectid,
+                                    username: username,
+                                },
+                                error: () => {
+                                    this.$Modal.remove();
+                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                },
+                                success: (res) => {
+                                    this.$Modal.remove();
+                                    setTimeout(() => {
+                                        if (res.ret === 1) {
+                                            this.$Message.success(res.msg);
+                                            this.getLists();
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                        }
+                                    }, 350);
+                                }
+                            });
+                        } else {
+                            this.$Modal.remove();
+                        }
+                    },
+                });
+            }
         }
     }
 </script>

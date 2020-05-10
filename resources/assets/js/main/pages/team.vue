@@ -115,7 +115,7 @@
             let isAdmin = $A.identity('admin');
             this.columns = [{
                 "title": "头像",
-                "minWidth": 50,
+                "minWidth": 60,
                 "maxWidth": 100,
                 render: (h, params) => {
                     return h('img', {
@@ -204,7 +204,6 @@
                                                     setTimeout(() => {
                                                         if (res.ret === 1) {
                                                             this.$Message.success(res.msg);
-                                                            //
                                                             this.getLists();
                                                         }else{
                                                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });

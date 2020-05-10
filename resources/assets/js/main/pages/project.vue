@@ -12,9 +12,9 @@
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover" @click="handleProject('myfavor')"><i class="ft icon">&#xE720;</i> {{$L('收藏的项目')}}</span>
-                    <span class="ft hover" @click="handleProject('myjoin')"><i class="ft icon">&#xE75E;</i> {{$L('参与的项目')}}</span>
-                    <span class="ft hover" @click="handleProject('mycreate')"><i class="ft icon">&#xE764;</i> {{$L('我创建的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('myfavor', null)"><i class="ft icon">&#xE720;</i> {{$L('收藏的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('myjoin', null)"><i class="ft icon">&#xE75E;</i> {{$L('参与的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('mycreate', null)"><i class="ft icon">&#xE764;</i> {{$L('我创建的项目')}}</span>
                 </div>
             </div>
         </div>
@@ -110,6 +110,11 @@
                     <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
                 </TabPane>
                 <TabPane :label="$L('项目统计')" name="statistics"></TabPane>
+            </Tabs>
+        </Drawer>
+
+        <Drawer v-model="projectListDrawerShow" width="75%">
+            <Tabs v-model="projectListDrawerTab">
                 <TabPane :label="$L('收藏的项目')" name="myfavor"></TabPane>
                 <TabPane :label="$L('参与的项目')" name="myjoin"></TabPane>
                 <TabPane :label="$L('创建的项目')" name="mycreate"></TabPane>
@@ -283,6 +288,9 @@
                 projectDrawerShow: false,
                 projectDrawerTab: 'complete',
 
+                projectListDrawerShow: false,
+                projectListDrawerTab: 'myfavor',
+
                 handleProjectId: 0,
             }
         },
@@ -358,7 +366,7 @@
                                 props: {
                                     value: this.labelsValue,
                                     autofocus: true,
-                                    placeholder: '请输入流程名称，多个请用空格分隔。'
+                                    placeholder: '请输入流程名称，多个可用空格分隔。'
                                 },
                                 on: {
                                     input: (val) => {
@@ -409,7 +417,9 @@
             },
 
             handleProject(event, item) {
-                this.handleProjectId = item.id;
+                if (item) {
+                    this.handleProjectId = item.id;
+                }
                 switch (event) {
                     case 'favor': {
                         this.favorProject(item);
@@ -437,12 +447,16 @@
                     }
                     case 'complete':
                     case 'member':
-                    case 'statistics':
+                    case 'statistics': {
+                        this.projectDrawerShow = true;
+                        this.projectDrawerTab = event;
+                        break;
+                    }
                     case 'myfavor':
                     case 'myjoin':
                     case 'mycreate': {
-                        this.projectDrawerShow = true;
-                        this.projectDrawerTab = event;
+                        this.projectListDrawerShow = true;
+                        this.projectListDrawerTab = event;
                         break;
                     }
                 }
@@ -546,7 +560,6 @@
                             h('UseridInput', {
                                 props: {
                                     value: this.transferValue,
-                                    autofocus: true,
                                     placeholder: '请输入昵称/用户名搜索'
                                 },
                                 on: {

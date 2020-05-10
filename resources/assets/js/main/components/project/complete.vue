@@ -10,7 +10,7 @@
 <style lang="scss" scoped>
     .project-complete {
         .tableFill {
-            margin: 20px;
+            margin: 12px 12px 20px;
         }
     }
 </style>
@@ -62,7 +62,7 @@
             }, {
                 "title": "操作",
                 "key": 'action',
-                "width": 80,
+                "width": 100,
                 "align": 'center',
                 render: (h, params) => {
                     return h('Button', {
@@ -72,7 +72,35 @@
                         },
                         on: {
                             click: () => {
-
+                                this.$Modal.confirm({
+                                    title: '取消归档',
+                                    content: '你确定要取消归档吗？',
+                                    loading: true,
+                                    onOk: () => {
+                                        $A.aAjax({
+                                            url: 'project/task/archived',
+                                            data: {
+                                                act: 'cancel',
+                                                taskid: params.row.id,
+                                            },
+                                            error: () => {
+                                                this.$Modal.remove();
+                                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                            },
+                                            success: (res) => {
+                                                this.$Modal.remove();
+                                                setTimeout(() => {
+                                                    if (res.ret === 1) {
+                                                        this.$Message.success(res.msg);
+                                                        this.getLists();
+                                                    }else{
+                                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                                    }
+                                                }, 350);
+                                            }
+                                        });
+                                    }
+                                });
                             }
                         }
                     }, '取消归档');

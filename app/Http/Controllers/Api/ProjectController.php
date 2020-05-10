@@ -27,6 +27,9 @@ class ProjectController extends Controller
 
     /**
      * 项目列表
+     *
+     * @apiParam {Number} [page]                当前页，默认:1
+     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
     public function lists()
     {
@@ -55,6 +58,9 @@ class ProjectController extends Controller
 
     /**
      * 添加项目
+     *
+     * @apiParam {String} title     项目名称
+     * @apiParam {Array} labels     流程，格式[流程1, 流程2]
      */
     public function add()
     {
@@ -122,6 +128,12 @@ class ProjectController extends Controller
 
     /**
      * 收藏项目
+     *
+     * @apiParam {String} act
+     * - cancel: 取消收藏
+     * - else: 添加收藏
+     * @apiParam {Number} projectid     项目ID
+     *
      * @throws \Throwable
      */
     public function favor()
@@ -139,34 +151,58 @@ class ProjectController extends Controller
             return Base::retError('项目不存在或已被删除！');
         }
         return DB::transaction(function () use ($item, $user) {
-            $row = Base::DBC2A(DB::table('project_users')->where([
-                'type' => '收藏',
-                'projectid' => $item['id'],
-                'username' => $user['username'],
-            ])->lockForUpdate()->first());
-            if (empty($row)) {
-                DB::table('project_users')->insert([
-                    'type' => '收藏',
-                    'projectid' => $item['id'],
-                    'isowner' => $item['username'] == $user['username'] ? 1 : 0,
-                    'username' => $user['username'],
-                    'indate' => Base::time()
-                ]);
-                DB::table('project_log')->insert([
-                    'type' => '日志',
-                    'projectid' => $item['id'],
-                    'username' => $user['username'],
-                    'detail' => '收藏项目',
-                    'indate' => Base::time()
-                ]);
-                return Base::retSuccess('收藏成功');
+            switch (Request::input('act')) {
+                case 'cancel': {
+                    if (DB::table('project_users')->where([
+                        'type' => '收藏',
+                        'projectid' => $item['id'],
+                        'username' => $user['username'],
+                    ])->delete()) {
+                        DB::table('project_log')->insert([
+                            'type' => '日志',
+                            'projectid' => $item['id'],
+                            'username' => $user['username'],
+                            'detail' => '取消收藏',
+                            'indate' => Base::time()
+                        ]);
+                        return Base::retSuccess('取消成功');
+                    }
+                    return Base::retSuccess('已取消');
+                }
+                default: {
+                    $row = Base::DBC2A(DB::table('project_users')->where([
+                        'type' => '收藏',
+                        'projectid' => $item['id'],
+                        'username' => $user['username'],
+                    ])->lockForUpdate()->first());
+                    if (empty($row)) {
+                        DB::table('project_users')->insert([
+                            'type' => '收藏',
+                            'projectid' => $item['id'],
+                            'isowner' => $item['username'] == $user['username'] ? 1 : 0,
+                            'username' => $user['username'],
+                            'indate' => Base::time()
+                        ]);
+                        DB::table('project_log')->insert([
+                            'type' => '日志',
+                            'projectid' => $item['id'],
+                            'username' => $user['username'],
+                            'detail' => '收藏项目',
+                            'indate' => Base::time()
+                        ]);
+                        return Base::retSuccess('收藏成功');
+                    }
+                    return Base::retSuccess('已收藏');
+                }
             }
-            return Base::retSuccess('已收藏');
         });
     }
 
     /**
      * 重命名项目
+     *
+     * @apiParam {Number} projectid     项目ID
+     * @apiParam {String} title         项目新名称
      */
     public function rename()
     {
@@ -209,6 +245,10 @@ class ProjectController extends Controller
 
     /**
      * 移交项目
+     *
+     * @apiParam {Number} projectid     项目ID
+     * @apiParam {String} username      项目新负责人用户名
+     *
      * @throws \Throwable
      */
     public function transfer()
@@ -244,18 +284,18 @@ class ProjectController extends Controller
             'username' => $username,
         ])->count();
         if ($count <= 0) {
-            DB::table('project_log')->insert([
-                'type' => '日志',
-                'projectid' => $item['id'],
-                'username' => $username,
-                'detail' => '加入项目',
-                'indate' => Base::time()
-            ]);
             DB::table('project_users')->insert([
                 'type' => '成员',
                 'projectid' => $item['id'],
                 'isowner' => 0,
                 'username' => $username,
+                'indate' => Base::time()
+            ]);
+            DB::table('project_log')->insert([
+                'type' => '日志',
+                'projectid' => $item['id'],
+                'username' => $username,
+                'detail' => '移交项目，自动加入项目',
                 'indate' => Base::time()
             ]);
         }
@@ -289,6 +329,8 @@ class ProjectController extends Controller
 
     /**
      * 删除项目
+     *
+     * @apiParam {Number} projectid     项目ID
      */
     public function delete()
     {
@@ -325,6 +367,8 @@ class ProjectController extends Controller
 
     /**
      * 退出项目
+     *
+     * @apiParam {Number} projectid     项目ID
      */
     public function out()
     {
@@ -345,7 +389,7 @@ class ProjectController extends Controller
         }
         $count = DB::table('project_users')->where([
             'type' => '成员',
-            'projectid' => $item['id'],
+            'projectid' => $projectid,
             'username' => $user['username'],
         ])->count();
         if ($count <= 0) {
@@ -369,9 +413,13 @@ class ProjectController extends Controller
     }
 
     /**
-     * 项目成员
+     * 项目成员-列表
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} [page]                当前页，默认:1
+     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
-    public function users()
+    public function users__lists()
     {
         $user = Users::authE();
         if (Base::isError($user)) {
@@ -413,7 +461,101 @@ class ProjectController extends Controller
     }
 
     /**
-     * 任务-列表
+     * 项目成员-添加、删除
+     *
+     * @apiParam {String} act
+     * - delete: 删除成员
+     * - else: 添加成员
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Array|String} username        用户名（或用户名组）
+     */
+    public function users__join()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = trim(Request::input('projectid'));
+        $item = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->first());
+        if (empty($item)) {
+            return Base::retError('项目不存在或已被删除！');
+        }
+        if ($item['username'] != $user['username']) {
+            return Base::retError('你是不是项目负责人！');
+        }
+        $usernames = Request::input('username');
+        if (empty($usernames)) {
+            return Base::retError('参数错误！');
+        }
+        if (!is_array($usernames)) {
+            if (Base::strExists($usernames, ',')) {
+                $usernames = explode(',', $usernames);
+            } else {
+                $usernames = [$usernames];
+            }
+        }
+        //
+        $logArray = [];
+        foreach ($usernames AS $username) {
+            $count = DB::table('project_users')->where([
+                'type' => '成员',
+                'projectid' => $projectid,
+                'username' => $username,
+            ])->count();
+            switch (Request::input('act')) {
+                case 'delete': {
+                    if ($count > 0 && $item['username'] != $username) {
+                        DB::table('project_users')->where([
+                            'type' => '成员',
+                            'projectid' => $projectid,
+                            'username' => $username,
+                        ])->delete();
+                        $logArray[] = [
+                            'type' => '日志',
+                            'projectid' => $item['id'],
+                            'username' => $user['username'],
+                            'detail' => '将成员【' . $username . '】移出项目',
+                            'indate' => Base::time()
+                        ];
+                    }
+                    break;
+                }
+                default: {
+                    if ($count == 0) {
+                        DB::table('project_users')->insert([
+                            'type' => '成员',
+                            'projectid' => $projectid,
+                            'isowner' => 0,
+                            'username' => $username,
+                            'indate' => Base::time()
+                        ]);
+                        $logArray[] = [
+                            'type' => '日志',
+                            'projectid' => $item['id'],
+                            'username' => $username,
+                            'detail' => '将成员【' . $username . '】加入项目',
+                            'indate' => Base::time()
+                        ];
+                    }
+                    break;
+                }
+            }
+        }
+        return Base::retSuccess('操作完成');
+    }
+
+    /**
+     * 项目任务-列表
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} [archived]            是否归档
+     * - 0: 未归档
+     * - 1: 已归档
+     * @apiParam {Number} [page]                当前页，默认:1
+     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
     public function task__lists()
     {
@@ -424,10 +566,22 @@ class ProjectController extends Controller
             $user = $user['data'];
         }
         //
+        $projectid = intval(Request::input('projectid'));
+        $count = DB::table('project_users')->where([
+            'type' => '成员',
+            'projectid' => $projectid,
+            'username' => $user['username'],
+        ])->count();
+        if ($count <= 0) {
+            return Base::retError('你不在项目成员内！');
+        }
+        //
         $whereArray = [];
+        $whereArray[] = ['project_lists.id', '=', $projectid];
         $whereArray[] = ['project_lists.delete', '=', 0];
-        if (Request::input('projectid') > 0) $whereArray[] = ['project_lists.id', '=', intval(Request::input('projectid'))];
-        if (in_array(intval(Request::input('archived')), [0, 1])) $whereArray[] = ['project_task.archived', '=', Request::input('archived')];
+        if (in_array(intval(Request::input('archived')), [0, 1])) {
+            $whereArray[] = ['project_task.archived', '=', Request::input('archived')];
+        }
         //
         $orderBy = 'project_task.id';
         if (intval(Request::input('archived')) === 1) {
@@ -444,5 +598,82 @@ class ProjectController extends Controller
             return Base::retError('未找到任何相关的任务');
         }
         return Base::retSuccess('success', $lists);
+    }
+
+    /**
+     * 项目任务-归档、取消归档
+     *
+     * @apiParam {String} act
+     * - cancel: 取消归档
+     * - else: 加入归档
+     * @apiParam {Number} taskid             任务ID
+     */
+    public function task__archived()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $taskid = intval(Request::input('taskid'));
+        $task = Base::DBC2A(DB::table('project_lists')
+            ->join('project_task', 'project_lists.id', '=', 'project_task.projectid')
+            ->select(['project_task.projectid', 'project_task.title', 'project_task.archived'])
+            ->where([
+                ['project_lists.delete', '=', 0],
+                ['project_task.id', '=', $taskid],
+            ])
+            ->first());
+        if (empty($task)) {
+            return Base::retError('任务不存在！');
+        }
+        $count = DB::table('project_users')->where([
+            'type' => '成员',
+            'projectid' => $task['projectid'],
+            'username' => $user['username'],
+        ])->count();
+        if ($count <= 0) {
+            return Base::retError('你不在项目成员内！');
+        }
+        //
+        switch (Request::input('act')) {
+            case 'cancel': {
+                if ($task['archived'] == 0) {
+                    return Base::retError('任务未归档！');
+                }
+                DB::table('project_task')->where('id', $taskid)->update([
+                    'archived' => 1,
+                    'archiveddate' => Base::time()
+                ]);
+                DB::table('project_log')->insert([
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $taskid,
+                    'username' => $user['username'],
+                    'detail' => '取消归档【' . $task['title'] . '】',
+                    'indate' => Base::time()
+                ]);
+                return Base::retSuccess('取消归档成功');
+            }
+            default: {
+                if ($task['archived'] == 1) {
+                    return Base::retError('任务已归档！');
+                }
+                DB::table('project_task')->where('id', $taskid)->update([
+                    'archived' => 0,
+                ]);
+                DB::table('project_log')->insert([
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $taskid,
+                    'username' => $user['username'],
+                    'detail' => '归档【' . $task['title'] . '】',
+                    'indate' => Base::time()
+                ]);
+                return Base::retSuccess('加入归档成功');
+            }
+        }
     }
 }
