@@ -28,8 +28,12 @@ class ProjectController extends Controller
     /**
      * 项目列表
      *
-     * @apiParam {Number} [page]                当前页，默认:1
-     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
+     * @apiParam {String} act           类型
+     * - join: 加入的项目（默认）
+     * - favor: 收藏的项目
+     * - manage: 管理的项目
+     * @apiParam {Number} [page]        当前页，默认:1
+     * @apiParam {Number} [pagesize]    每页显示数量，默认:20，最大:100
      */
     public function lists()
     {
@@ -40,14 +44,28 @@ class ProjectController extends Controller
             $user = $user['data'];
         }
         //
+        $whereArray = [];
+        $whereArray[] = ['project_lists.delete', '=', 0];
+        $whereArray[] = ['project_users.username', '=', $user['username']];
+        switch (Request::input('act')) {
+            case "favor": {
+                $whereArray[] = ['project_users.type', '=', '收藏'];
+                break;
+            }
+            case "manage": {
+                $whereArray[] = ['project_users.type', '=', '成员'];
+                $whereArray[] = ['project_users.isowner', '=', 1];
+                break;
+            }
+            default: {
+                $whereArray[] = ['project_users.type', '=', '成员'];
+                break;
+            }
+        }
         $lists = DB::table('project_lists')
             ->join('project_users', 'project_lists.id', '=', 'project_users.projectid')
-            ->select(['project_lists.*', 'project_users.isowner'])
-            ->where([
-                ['project_lists.delete', 0],
-                ['project_users.type', '成员'],
-                ['project_users.username', $user['username']]
-            ])
+            ->select(['project_lists.*', 'project_users.isowner', 'project_users.indate as uindate'])
+            ->where($whereArray)
             ->orderByDesc('project_lists.id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
@@ -59,8 +77,8 @@ class ProjectController extends Controller
     /**
      * 添加项目
      *
-     * @apiParam {String} title     项目名称
-     * @apiParam {Array} labels     流程，格式[流程1, 流程2]
+     * @apiParam {String} title         项目名称
+     * @apiParam {Array} labels         流程，格式[流程1, 流程2]
      */
     public function add()
     {
@@ -129,7 +147,7 @@ class ProjectController extends Controller
     /**
      * 收藏项目
      *
-     * @apiParam {String} act
+     * @apiParam {String} act           类型
      * - cancel: 取消收藏
      * - else: 添加收藏
      * @apiParam {Number} projectid     项目ID
@@ -415,9 +433,9 @@ class ProjectController extends Controller
     /**
      * 项目成员-列表
      *
-     * @apiParam {Number} projectid             项目ID
-     * @apiParam {Number} [page]                当前页，默认:1
-     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
+     * @apiParam {Number} projectid     项目ID
+     * @apiParam {Number} [page]        当前页，默认:1
+     * @apiParam {Number} [pagesize]    每页显示数量，默认:20，最大:100
      */
     public function users__lists()
     {

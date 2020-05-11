@@ -12,9 +12,9 @@
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover" @click="handleProject('myfavor', null)"><i class="ft icon">&#xE720;</i> {{$L('收藏的项目')}}</span>
                     <span class="ft hover" @click="handleProject('myjoin', null)"><i class="ft icon">&#xE75E;</i> {{$L('参与的项目')}}</span>
-                    <span class="ft hover" @click="handleProject('mycreate', null)"><i class="ft icon">&#xE764;</i> {{$L('我创建的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('myfavor', null)"><i class="ft icon">&#xE720;</i> {{$L('收藏的项目')}}</span>
+                    <span class="ft hover" @click="handleProject('mycreate', null)"><i class="ft icon">&#xE764;</i> {{$L('我管理的项目')}}</span>
                 </div>
             </div>
         </div>
@@ -115,11 +115,17 @@
             </Tabs>
         </Drawer>
 
-        <Drawer v-model="projectListDrawerShow" width="75%">
+        <Drawer v-model="projectListDrawerShow" width="50%">
             <Tabs v-model="projectListDrawerTab">
-                <TabPane :label="$L('收藏的项目')" name="myfavor"></TabPane>
-                <TabPane :label="$L('参与的项目')" name="myjoin"></TabPane>
-                <TabPane :label="$L('创建的项目')" name="mycreate"></TabPane>
+                <TabPane :label="$L('参与的项目')" name="myjoin">
+                    <project-my-join :canload="projectListDrawerShow && projectListDrawerTab == 'myjoin'"></project-my-join>
+                </TabPane>
+                <TabPane :label="$L('收藏的项目')" name="myfavor">
+                    <project-my-favor :canload="projectListDrawerShow && projectListDrawerTab == 'myfavor'"></project-my-favor>
+                </TabPane>
+                <TabPane :label="$L('管理的项目')" name="mycreate">
+                    <project-my-manage :canload="projectListDrawerShow && projectListDrawerTab == 'mycreate'"></project-my-manage>
+                </TabPane>
             </Tabs>
         </Drawer>
     </div>
@@ -259,8 +265,18 @@
     import ProjectComplete from "../components/project/complete";
     import ProjectUsers from "../components/project/users";
     import ProjectStatistics from "../components/project/statistics";
+    import ProjectMyFavor from "../components/project/my/favor";
+    import ProjectMyJoin from "../components/project/my/join";
+    import ProjectMyManage from "../components/project/my/manage";
+    import Project from "../mixins/project";
     export default {
-        components: {ProjectStatistics, ProjectUsers, ProjectComplete, WLoading, WContent, WHeader},
+        components: {
+            ProjectMyManage,
+            ProjectMyJoin,
+            ProjectMyFavor, ProjectStatistics, ProjectUsers, ProjectComplete, WLoading, WContent, WHeader},
+        mixins: [
+            Project
+        ],
         data () {
             return {
                 loadIng: 0,
@@ -292,7 +308,7 @@
                 projectDrawerTab: 'complete',
 
                 projectListDrawerShow: false,
-                projectListDrawerTab: 'myfavor',
+                projectListDrawerTab: 'myjoin',
 
                 handleProjectId: 0,
             }
@@ -425,7 +441,7 @@
                 }
                 switch (event) {
                     case 'favor': {
-                        this.favorProject(item);
+                        this.favorProject('add', item.id);
                         break;
                     }
                     case 'rename': {
@@ -437,11 +453,15 @@
                         break;
                     }
                     case 'delete': {
-                        this.deleteProject(item);
+                        this.deleteProject(item.id, () => {
+                            this.getLists();
+                        });
                         break;
                     }
                     case 'out': {
-                        this.outProject(item);
+                        this.outProject(item.id, () => {
+                            this.getLists();
+                        });
                         break;
                     }
 
@@ -455,34 +475,14 @@
                         this.projectDrawerTab = event;
                         break;
                     }
-                    case 'myfavor':
                     case 'myjoin':
+                    case 'myfavor':
                     case 'mycreate': {
                         this.projectListDrawerShow = true;
                         this.projectListDrawerTab = event;
                         break;
                     }
                 }
-            },
-
-            favorProject(item) {
-                this.$set(item, 'loadIng', true);
-                $A.aAjax({
-                    url: 'project/favor',
-                    data: {
-                        id: item.id,
-                    },
-                    complete: () => {
-                        this.$set(item, 'loadIng', false);
-                    },
-                    success: (res) => {
-                        if (res.ret === 1) {
-                            this.$Message.success(res.msg);
-                        }else{
-                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
-                        }
-                    }
-                });
             },
 
             renameProject(item) {
@@ -609,64 +609,6 @@
                     },
                 });
             },
-
-            deleteProject(item) {
-                this.$Modal.confirm({
-                    title: '删除项目',
-                    content: '你确定要删除此项目吗？',
-                    loading: true,
-                    onOk: () => {
-                        $A.aAjax({
-                            url: 'project/delete?projectid=' + item.id,
-                            error: () => {
-                                this.$Modal.remove();
-                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
-                            },
-                            success: (res) => {
-                                this.$Modal.remove();
-                                setTimeout(() => {
-                                    if (res.ret === 1) {
-                                        this.$Message.success(res.msg);
-                                        //
-                                        this.getLists();
-                                    }else{
-                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
-                                    }
-                                }, 350);
-                            }
-                        });
-                    }
-                });
-            },
-
-            outProject(item) {
-                this.$Modal.confirm({
-                    title: '退出项目',
-                    content: '你确定要退出此项目吗？',
-                    loading: true,
-                    onOk: () => {
-                        $A.aAjax({
-                            url: 'project/out?projectid=' + item.id,
-                            error: () => {
-                                this.$Modal.remove();
-                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
-                            },
-                            success: (res) => {
-                                this.$Modal.remove();
-                                setTimeout(() => {
-                                    if (res.ret === 1) {
-                                        this.$Message.success(res.msg);
-                                        //
-                                        this.getLists();
-                                    }else{
-                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
-                                    }
-                                }, 350);
-                            }
-                        });
-                    }
-                });
-            }
         },
     }
 </script>
