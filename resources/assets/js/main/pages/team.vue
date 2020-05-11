@@ -235,11 +235,8 @@
         mounted() {
             this.getLists(true);
         },
-        computed: {
-
-        },
-        watch: {
-
+        deactivated() {
+            this.addShow = false;
         },
         methods: {
             setPage(page) {

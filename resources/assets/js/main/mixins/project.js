@@ -1,5 +1,9 @@
 export default {
     methods: {
+        openProject(projectid) {
+            this.goForward({path: '/project/panel/' + projectid});
+        },
+
         outProject(projectid, successCallback) {
             this.$Modal.confirm({
                 title: '退出项目',

@@ -47,6 +47,18 @@
                 "title": "项目名称",
                 "key": 'title',
                 "minWidth": 100,
+                render: (h, params) => {
+                    return h('a', {
+                        attrs: {
+                            href: 'javascript:void(0)',
+                        },
+                        on: {
+                            click: () => {
+                                this.openProject(params.row.id);
+                            }
+                        }
+                    }, params.row.title);
+                },
             }, {
                 "title": "创建时间",
                 "minWidth": 160,

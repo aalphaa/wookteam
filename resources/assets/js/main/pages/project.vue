@@ -102,7 +102,7 @@
         </Modal>
 
         <Drawer v-model="projectDrawerShow" width="75%">
-            <Tabs v-model="projectDrawerTab">
+            <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
                 <TabPane :label="$L('已完成任务')" name="complete">
                     <project-complete :canload="projectDrawerShow && projectDrawerTab == 'complete'" :projectid="handleProjectId"></project-complete>
                 </TabPane>
@@ -116,7 +116,7 @@
         </Drawer>
 
         <Drawer v-model="projectListDrawerShow" width="50%">
-            <Tabs v-model="projectListDrawerTab">
+            <Tabs v-if="projectListDrawerShow" v-model="projectListDrawerTab">
                 <TabPane :label="$L('参与的项目')" name="myjoin">
                     <project-my-join :canload="projectListDrawerShow && projectListDrawerTab == 'myjoin'"></project-my-join>
                 </TabPane>
@@ -324,11 +324,10 @@
         mounted() {
             this.getLists(true);
         },
-        computed: {
-
-        },
-        watch: {
-
+        deactivated() {
+            this.addShow = false;
+            this.projectDrawerShow = false;
+            this.projectListDrawerShow = false;
         },
         methods: {
             setPage(page) {
@@ -466,6 +465,7 @@
                     }
 
                     case 'open': {
+                        this.openProject(item.id);
                         break;
                     }
                     case 'complete':

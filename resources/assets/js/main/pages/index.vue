@@ -345,11 +345,8 @@
         mounted() {
 
         },
-        computed: {
-
-        },
-        watch: {
-
+        deactivated() {
+            this.loginShow = false;
         },
         methods: {
             onLogin() {

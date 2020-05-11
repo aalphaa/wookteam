@@ -14,6 +14,11 @@ export default [
         meta: { slide: false },
         component: resolve => require(['./pages/project.vue'], resolve)
     }, {
+        path: '/project/panel/:id',
+        name: 'project-panel',
+        meta: { slide: false },
+        component: resolve => require(['./pages/project-panel.vue'], resolve)
+    }, {
         path: '/doc',
         name: 'doc',
         meta: { slide: false },
