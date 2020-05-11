@@ -3,7 +3,7 @@
         <!-- 列表 -->
         <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
         <!-- 分页 -->
-        <Page class="pageBox" :total="listTotal" :current="listPage" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total></Page>
+        <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
     </div>
 </template>
 
@@ -50,12 +50,12 @@
                 "key": 'createuser',
                 "minWidth": 80,
             }, {
-                "title": "账号",
+                "title": "负责人",
                 "key": 'username',
                 "minWidth": 80,
             }, {
                 "title": "归档时间",
-                "minWidth": 160,
+                "width": 160,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.archiveddate));
                 }
@@ -117,7 +117,6 @@
         watch: {
             projectid() {
                 if (this.loadYet) {
-                    this.loadYet = true;
                     this.getLists(true);
                 }
             },

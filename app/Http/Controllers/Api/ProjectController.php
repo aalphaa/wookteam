@@ -554,6 +554,11 @@ class ProjectController extends Controller
      * @apiParam {Number} [archived]            是否归档
      * - 0: 未归档
      * - 1: 已归档
+     * @apiParam {String} [type]                任务类型
+     * - 未完成
+     * - 已超期
+     * - 已完成
+     * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
@@ -576,11 +581,29 @@ class ProjectController extends Controller
             return Base::retError('你不在项目成员内！');
         }
         //
+        $whereFunc = null;
         $whereArray = [];
         $whereArray[] = ['project_lists.id', '=', $projectid];
         $whereArray[] = ['project_lists.delete', '=', 0];
-        if (in_array(intval(Request::input('archived')), [0, 1])) {
-            $whereArray[] = ['project_task.archived', '=', Request::input('archived')];
+        if (in_array(Request::input('archived'), [0, 1])) {
+            $whereArray[] = ['project_task.archived', '=', intval(Request::input('archived'))];
+        }
+        $type = trim(Request::input('type'));
+        switch ($type) {
+            case '未完成':
+                $whereArray[] = ['project_task.status', '=', '进行中'];
+                $whereFunc = function($query) {
+                    $query->where('project_task.enddate', '=', 0)->orWhere('project_task.enddate', '>', Base::time());
+                };
+                break;
+            case '已超期':
+                $whereArray[] = ['project_task.status', '=', '进行中'];
+                $whereArray[] = ['project_task.enddate', '>', 0];
+                $whereArray[] = ['project_task.enddate', '<=', Base::time()];
+                break;
+            case '已完成':
+                $whereArray[] = ['project_task.status', '=', '已完成'];
+                break;
         }
         //
         $orderBy = 'project_task.id';
@@ -592,10 +615,16 @@ class ProjectController extends Controller
             ->join('project_task', 'project_lists.id', '=', 'project_task.projectid')
             ->select(['project_task.*'])
             ->where($whereArray)
+            ->where($whereFunc)
             ->orderByDesc($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的任务');
+        }
+        if (intval(Request::input('statistics')) == 1) {
+            $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('status', '进行中')->where(function($query) { $query->where('enddate', '=', 0)->orWhere('enddate', '>', Base::time()); })->count();
+            $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('status', '进行中')->whereBetween('enddate', [0, Base::time()])->count();
+            $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('status', '已完成')->count();
         }
         return Base::retSuccess('success', $lists);
     }

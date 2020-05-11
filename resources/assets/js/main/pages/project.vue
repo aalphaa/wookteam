@@ -65,7 +65,7 @@
                 </li>
             </ul>
             <!-- 分页 -->
-            <Page v-if="listTotal > 0" class="pageBox" :total="listTotal" :current="listPage" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total></Page>
+            <Page v-if="listTotal > 0" class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total></Page>
         </w-content>
 
         <Modal
@@ -109,7 +109,9 @@
                 <TabPane :label="$L('成员管理')" name="member">
                     <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
                 </TabPane>
-                <TabPane :label="$L('项目统计')" name="statistics"></TabPane>
+                <TabPane :label="$L('项目统计')" name="statistics">
+                    <project-statistics :canload="projectDrawerShow && projectDrawerTab == 'statistics'" :projectid="handleProjectId"></project-statistics>
+                </TabPane>
             </Tabs>
         </Drawer>
 
@@ -256,8 +258,9 @@
     import WLoading from "../components/WLoading";
     import ProjectComplete from "../components/project/complete";
     import ProjectUsers from "../components/project/users";
+    import ProjectStatistics from "../components/project/statistics";
     export default {
-        components: {ProjectUsers, ProjectComplete, WLoading, WContent, WHeader},
+        components: {ProjectStatistics, ProjectUsers, ProjectComplete, WLoading, WContent, WHeader},
         data () {
             return {
                 loadIng: 0,

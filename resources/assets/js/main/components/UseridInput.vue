@@ -102,9 +102,9 @@
 </style>
 <script>
 
-    import clickoutside from './directives/clickoutside';
-    import TransferDom from './directives/transfer-dom';
-    import Popper from './directives/popper-novalue';
+    import clickoutside from '../../_modules/directives/clickoutside';
+    import TransferDom from '../../_modules/directives/transfer-dom';
+    import Popper from '../../_modules/directives/popper-novalue';
     import WLoading from "./WLoading";
 
     export default {
