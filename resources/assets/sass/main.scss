@@ -172,3 +172,77 @@
     text-align: center;
     margin-bottom: 12px;
 }
+.sreachBox {
+    > .item {
+        margin-bottom: 8px;
+    }
+    .item {
+        > div {
+            display: block;
+            float: left;
+            padding-right: 10px;
+            &:last-child {
+                padding-right: 0;
+            }
+            .ivu-input-wrapper,.ivu-select {
+                margin-top: 2px;
+            }
+            input,.ivu-select-placeholder {
+                font-weight: normal;
+            }
+        }
+        .item-1 {
+            width: 100%;
+        }
+        .item-2 {
+            width: 50%;
+        }
+        .item-3 {
+            width: 33.33%;
+        }
+        .item-4 {
+            width: 25%;
+        }
+        .item-5 {
+            width: 20%;
+        }
+        &:after {
+            content: '';
+            display: block;
+            height: 0;
+            clear: both;
+            visibility: hidden;
+        }
+    }
+    .item-title,
+    .item-title-active {
+        display: block;
+        overflow: hidden;
+        text-overflow:ellipsis;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+    .item-title-active {
+        color: #ff0000;
+    }
+    .item-button {
+        text-align: right;
+        margin-top: 10px;
+        margin-bottom: 0;
+        .ivu-input-wrapper {
+            float: none;
+            width: 150px;
+            display:inline-block;
+        }
+    }
+    .ivu-date-picker {
+        width: 100%;
+        position: relative;
+        vertical-align: middle;
+    }
+    .item-button {
+        .ivu-btn {
+            margin-left: 8px;
+        }
+    }
+}

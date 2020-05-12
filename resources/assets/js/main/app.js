@@ -14,8 +14,11 @@ Vue.use(Language);
 
 import Title from '../_components/Title.vue'
 import UseridInput from './components/UseridInput'
+import sreachTitle from '../_components/sreachTitle.vue'
+
 Vue.component('VTitle', Title);
 Vue.component('UseridInput', UseridInput);
+Vue.component('sreachTitle', sreachTitle);
 
 const router = new VueRouter({routes});
 

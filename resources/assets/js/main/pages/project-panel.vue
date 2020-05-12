@@ -15,10 +15,10 @@
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover"><i class="ft icon">&#xE6E7;</i> 任务看板</span>
-                    <span class="ft hover"><i class="ft icon">&#xE89E;</i> 任务列表</span>
-                    <span class="ft hover"><i class="ft icon">&#xE705;</i> 甘特图</span>
-                    <span class="ft hover"><i class="ft icon">&#xE7A7;</i> 设置</span>
+                    <span class="ft hover" @click="openProjectDrawer('lists')"><i class="ft icon">&#xE89E;</i> 任务列表</span>
+                    <span class="ft hover" @click="openProjectDrawer('files')"><i class="ft icon">&#xE701;</i> 文件列表</span>
+                    <span class="ft hover" @click="openProjectDrawer('logs')"><i class="ft icon">&#xE753;</i> 项目动态</span>
+                    <span class="ft hover" @click="openProjectDrawer('setting')"><i class="ft icon">&#xE7A7;</i> 设置</span>
                 </div>
             </div>
         </div>
@@ -64,6 +64,19 @@
             </draggable>
         </w-content>
 
+        <Drawer v-model="projectDrawerShow" width="80%">
+            <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
+                <TabPane :label="$L('任务列表')" name="lists">
+                    <project-task-lists :canload="projectDrawerShow && projectDrawerTab == 'lists'" :projectid="projectid" :labelLists="projectSimpleLabel"></project-task-lists>
+                </TabPane>
+                <TabPane :label="$L('文件列表')" name="files">
+                </TabPane>
+                <TabPane :label="$L('项目动态')" name="logs">
+                </TabPane>
+                <TabPane :label="$L('项目设置')" name="setting">
+                </TabPane>
+            </Tabs>
+        </Drawer>
     </div>
 </template>
 
@@ -265,9 +278,10 @@
     import WContent from "../components/WContent";
     import WLoading from "../components/WLoading";
     import ProjectAddTask from "../components/project/task/add";
+    import ProjectTaskLists from "../components/project/task/lists";
 
     export default {
-        components: {ProjectAddTask, draggable, WLoading, WContent, WHeader},
+        components: {ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
         data () {
             return {
                 loadIng: 0,
@@ -276,6 +290,10 @@
                 projectid: 0,
                 projectDetail: {},
                 projectLabel: [],
+                projectSimpleLabel: [],
+
+                projectDrawerShow: false,
+                projectDrawerTab: 'lists',
             }
         },
         mounted() {
@@ -295,6 +313,7 @@
                 }
                 this.projectDetail = {};
                 this.projectLabel = [];
+                this.projectSimpleLabel = [];
                 this.getDetail();
             }
         },
@@ -318,6 +337,7 @@
                         if (res.ret === 1) {
                             this.projectDetail = res.data.project;
                             this.projectLabel = res.data.label;
+                            this.projectSimpleLabel = res.data.simpleLabel;
                         } else {
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                             this.goBack();
@@ -520,6 +540,11 @@
                         }
                     }
                 });
+            },
+
+            openProjectDrawer(tab) {
+                this.projectDrawerTab = tab;
+                this.projectDrawerShow = true;
             }
         },
     }

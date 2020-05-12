@@ -100,6 +100,7 @@ class ProjectController extends Controller
         }
         //子分类
         $label = Base::DBC2A(DB::table('project_label')->where('projectid', $projectid)->orderBy('inorder')->orderBy('id')->get());
+        $simpleLabel = [];
         //任务
         $task = Base::DBC2A(DB::table('project_task')->where([ 'projectid' => $projectid, 'delete' => 0, 'complete' => 0 ])->orderBy('level')->orderBy('id')->get());
         //任务归类
@@ -112,11 +113,13 @@ class ProjectController extends Controller
                 }
             }
             $label[$index]['taskLists'] = Project::sortTask($taskLists);
+            $simpleLabel[] = ['id' => $temp['id'], 'title' => $temp['title']];
         }
         //
         return Base::retSuccess('success', [
             'project' => $projectDetail,
             'label' => $label,
+            'simpleLabel' => $simpleLabel,
         ]);
     }
 
@@ -780,6 +783,7 @@ class ProjectController extends Controller
      * - 未完成
      * - 已超期
      * - 已完成
+     * @apiParam {String} [username]            负责人用户名
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
      * @apiParam {Number} [levelsort]           是否按紧急排序（1:是）
      * @apiParam {Number} [page]                当前页，默认:1
@@ -808,14 +812,20 @@ class ProjectController extends Controller
         if (intval(Request::input('labelid')) > 0) {
             $whereArray[] = ['project_task.labelid', '=', intval(Request::input('labelid'))];
         }
+        if (intval(Request::input('level')) > 0) {
+            $whereArray[] = ['project_task.level', '=', intval(Request::input('level'))];
+        }
+        if (trim(Request::input('username'))) {
+            $whereArray[] = ['project_task.username', '=', trim(Request::input('username'))];
+        }
         $archived = trim(Request::input('archived'));
+        if (empty($archived)) $archived = "未归档";
         switch ($archived) {
             case '已归档':
                 $whereArray[] = ['project_task.archived', '=', 1];
                 $orderBy = '`archiveddate` DESC';
                 break;
             case '未归档':
-            default:
                 $whereArray[] = ['project_task.archived', '=', 0];
                 break;
         }

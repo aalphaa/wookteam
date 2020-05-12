@@ -28,6 +28,10 @@
                     this.sessionStorage(hash, this.sessionStorage('::count') + 1);
                 }
             }
+            //
+            setInterval(() => {
+                this.searchEnter();
+            }, 1000);
         },
         watch: {
             '$route' (To, From) {
@@ -106,6 +110,38 @@
                 for(let key in history){ if (history.hasOwnProperty(key) && key !== '::count') { conut++; } }
                 history['::count'] = Math.max(num, conut);
                 window.sessionStorage['__history__'] = JSON.stringify(history);
+            },
+
+            searchEnter() {
+                let row = $A(".sreachBox");
+                if (row.length === 0) {
+                    return;
+                }
+                if (row.attr("data-enter-init") === "init") {
+                    return;
+                }
+                row.attr("data-enter-init", "init");
+                //
+                let buttons = row.find("button[type='button']");
+                let button = null;
+                if (buttons.length === 0) {
+                    return;
+                }
+                buttons.each((index, item) => {
+                    if ($A(item).text().indexOf("搜索")) {
+                        button = $A(item);
+                    }
+                });
+                if (button === null) {
+                    return;
+                }
+                row.find("input.ivu-input").keydown(function(e) {
+                    if (e.keyCode == 13) {
+                        if (!button.hasClass("ivu-btn-loading") ) {
+                            button.click();
+                        }
+                    }
+                });
             }
         }
     }
