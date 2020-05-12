@@ -29,7 +29,8 @@
         "vue-template-compiler": "^2.6.11"
     },
     "dependencies": {
+        "tinymce": "^5.2.2",
         "view-design": "^4.2.0",
-        "tinymce": "^5.2.2"
+        "vuedraggable": "^2.23.2"
     }
 }

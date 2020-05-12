@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Module\Base;
+use App\Module\Project;
 use App\Module\Users;
 use DB;
 use Request;
@@ -75,6 +76,51 @@ class ProjectController extends Controller
     }
 
     /**
+     * 项目详情
+     *
+     * @apiParam {Number} projectid     项目ID
+     */
+    public function detail()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = trim(Request::input('projectid'));
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
+            return Base::retError('项目不存在或已被删除！');
+        }
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //子分类
+        $label = Base::DBC2A(DB::table('project_label')->where('projectid', $projectid)->orderBy('inorder')->orderByDesc('id')->get());
+        //任务
+        $task = Base::DBC2A(DB::table('project_task')->where([ 'projectid' => $projectid, 'delete' => 0, 'complete' => 0 ])->orderBy('level')->orderBy('id')->get());
+        //任务归类
+        foreach ($label AS $index => $temp) {
+            $taskLists = [];
+            foreach ($task AS $info) {
+                if ($temp['id'] == $info['labelid']) {
+                    $info['overdue'] = Project::taskIsOverdue($info);
+                    $taskLists[] = array_merge($info, Users::username2basic($info['username']));
+                }
+            }
+            $label[$index]['taskLists'] = Project::sortTask($taskLists);
+        }
+        //
+        return Base::retSuccess('success', [
+            'project' => $projectDetail,
+            'label' => $label,
+        ]);
+    }
+
+    /**
      * 添加项目
      *
      * @apiParam {String} title         项目名称
@@ -123,6 +169,9 @@ class ProjectController extends Controller
             'indate' => Base::time()
         ]);
         if ($projectid) {
+            foreach ($insertLabels AS $key => $label) {
+                $insertLabels[$key]['projectid'] = $projectid;
+            }
             DB::table('project_label')->insert($insertLabels);
             DB::table('project_log')->insert([
                 'type' => '日志',
@@ -164,21 +213,21 @@ class ProjectController extends Controller
         }
         //
         $projectid = trim(Request::input('projectid'));
-        $item = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->first());
-        if (empty($item)) {
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
             return Base::retError('项目不存在或已被删除！');
         }
-        return DB::transaction(function () use ($item, $user) {
+        return DB::transaction(function () use ($projectDetail, $user) {
             switch (Request::input('act')) {
                 case 'cancel': {
                     if (DB::table('project_users')->where([
                         'type' => '收藏',
-                        'projectid' => $item['id'],
+                        'projectid' => $projectDetail['id'],
                         'username' => $user['username'],
                     ])->delete()) {
                         DB::table('project_log')->insert([
                             'type' => '日志',
-                            'projectid' => $item['id'],
+                            'projectid' => $projectDetail['id'],
                             'username' => $user['username'],
                             'detail' => '取消收藏',
                             'indate' => Base::time()
@@ -190,20 +239,20 @@ class ProjectController extends Controller
                 default: {
                     $row = Base::DBC2A(DB::table('project_users')->where([
                         'type' => '收藏',
-                        'projectid' => $item['id'],
+                        'projectid' => $projectDetail['id'],
                         'username' => $user['username'],
                     ])->lockForUpdate()->first());
                     if (empty($row)) {
                         DB::table('project_users')->insert([
                             'type' => '收藏',
-                            'projectid' => $item['id'],
-                            'isowner' => $item['username'] == $user['username'] ? 1 : 0,
+                            'projectid' => $projectDetail['id'],
+                            'isowner' => $projectDetail['username'] == $user['username'] ? 1 : 0,
                             'username' => $user['username'],
                             'indate' => Base::time()
                         ]);
                         DB::table('project_log')->insert([
                             'type' => '日志',
-                            'projectid' => $item['id'],
+                            'projectid' => $projectDetail['id'],
                             'username' => $user['username'],
                             'detail' => '收藏项目',
                             'indate' => Base::time()
@@ -232,11 +281,11 @@ class ProjectController extends Controller
         }
         //
         $projectid = trim(Request::input('projectid'));
-        $item = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->first());
-        if (empty($item)) {
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
             return Base::retError('项目不存在或已被删除！');
         }
-        if ($item['username'] != $user['username']) {
+        if ($projectDetail['username'] != $user['username']) {
             return Base::retError('你不是项目负责人！');
         }
         //
@@ -247,14 +296,14 @@ class ProjectController extends Controller
             return Base::retError('项目名称最多只能设置32个字！');
         }
         //
-        DB::table('project_lists')->where('id', $item['id'])->update([
+        DB::table('project_lists')->where('id', $projectDetail['id'])->update([
             'title' => $title
         ]);
         DB::table('project_log')->insert([
             'type' => '日志',
-            'projectid' => $item['id'],
+            'projectid' => $projectDetail['id'],
             'username' => $user['username'],
-            'detail' => '【' . $item['title'] . '】重命名【' . $title . '】',
+            'detail' => '【' . $projectDetail['title'] . '】重命名【' . $title . '】',
             'indate' => Base::time()
         ]);
         //
@@ -279,64 +328,60 @@ class ProjectController extends Controller
         }
         //
         $projectid = trim(Request::input('projectid'));
-        $item = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->first());
-        if (empty($item)) {
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
             return Base::retError('项目不存在或已被删除！');
         }
-        if ($item['username'] != $user['username']) {
+        if ($projectDetail['username'] != $user['username']) {
             return Base::retError('你不是项目负责人！');
         }
         //
         $username = trim(Request::input('username'));
-        if ($username == $item['username']) {
+        if ($username == $projectDetail['username']) {
             return Base::retError('你已是项目负责人！');
         }
         $count = DB::table('users')->where('username', $username)->count();
         if ($count <= 0) {
             return Base::retError('成员用户名(' . $username . ')不存在！');
         }
-        //判断是否已在项目
-        $count = DB::table('project_users')->where([
-            'type' => '成员',
-            'projectid' => $item['id'],
-            'username' => $username,
-        ])->count();
-        if ($count <= 0) {
+        //判断是否已在项目成员内
+        $inRes = Project::inThe($projectDetail['id'], $username);
+        if (Base::isError($inRes)) {
             DB::table('project_users')->insert([
                 'type' => '成员',
-                'projectid' => $item['id'],
+                'projectid' => $projectDetail['id'],
                 'isowner' => 0,
                 'username' => $username,
                 'indate' => Base::time()
             ]);
             DB::table('project_log')->insert([
                 'type' => '日志',
-                'projectid' => $item['id'],
+                'projectid' => $projectDetail['id'],
                 'username' => $username,
                 'detail' => '移交项目，自动加入项目',
                 'indate' => Base::time()
             ]);
         }
         //开始移交
-        return DB::transaction(function () use ($user, $username, $item) {
-            DB::table('project_lists')->where('id', $item['id'])->update([
+        return DB::transaction(function () use ($user, $username, $projectDetail) {
+            DB::table('project_lists')->where('id', $projectDetail['id'])->update([
                 'username' => $username
             ]);
             DB::table('project_log')->insert([
                 'type' => '日志',
-                'projectid' => $item['id'],
+                'projectid' => $projectDetail['id'],
                 'username' => $user['username'],
-                'detail' => '【' . $item['username'] . '】移交给【' . $username . '】',
+                'detail' => '【' . $projectDetail['username'] . '】移交给【' . $username . '】',
                 'indate' => Base::time()
             ]);
             DB::table('project_users')->where([
-                'projectid' => $item['id'],
-                'username' => $item['username'],
+                'projectid' => $projectDetail['id'],
+                'username' => $projectDetail['username'],
             ])->update([
                 'isowner' => 0
             ]);
             DB::table('project_users')->where([
-                'projectid' => $item['id'],
+                'projectid' => $projectDetail['id'],
                 'username' => $username,
             ])->update([
                 'isowner' => 1
@@ -360,21 +405,21 @@ class ProjectController extends Controller
         }
         //
         $projectid = trim(Request::input('projectid'));
-        $item = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->first());
-        if (empty($item)) {
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
             return Base::retError('项目不存在或已被删除！');
         }
-        if ($item['username'] != $user['username']) {
+        if ($projectDetail['username'] != $user['username']) {
             return Base::retError('你不是项目负责人！');
         }
         //
-        DB::table('project_lists')->where('id', $item['id'])->update([
+        DB::table('project_lists')->where('id', $projectDetail['id'])->update([
             'delete' => 1,
             'deletedate' => Base::time()
         ]);
         DB::table('project_log')->insert([
             'type' => '日志',
-            'projectid' => $item['id'],
+            'projectid' => $projectDetail['id'],
             'username' => $user['username'],
             'detail' => '删除项目',
             'indate' => Base::time()
@@ -398,30 +443,26 @@ class ProjectController extends Controller
         }
         //
         $projectid = trim(Request::input('projectid'));
-        $item = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->first());
-        if (empty($item)) {
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
             return Base::retError('项目不存在或已被删除！');
         }
-        if ($item['username'] == $user['username']) {
+        if ($projectDetail['username'] == $user['username']) {
             return Base::retError('你是项目负责人，不可退出项目！');
         }
-        $count = DB::table('project_users')->where([
-            'type' => '成员',
-            'projectid' => $projectid,
-            'username' => $user['username'],
-        ])->count();
-        if ($count <= 0) {
-            return Base::retError('你不在项目成员内！');
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
         }
         //
         DB::table('project_users')->where([
             'type' => '成员',
-            'projectid' => $item['id'],
+            'projectid' => $projectDetail['id'],
             'username' => $user['username'],
         ])->delete();
         DB::table('project_log')->insert([
             'type' => '日志',
-            'projectid' => $item['id'],
+            'projectid' => $projectDetail['id'],
             'username' => $user['username'],
             'detail' => '退出项目',
             'indate' => Base::time()
@@ -447,13 +488,9 @@ class ProjectController extends Controller
         }
         //
         $projectid = intval(Request::input('projectid'));
-        $count = DB::table('project_users')->where([
-            'type' => '成员',
-            'projectid' => $projectid,
-            'username' => $user['username'],
-        ])->count();
-        if ($count <= 0) {
-            return Base::retError('你不在项目成员内！');
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
         }
         //
         $lists = DB::table('project_lists')
@@ -469,8 +506,8 @@ class ProjectController extends Controller
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的成员');
         }
-        foreach ($lists['lists'] AS $key => $item) {
-            $userInfo = Users::username2basic($item['username']);
+        foreach ($lists['lists'] AS $key => $projectDetail) {
+            $userInfo = Users::username2basic($projectDetail['username']);
             $lists['lists'][$key]['userimg'] = $userInfo['userimg'];
             $lists['lists'][$key]['nickname'] = $userInfo['nickname'];
             $lists['lists'][$key]['profession'] = $userInfo['profession'];
@@ -497,11 +534,11 @@ class ProjectController extends Controller
         }
         //
         $projectid = trim(Request::input('projectid'));
-        $item = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->first());
-        if (empty($item)) {
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
             return Base::retError('项目不存在或已被删除！');
         }
-        if ($item['username'] != $user['username']) {
+        if ($projectDetail['username'] != $user['username']) {
             return Base::retError('你是不是项目负责人！');
         }
         $usernames = Request::input('username');
@@ -518,14 +555,10 @@ class ProjectController extends Controller
         //
         $logArray = [];
         foreach ($usernames AS $username) {
-            $count = DB::table('project_users')->where([
-                'type' => '成员',
-                'projectid' => $projectid,
-                'username' => $username,
-            ])->count();
+            $inRes = Project::inThe($projectid, $username);
             switch (Request::input('act')) {
                 case 'delete': {
-                    if ($count > 0 && $item['username'] != $username) {
+                    if (!Base::isError($inRes) && $projectDetail['username'] != $username) {
                         DB::table('project_users')->where([
                             'type' => '成员',
                             'projectid' => $projectid,
@@ -533,7 +566,7 @@ class ProjectController extends Controller
                         ])->delete();
                         $logArray[] = [
                             'type' => '日志',
-                            'projectid' => $item['id'],
+                            'projectid' => $projectDetail['id'],
                             'username' => $user['username'],
                             'detail' => '将成员【' . $username . '】移出项目',
                             'indate' => Base::time()
@@ -542,7 +575,7 @@ class ProjectController extends Controller
                     break;
                 }
                 default: {
-                    if ($count == 0) {
+                    if (Base::isError($inRes)) {
                         DB::table('project_users')->insert([
                             'type' => '成员',
                             'projectid' => $projectid,
@@ -552,7 +585,7 @@ class ProjectController extends Controller
                         ]);
                         $logArray[] = [
                             'type' => '日志',
-                            'projectid' => $item['id'],
+                            'projectid' => $projectDetail['id'],
                             'username' => $username,
                             'detail' => '将成员【' . $username . '】加入项目',
                             'indate' => Base::time()
@@ -569,10 +602,13 @@ class ProjectController extends Controller
      * 项目任务-列表
      *
      * @apiParam {Number} projectid             项目ID
-     * @apiParam {Number} [archived]            是否归档
-     * - 0: 未归档
-     * - 1: 已归档
+     * @apiParam {Number} [labelid]             项目子分类ID
+     * @apiParam {String} [archived]            是否归档
+     * - 未归档 （默认）
+     * - 已归档
+     * - 全部
      * @apiParam {String} [type]                任务类型
+     * - 全部（默认）
      * - 未完成
      * - 已超期
      * - 已完成
@@ -590,61 +626,148 @@ class ProjectController extends Controller
         }
         //
         $projectid = intval(Request::input('projectid'));
-        $count = DB::table('project_users')->where([
-            'type' => '成员',
-            'projectid' => $projectid,
-            'username' => $user['username'],
-        ])->count();
-        if ($count <= 0) {
-            return Base::retError('你不在项目成员内！');
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
         }
         //
-        $whereFunc = null;
+        $orderBy = '`id` ASC';
         $whereArray = [];
         $whereArray[] = ['project_lists.id', '=', $projectid];
         $whereArray[] = ['project_lists.delete', '=', 0];
-        if (in_array(Request::input('archived'), [0, 1])) {
-            $whereArray[] = ['project_task.archived', '=', intval(Request::input('archived'))];
+        if (intval(Request::input('labelid')) > 0) {
+            $whereArray[] = ['project_task.labelid', '=', intval(Request::input('labelid'))];
+        }
+        $archived = trim(Request::input('archived'));
+        switch ($archived) {
+            case '已归档':
+                $whereArray[] = ['project_task.archived', '=', 1];
+                $orderBy = '`archiveddate` DESC';
+                break;
+            case '未归档':
+            default:
+                $whereArray[] = ['project_task.archived', '=', 0];
+                break;
         }
         $type = trim(Request::input('type'));
         switch ($type) {
             case '未完成':
-                $whereArray[] = ['project_task.status', '=', '进行中'];
-                $whereFunc = function($query) {
-                    $query->where('project_task.enddate', '=', 0)->orWhere('project_task.enddate', '>', Base::time());
-                };
+                $whereArray[] = ['project_task.complete', '=', 0];
                 break;
             case '已超期':
-                $whereArray[] = ['project_task.status', '=', '进行中'];
+                $whereArray[] = ['project_task.complete', '=', 0];
                 $whereArray[] = ['project_task.enddate', '>', 0];
                 $whereArray[] = ['project_task.enddate', '<=', Base::time()];
                 break;
             case '已完成':
-                $whereArray[] = ['project_task.status', '=', '已完成'];
+                $whereArray[] = ['project_task.complete', '=', 1];
                 break;
-        }
-        //
-        $orderBy = 'project_task.id';
-        if (intval(Request::input('archived')) === 1) {
-            $orderBy = 'project_task.archiveddate';
         }
         //
         $lists = DB::table('project_lists')
             ->join('project_task', 'project_lists.id', '=', 'project_task.projectid')
             ->select(['project_task.*'])
             ->where($whereArray)
-            ->where($whereFunc)
-            ->orderByDesc($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
+            ->orderByRaw($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
-        if ($lists['total'] == 0) {
-            return Base::retError('未找到任何相关的任务');
-        }
         if (intval(Request::input('statistics')) == 1) {
-            $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('status', '进行中')->where(function($query) { $query->where('enddate', '=', 0)->orWhere('enddate', '>', Base::time()); })->count();
-            $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('status', '进行中')->whereBetween('enddate', [0, Base::time()])->count();
-            $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('status', '已完成')->count();
+            $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('complete', 0)->count();
+            $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('complete', 0)->whereBetween('enddate', [1, Base::time()])->count();
+            $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('complete', 1)->count();
+        }
+        if ($lists['total'] == 0) {
+            return Base::retError('未找到任何相关的任务', $lists);
+        }
+        foreach ($lists['lists'] AS $key => $info) {
+            $info['overdue'] = Project::taskIsOverdue($info);
+            $lists['lists'][$key] = array_merge($info, Users::username2basic($info['username']));
         }
         return Base::retSuccess('success', $lists);
+    }
+
+    /**
+     * 项目任务-添加任务
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} labelid               项目子分类ID
+     * @apiParam {String} title                 任务标题
+     * @apiParam {Number} [level]               任务紧急级别（1~4，默认:2）
+     * @apiParam {String} [username]            任务负责人用户名
+     * - 0: 未归档
+     * - 1: 已归档
+     *
+     * @throws \Throwable
+     */
+    public function task__add()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = intval(Request::input('projectid'));
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
+            return Base::retError('项目不存在或已被删除！');
+        }
+        //
+        $labelid = intval(Request::input('labelid'));
+        $labelDetail = Base::DBC2A(DB::table('project_label')->where('id', $labelid)->where('projectid', $projectid)->first());
+        if (empty($labelDetail)) {
+            return Base::retError('项目子分类不存在或已被删除！');
+        }
+        //
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $username = trim(Request::input('username'));
+        if (empty($username)) {
+            $username = $user['username'];
+        }
+        if ($username != $user['username']) {
+            $inRes = Project::inThe($projectid, $username);
+            if (Base::isError($inRes)) {
+                return Base::retError('负责人不在项目成员内！');
+            }
+        }
+        //
+        $title = trim(Request::input('title'));
+        if (empty($title)) {
+            return Base::retError('任务标题不能为空！');
+        }
+        //
+        $inArray = [
+            'projectid' => $projectid,
+            'labelid' => $labelid,
+            'createuser' => $user['username'],
+            'username' => $username,
+            'title' => $title,
+            'level' => max(1, min(4, intval(Request::input('level')))),
+            'indate' => Base::time(),
+            'subtask' => Base::array2string([]),
+            'files' => Base::array2string([]),
+            'follower' => Base::array2string([]),
+        ];
+        return DB::transaction(function () use ($inArray) {
+            $taskid = DB::table('project_task')->insertGetId($inArray);
+            if (empty($taskid)) {
+                return Base::retError('系统繁忙，请稍后再试！');
+            }
+            DB::table('project_log')->insert([
+                'type' => '日志',
+                'projectid' => $inArray['projectid'],
+                'taskid' => $taskid,
+                'username' => $inArray['createuser'],
+                'detail' => '添加任务【' . $inArray['title'] . '】',
+                'indate' => Base::time()
+            ]);
+            Project::updateNum($inArray['projectid']);
+            return Base::retSuccess('添加成功！');
+        });
     }
 
     /**
@@ -676,13 +799,9 @@ class ProjectController extends Controller
         if (empty($task)) {
             return Base::retError('任务不存在！');
         }
-        $count = DB::table('project_users')->where([
-            'type' => '成员',
-            'projectid' => $task['projectid'],
-            'username' => $user['username'],
-        ])->count();
-        if ($count <= 0) {
-            return Base::retError('你不在项目成员内！');
+        $inRes = Project::inThe($task['projectid'], $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
         }
         //
         switch (Request::input('act')) {

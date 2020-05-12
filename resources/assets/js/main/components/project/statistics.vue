@@ -45,7 +45,6 @@
 
                 > div {
                     position: relative;
-                    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
                     box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
                     transition: all 0.2s;
                     border-radius: 6px;
@@ -223,6 +222,7 @@
                     return;
                 }
                 this.loadIng++;
+                let tempType = this.taskType;
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
@@ -236,20 +236,20 @@
                         this.loadIng--;
                     },
                     success: (res) => {
+                        if (tempType != this.taskType) {
+                            return;
+                        }
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.statistics_unfinished = res.data.statistics_unfinished;
-                            this.statistics_overdue = res.data.statistics_overdue;
-                            this.statistics_complete = res.data.statistics_complete;
                         } else {
                             this.lists = [];
                             this.listTotal = 0;
                             this.noDataText = res.msg;
-                            this.statistics_unfinished = 0;
-                            this.statistics_overdue = 0;
-                            this.statistics_complete = 0;
                         }
+                        this.statistics_unfinished = res.data.statistics_unfinished || 0;
+                        this.statistics_overdue = res.data.statistics_overdue || 0;
+                        this.statistics_complete = res.data.statistics_complete || 0;
                     }
                 });
             },

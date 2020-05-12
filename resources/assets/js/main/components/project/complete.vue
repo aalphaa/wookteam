@@ -158,7 +158,7 @@
                         page: Math.max(this.listPage, 1),
                         pagesize: Math.max($A.runNum(this.listPageSize), 10),
                         projectid: this.projectid,
-                        archived: 1,
+                        archived: '已归档',
                     },
                     complete: () => {
                         this.loadIng--;

@@ -187,7 +187,7 @@
                 if (this.multiple) {
                     return;
                 }
-                this.userName = $A.clone(val)
+                this.userName = $A.cloneData(val)
             },
 
             userName (val) {

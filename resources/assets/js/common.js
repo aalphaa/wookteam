@@ -482,7 +482,7 @@
          * @param myObj
          * @returns {*}
          */
-        clone(myObj) {
+        cloneData(myObj) {
             if(typeof(myObj) !== 'object') return myObj;
             if(myObj === null) return myObj;
             //
