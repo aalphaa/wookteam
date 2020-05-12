@@ -646,7 +646,7 @@ class ProjectController extends Controller
             'type' => '日志',
             'projectid' => $projectid,
             'username' => $user['username'],
-            'detail' => '添加流程列表【' . $title . '】',
+            'detail' => '添加任务列表【' . $title . '】',
             'indate' => Base::time()
         ]);
         //
@@ -700,7 +700,7 @@ class ProjectController extends Controller
                 'type' => '日志',
                 'projectid' => $projectid,
                 'username' => $user['username'],
-                'detail' => '流程列表【' . $labelDetail['title'] . '】重命名【' . $title . '】',
+                'detail' => '任务列表【' . $labelDetail['title'] . '】重命名【' . $title . '】',
                 'indate' => Base::time()
             ]);
         }
@@ -755,7 +755,7 @@ class ProjectController extends Controller
                 'projectid' => $projectid,
                 'taskid' => 0,
                 'username' => $user['username'],
-                'detail' => '删除流程列表【' . $labelDetail['title'] . '】',
+                'detail' => '删除任务列表【' . $labelDetail['title'] . '】',
                 'indate' => Base::time()
             ];
             DB::table('project_task')->where('labelid', $labelDetail['id'])->update([

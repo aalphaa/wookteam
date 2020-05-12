@@ -123,6 +123,7 @@
                 "title": "优先级",
                 "key": 'level',
                 "align": "center",
+                "minWidth": 70,
                 "maxWidth": 80,
                 render: (h, params) => {
                     let level = params.row.level;
@@ -151,6 +152,7 @@
                 "title": "状态",
                 "key": 'complete',
                 "align": "center",
+                "minWidth": 70,
                 "maxWidth": 80,
                 render: (h, params) => {
                     let color;
