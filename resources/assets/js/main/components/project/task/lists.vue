@@ -74,7 +74,7 @@
                 default: true
             },
             labelLists: {
-                type: Object,
+                type: Array,
             },
         },
         data() {

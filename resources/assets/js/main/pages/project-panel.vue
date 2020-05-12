@@ -40,14 +40,16 @@
                                 </DropdownMenu>
                             </Dropdown>
                         </div>
-                        <draggable v-model="label.taskLists" class="task-box" group="task" :sort="false" :animation="150" draggable=".task-draggable">
-                            <div v-for="task in label.taskLists" :key="task.id" class="task-item task-draggable" :class="['p'+task.level,task.complete?'complete':'',task.overdue?'overdue':'']">
-                                <div class="task-title">{{task.title}}</div>
-                                <div class="task-more">
-                                    <div v-if="task.overdue" class="task-status">已超期</div>
-                                    <div v-else-if="task.complete" class="task-status">已完成</div>
-                                    <div v-else class="task-status">未完成</div>
-                                    <Tooltip class="task-userimg" :content="task.nickname || task.username"><img :src="task.userimg"/></Tooltip>
+                        <draggable v-model="label.taskLists" class="task-box" group="task" :animation="150" draggable=".task-draggable">
+                            <div v-for="task in label.taskLists" :key="task.id" class="task-item task-draggable">
+                                <div class="task-shadow" :class="['p'+task.level,task.complete?'complete':'',task.overdue?'overdue':'']">
+                                    <div class="task-title">{{task.title}}</div>
+                                    <div class="task-more">
+                                        <div v-if="task.overdue" class="task-status">已超期</div>
+                                        <div v-else-if="task.complete" class="task-status">已完成</div>
+                                        <div v-else class="task-status">未完成</div>
+                                        <Tooltip class="task-userimg" :content="task.nickname || task.username"><img :src="task.userimg"/></Tooltip>
+                                    </div>
                                 </div>
                             </div>
                             <div slot="footer">
@@ -191,66 +193,68 @@
                         padding: 0 12px 2px;
                         .task-item {
                             width: 100%;
-                            margin: 5px 0 8px;
-                            padding: 8px;
-                            background-color: #ffffff;
-                            border-left: 2px solid #BF9F03;
-                            border-right: 2px solid #ffffff;
-                            color: #091e42;
-                            border-radius: 3px;
-                            box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
-                            transition: all 0.2s;
-                            cursor: pointer;
-                            &:hover{
-                                box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.38);
-                            }
-                            &.p1 {
-                                border-left-color: #ff0000;
-                            }
-                            &.p2 {
-                                border-left-color: #BB9F35;
-                            }
-                            &.p3 {
-                                border-left-color: #449EDD;
-                            }
-                            &.p4 {
-                                border-left-color: #84A83B;
-                            }
-                            &.complete {
-                                .task-more {
-                                    .task-status {
-                                        color: #666666;
-                                    }
-                                }
-                            }
-                            &.overdue {
-                                .task-more {
-                                    .task-status {
-                                        color: #ff0000;
-                                    }
-                                }
-                            }
-                            .task-title {
-                                font-size: 12px;
+                            .task-shadow {
+                                margin: 5px 0 4px;
+                                padding: 8px;
+                                background-color: #ffffff;
+                                border-left: 2px solid #BF9F03;
+                                border-right: 2px solid #ffffff;
                                 color: #091e42;
-                            }
-                            .task-more {
-                                min-height: 30px;
-                                display: flex;
-                                align-items: flex-end;
-                                .task-status {
-                                    color: #19be6b;
-                                    font-size: 12px;
-                                    flex: 1;
+                                border-radius: 3px;
+                                cursor: pointer;
+                                box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
+                                transition: all 0.3s;
+                                &:hover{
+                                    box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.38);
                                 }
-                                .task-userimg {
-                                    width: 26px;
-                                    height: 26px;
-                                    img {
-                                        object-fit: cover;
-                                        width: 100%;
-                                        height: 100%;
-                                        border-radius: 50%;
+                                &.p1 {
+                                    border-left-color: #ff0000;
+                                }
+                                &.p2 {
+                                    border-left-color: #BB9F35;
+                                }
+                                &.p3 {
+                                    border-left-color: #449EDD;
+                                }
+                                &.p4 {
+                                    border-left-color: #84A83B;
+                                }
+                                &.complete {
+                                    .task-more {
+                                        .task-status {
+                                            color: #666666;
+                                        }
+                                    }
+                                }
+                                &.overdue {
+                                    .task-more {
+                                        .task-status {
+                                            color: #ff0000;
+                                        }
+                                    }
+                                }
+                                .task-title {
+                                    font-size: 12px;
+                                    color: #091e42;
+                                }
+                                .task-more {
+                                    min-height: 30px;
+                                    display: flex;
+                                    align-items: flex-end;
+                                    .task-status {
+                                        color: #19be6b;
+                                        font-size: 12px;
+                                        flex: 1;
+                                    }
+                                    .task-userimg {
+                                        width: 26px;
+                                        height: 26px;
+                                        img {
+                                            object-fit: cover;
+                                            width: 100%;
+                                            height: 100%;
+                                            border-radius: 50%;
+                                        }
                                     }
                                 }
                             }
@@ -264,7 +268,7 @@
                         position: absolute;
                         top: 50%;
                         transform: translate(0, -50%) scale(1);
-                        transition: all 0.2s;
+                        transition: all 0.3s;
                     }
                 }
             }
