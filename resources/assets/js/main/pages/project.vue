@@ -474,7 +474,7 @@
                     }
 
                     case 'open': {
-                        this.openProject(item.id);
+                        this.openProject(item.id, item);
                         break;
                     }
                     case 'complete':

@@ -150,6 +150,9 @@ class DBCache
 
     public function whereRaw($sql, $bindings = [], $boolean = 'and')
     {
+        if ($sql === null) {
+            return $this;
+        }
         $this->__whereRaw[] = [
             $sql,
             $bindings,

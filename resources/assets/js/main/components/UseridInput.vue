@@ -125,6 +125,9 @@
             noidentity: {
                 default: ''
             },
+            projectid: {
+                default: ''
+            },
             placeholder: {
                 default: ''
             },
@@ -203,6 +206,9 @@
                         if (typeof this.noidentity === "string") {
                             where['noidentity'] = this.noidentity;
                         }
+                        if (this.projectid) {
+                            where['projectid'] = this.projectid;
+                        }
                         $A.aAjax({
                             url: window.location.origin + '/api/users/searchinfo',
                             data: {
@@ -217,7 +223,7 @@
                             },
                             success: (res) => {
                                 if (res.ret === 1 && res.data.total > 0) {
-                                    let tmpData = res.data.lists[0];
+                                    let tmpData = res.data[0];
                                     if (this.multiple) {
                                         this.addMultipleLists(tmpData);
                                     } else {
@@ -325,6 +331,9 @@
                 if (typeof this.noidentity === "string") {
                     where['noidentity'] = this.noidentity;
                 }
+                if (this.projectid) {
+                    where['projectid'] = this.projectid;
+                }
                 $A.aAjax({
                     url: window.location.origin + '/api/users/searchinfo',
                     data: {
@@ -339,7 +348,7 @@
                     },
                     success: (res) => {
                         if (res.ret === 1) {
-                            this.userLists = res.data.lists;
+                            this.userLists = res.data;
                             for (let i = 0; i < this.userLists.length; i++) {
                                 if (this.userLists[i].id == this.userName) {
                                     this.userLists[i]['_highlight'] = true;

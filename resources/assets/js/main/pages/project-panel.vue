@@ -273,23 +273,30 @@
                 loadIng: 0,
                 loadDetailed: false,
 
-                projectid: this.$route.params.id,
+                projectid: 0,
                 projectDetail: {},
                 projectLabel: [],
             }
         },
         mounted() {
-            if ($A.runNum(this.projectid) <= 0) {
-                this.goBack();
-                return;
-            }
-            this.getDetail();
-        },
-        computed: {
 
+        },
+        activated() {
+            this.projectid = this.$route.params.projectid;
+            if (typeof this.$route.params.other === "object") {
+                this.$set(this.projectDetail, 'title', $A.getObject(this.$route.params.other, 'title'))
+            }
         },
         watch: {
-
+            projectid(val) {
+                if ($A.runNum(val) <= 0) {
+                    this.goBack();
+                    return;
+                }
+                this.projectDetail = {};
+                this.projectLabel = [];
+                this.getDetail();
+            }
         },
         methods: {
             getDetail() {

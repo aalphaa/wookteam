@@ -30,7 +30,7 @@
                     <div slot="content">
                         <div style="width:240px">
                             选择负责人
-                            <UseridInput v-model="addUsername" @change="changeUser" placeholder="留空默认: 自己" style="margin:5px 0 3px"></UseridInput>
+                            <UseridInput v-model="addUsername" :projectid="projectid" @change="changeUser" placeholder="留空默认: 自己" style="margin:5px 0 3px"></UseridInput>
                         </div>
                     </div>
                 </Poptip>

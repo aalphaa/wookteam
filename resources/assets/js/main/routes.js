@@ -14,7 +14,7 @@ export default [
         meta: { slide: false },
         component: resolve => require(['./pages/project.vue'], resolve)
     }, {
-        path: '/project/panel/:id',
+        path: '/project/panel/:projectid',
         name: 'project-panel',
         meta: { slide: false },
         component: resolve => require(['./pages/project-panel.vue'], resolve)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Model\DBCache;
 use App\Module\Base;
 use App\Module\Users;
 use DB;
@@ -88,6 +89,7 @@ class UsersController extends Controller
         $keys = Request::input('where');
         $whereArr = [];
         $whereFunc = null;
+        $whereRaw = null;
         if ($keys['usernameequal'])     $whereArr[] = ['username', '=', $keys['usernameequal']];
         if ($keys['identity'])          $whereArr[] = ['identity', 'like', '%,' . $keys['identity'] . ',%'];
         if ($keys['noidentity'])        $whereArr[] = ['identity', 'not like', '%,' . $keys['noidentity'] . ',%'];
@@ -96,16 +98,23 @@ class UsersController extends Controller
                 $query->where('username', 'like', '%' . $keys['username'] . '%')->orWhere('nickname', 'like', '%' . $keys['username'] . '%');
             };
         }
-        //
-        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession'])->where($whereArr)->where($whereFunc)->orderBy('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
-        $lists = Base::getPageList($lists);
-        if ($lists['total'] == 0) {
-            return Base::retError('未搜索到任何相关的会员');
+        if (intval($keys['projectid']) > 0) {
+            $whereRaw.= $whereRaw ? ' AND ' : '';
+            $whereRaw.= "`username` IN (SELECT username FROM `" . env('DB_PREFIX') . "project_users` WHERE `type`='成员' AND `projectid`=" . intval($keys['projectid']) .")";
         }
-        foreach ($lists['lists'] AS $key => $item) {
-            $lists['lists'][$key]['userimg'] = Base::fillUrl($item['userimg']);
-            $lists['lists'][$key]['identitys'] = explode(",", trim($item['identity'], ","));
-            $lists['lists'][$key]['setting'] = Base::string2array($item['setting']);
+        //
+        $lists = DBCache::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession'])
+            ->where($whereArr)
+            ->where($whereFunc)
+            ->whereRaw($whereRaw)
+            ->orderBy('id')
+            ->cacheMinutes(now()->addSeconds(10))
+            ->take(Min(Max(Base::nullShow(Request::input('take'), 10), 1), 100))
+            ->get();
+        foreach ($lists AS $key => $item) {
+            $lists[$key]['userimg'] = Base::fillUrl($item['userimg']);
+            $lists[$key]['identitys'] = explode(",", trim($item['identity'], ","));
+            $lists[$key]['setting'] = Base::string2array($item['setting']);
         }
         return Base::retSuccess('success', $lists);
     }
