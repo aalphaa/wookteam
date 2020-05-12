@@ -26,5 +26,8 @@ mix.webpackConfig({
     output: {
         hashDigestLength: 32,
         chunkFilename: 'js/build/[name].js?[hash]',
+    },
+    devServer:{
+        disableHostCheck: true,
     }
 });

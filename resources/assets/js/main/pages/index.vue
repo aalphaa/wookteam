@@ -45,7 +45,7 @@
                     </div>
                     <div class="z-8"><h3>{{$L('酷团队协作工具就从这里开始')}}</h3>
                         <div class="bl inline-block">
-                            <span class="start" @click="loginShow=true">{{$L('立即登陆')}}</span>
+                            <span class="start" @click="loginChack">{{$L('立即登陆')}}</span>
                         </div>
                     </div>
                 </div>
@@ -342,13 +342,17 @@
                 ]
             };
         },
-        mounted() {
-
-        },
         deactivated() {
             this.loginShow = false;
         },
         methods: {
+            loginChack() {
+                if ($A.getToken() !== false) {
+                    this.goForward({path: '/todo'}, true);
+                } else {
+                    this.loginShow = true;
+                }
+            },
             onLogin() {
                 this.$refs.login.validate((valid) => {
                     if (valid) {
@@ -361,8 +365,8 @@
                             },
                             success: (res) => {
                                 if (res.ret === 1) {
-                                    $A.token(res.data.token);
                                     $A.storage("userInfo", res.data);
+                                    $A.setToken(res.data.token);
                                     $A.triggerUserInfoListener(res.data);
                                     //
                                     this.loadIng--;

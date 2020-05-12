@@ -112,6 +112,35 @@ import '../../sass/main.scss';
         },
 
         /**
+         * 获取token
+         * @returns {boolean}
+         */
+        getToken() {
+            let token = $A.token();
+            return $A.count(token) < 10 ? false : token;
+        },
+
+        /**
+         * 设置token
+         * @param token
+         */
+        setToken(token) {
+            $A.token(token);
+        },
+
+        /**
+         * 获取会员昵称
+         * @returns string
+         */
+        getUserName() {
+            if ($A.getToken() === false) {
+                return "";
+            }
+            let userInfo = $A.getUserInfo();
+            return $A.ishave(userInfo.username) ? userInfo.username : '';
+        },
+
+        /**
          * 获取用户信息（并保存）
          * @param callback          网络请求获取到用户信息回调（监听用户信息发生变化）
          * @param onlyListener      只监听不重新网络请求获取
@@ -130,8 +159,8 @@ import '../../sass/main.scss';
                         },
                         success: (res) => {
                             if (res.ret === 1) {
-                                $A.token(res.data.token);
                                 $A.storage("userInfo", res.data);
+                                $A.setToken(res.data.token);
                                 $A.triggerUserInfoListener(res.data);
                                 //
                                 typeof callback === "function" && callback(res.data);

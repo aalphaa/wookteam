@@ -250,7 +250,7 @@
             .browse-img {
                 width: 64px;
                 height: 64px;
-                background-image: url("../../../statics/images/loading.png");
+                background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKoAAABxCAAAAABg5GeyAAACW0lEQVR4Ae3XVRLjMBAE0L3/rSwKM3OcSNPyLVYOLvM6UD0Bd03LVe9XH+RlhlRSSSWVVFJJJZVUUkkllVRSSSWVVFJJJZVUUkl9WyqppJJKKqmkkgpURP17xngOAR5NxW5wlJ9MaLQh83F4NHWmd/gZtdVBaOldfDB1bq5UpJFbFOC6LKnYrkRO209PAw+hIuzWB8Ep5es8HvYo4z4tE1X8UeRwlMM2D5Bzkc7kj6Bi3VTKDDwEeUcrMxrUvGDXTnHa6kK69SDN9sgq1clxKSbNHqqnYmdri81Q9QHf1JPt1Frncaib2XbiTKL2GkHaurnY9LOulMV0O7G6Kw+g9sw2ohhm62KezVJaaufjWC1TnOkr1exilJ7Ji0vxCCqO9V4UwV4PYr9+apouhGYLKfnahdpqegjmeoXOpXgANe70pKT6Zhu19qkY2nC0PZS527lQOyInqr8Uvc5jqfUb1X+PGh5IhW90S2quh3FQC2XRcF66TUkTXPcLKm5FtdR9RJq+2hWII7UpFtmsQLEyzsdJtkxxpr6gLotbUSlV9yeT0Trmzk2XPdUThLYarUbWOY9j04xXQ2u+pMZLYSumGmNUH3HbM9qOAwSHodN2Pks25F2j3aI7+IxqNsB+YLWb16ukSjiW4xNB0gMoMfApBS/XZQgi3p9/5RsiKNKZEOwYFVIF5VyTyD19sbyjIJiNJRZxpNbx2S8sGKvGZNHJBniBu9Wy5WxjGuQFqIAcBHiRGyt4ua5gSCWVVFJJJZVUUkkllVRSSSWVVFJJJZVUUkkllVRSSSWVVFI/AgO0SXIVYHeGAAAAAElFTkSuQmCC);
                 background-position: center;
                 background-repeat: no-repeat;
                 background-size: cover;
