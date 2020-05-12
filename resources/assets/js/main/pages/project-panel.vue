@@ -28,12 +28,15 @@
                 <div v-for="label in projectLabel" :key="label.id" class="label-item label-draggable">
                     <div class="label-body">
                         <div class="title-box">
+                            <div v-if="label.loadIng === true" class="title-loading">
+                                <w-loading></w-loading>
+                            </div>
                             <h2>{{label.title}}</h2>
-                            <Dropdown trigger="click" transfer>
+                            <Dropdown trigger="click" @on-click="handleLabel($event, label)" transfer>
                                 <Icon type="ios-more"/>
                                 <DropdownMenu slot="list">
-                                    <DropdownItem>重命名</DropdownItem>
-                                    <DropdownItem>删除</DropdownItem>
+                                    <Dropdown-item name="rename">{{$L('重命名')}}</Dropdown-item>
+                                    <Dropdown-item name="delete">{{$L('删除')}}</Dropdown-item>
                                 </DropdownMenu>
                             </Dropdown>
                         </div>
@@ -53,7 +56,7 @@
                         </draggable>
                     </div>
                 </div>
-                <div v-if="loadDetailed" slot="footer" class="label-item label-create">
+                <div v-if="loadDetailed" slot="footer" class="label-item label-create" @click="addLabel">
                     <div class="label-body">
                         <div class="trigger-box ft hover"><i class="ft icon">&#xE8C8;</i>添加一个新列表</div>
                     </div>
@@ -119,6 +122,11 @@
                 padding-right: 15px;
                 &.label-create {
                     cursor: pointer;
+                    &:hover {
+                        .trigger-box {
+                            transform: translate(0, -50%) scale(1.1);
+                        }
+                    }
                 }
                 .label-body {
                     width: 300px;
@@ -139,6 +147,11 @@
                         align-items: center;
                         width: 100%;
                         height: 42px;
+                        .title-loading {
+                            width: 16px;
+                            height: 16px;
+                            margin-right: 6px;
+                        }
                         h2 {
                             flex: 1;
                             font-size: 16px;
@@ -237,7 +250,8 @@
                         width: 100%;
                         position: absolute;
                         top: 50%;
-                        transform: translate(0, -50%);
+                        transform: translate(0, -50%) scale(1);
+                        transition: all 0.2s;
                     }
                 }
             }
@@ -304,14 +318,189 @@
                     }
                 });
             },
+            handleLabel(event, labelDetail) {
+                switch (event) {
+                    case 'rename': {
+                        this.renameLabel(labelDetail);
+                        break;
+                    }
+                    case 'delete': {
+                        this.deleteLabel(labelDetail);
+                        break;
+                    }
+                }
+            },
+
+            renameLabel(item) {
+                this.renameValue = "";
+                this.$Modal.confirm({
+                    render: (h) => {
+                        return h('div', [
+                            h('div', {
+                                style: {
+                                    fontSize: '16px',
+                                    fontWeight: '500',
+                                    marginBottom: '20px',
+                                }
+                            }, '重命名列表'),
+                            h('Input', {
+                                props: {
+                                    value: this.renameValue,
+                                    autofocus: true,
+                                    placeholder: '请输入新的列表名称'
+                                },
+                                on: {
+                                    input: (val) => {
+                                        this.renameValue = val;
+                                    }
+                                }
+                            })
+                        ])
+                    },
+                    loading: true,
+                    onOk: () => {
+                        if (this.renameValue) {
+                            this.$set(item, 'loadIng', true);
+                            let title = this.renameValue;
+                            $A.aAjax({
+                                url: 'project/label/rename',
+                                data: {
+                                    projectid: this.projectid,
+                                    labelid: item.id,
+                                    title: title,
+                                },
+                                complete: () => {
+                                    this.$set(item, 'loadIng', false);
+                                },
+                                error: () => {
+                                    this.$Modal.remove();
+                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                },
+                                success: (res) => {
+                                    this.$Modal.remove();
+                                    this.$set(item, 'title', title);
+                                    setTimeout(() => {
+                                        if (res.ret === 1) {
+                                            this.$Message.success(res.msg);
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                        }
+                                    }, 350);
+                                }
+                            });
+                        } else {
+                            this.$Modal.remove();
+                        }
+                    },
+                });
+            },
+
+            deleteLabel(item) {
+                let redTip = item.taskLists.length > 0 ? '<div style="color:red;font-weight:500">注：将同时删除列表下所有任务</div>' : '';
+                this.$Modal.confirm({
+                    title: '删除列表',
+                    content: '<div>你确定要删除此列表吗？</div>' + redTip,
+                    loading: true,
+                    onOk: () => {
+                        $A.aAjax({
+                            url: 'project/label/delete',
+                            data: {
+                                projectid: this.projectid,
+                                labelid: item.id,
+                            },
+                            error: () => {
+                                this.$Modal.remove();
+                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                            },
+                            success: (res) => {
+                                this.$Modal.remove();
+                                this.projectLabel.some((label, index) => {
+                                    if (label.id == item.id) {
+                                        this.projectLabel.splice(index, 1);
+                                        return true;
+                                    }
+                                });
+                                setTimeout(() => {
+                                    if (res.ret === 1) {
+                                        this.$Message.success(res.msg);
+                                    } else {
+                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                    }
+                                }, 350);
+                            }
+                        });
+                    }
+                });
+            },
+
+            addLabel() {
+                this.labelValue = "";
+                this.$Modal.confirm({
+                    render: (h) => {
+                        return h('div', [
+                            h('div', {
+                                style: {
+                                    fontSize: '16px',
+                                    fontWeight: '500',
+                                    marginBottom: '20px',
+                                }
+                            }, '添加列表'),
+                            h('Input', {
+                                props: {
+                                    value: this.labelValue,
+                                    autofocus: true,
+                                    placeholder: '请输入列表名称'
+                                },
+                                on: {
+                                    input: (val) => {
+                                        this.labelValue = val;
+                                    }
+                                }
+                            })
+                        ])
+                    },
+                    loading: true,
+                    onOk: () => {
+                        if (this.labelValue) {
+                            $A.aAjax({
+                                url: 'project/label/add',
+                                data: {
+                                    projectid: this.projectid,
+                                    title: this.labelValue
+                                },
+                                error: () => {
+                                    this.$Modal.remove();
+                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                },
+                                success: (res) => {
+                                    this.$Modal.remove();
+                                    this.projectLabel.push(res.data);
+                                    setTimeout(() => {
+                                        if (res.ret === 1) {
+                                            this.$Message.success(res.msg);
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                        }
+                                    }, 350);
+                                }
+                            });
+                        } else {
+                            this.$Modal.remove();
+                        }
+                    },
+                });
+            },
             addTaskSuccess(label) {
+                this.$set(label, 'loadIng', true);
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
                         projectid: this.projectid,
                         labelid: label.id,
+                        levelsort: 1
                     },
                     complete: () => {
+                        this.$set(label, 'loadIng', false);
                     },
                     error: () => {
                         window.location.reload();

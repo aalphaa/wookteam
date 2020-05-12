@@ -99,7 +99,7 @@ class ProjectController extends Controller
             return $inRes;
         }
         //子分类
-        $label = Base::DBC2A(DB::table('project_label')->where('projectid', $projectid)->orderBy('inorder')->orderByDesc('id')->get());
+        $label = Base::DBC2A(DB::table('project_label')->where('projectid', $projectid)->orderBy('inorder')->orderBy('id')->get());
         //任务
         $task = Base::DBC2A(DB::table('project_task')->where([ 'projectid' => $projectid, 'delete' => 0, 'complete' => 0 ])->orderBy('level')->orderBy('id')->get());
         //任务归类
@@ -599,6 +599,174 @@ class ProjectController extends Controller
     }
 
     /**
+     * 项目子分类-添加分类
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {String} title                 分类名称
+     */
+    public function label__add()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = trim(Request::input('projectid'));
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $title = trim(Request::input('title'));
+        if (empty($title)) {
+            return Base::retError('列表名称不能为空！');
+        } elseif (mb_strlen($title) > 32) {
+            return Base::retError('列表名称最多只能设置32个字！');
+        }
+        //
+        $count = DB::table('project_label')->where('projectid', $projectid)->where('title', $title)->count();
+        if ($count > 0) {
+            return Base::retError('列表名称已存在！');
+        }
+        //
+        $id = DB::table('project_label')->insertGetId([
+            'projectid' => $projectid,
+            'title' => $title,
+            'inorder' => intval(DB::table('project_label')->where('projectid', $projectid)->orderByDesc('inorder')->value('inorder')) + 1,
+        ]);
+        if (empty($id)) {
+            return Base::retError('系统繁忙，请稍后再试！');
+        }
+        DB::table('project_log')->insert([
+            'type' => '日志',
+            'projectid' => $projectid,
+            'username' => $user['username'],
+            'detail' => '添加流程列表【' . $title . '】',
+            'indate' => Base::time()
+        ]);
+        //
+        $row = Base::DBC2A(DB::table('project_label')->where('id', $id)->first());
+        $row['taskLists'] = [];
+        return Base::retSuccess('添加成功', $row);
+    }
+
+    /**
+     * 项目子分类-重命名分类
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} labelid               分类ID
+     * @apiParam {String} title                 新分类名称
+     */
+    public function label__rename()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = trim(Request::input('projectid'));
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $title = trim(Request::input('title'));
+        if (empty($title)) {
+            return Base::retError('列表名称不能为空！');
+        } elseif (mb_strlen($title) > 32) {
+            return Base::retError('列表名称最多只能设置32个字！');
+        }
+        //
+        $labelid = intval(Request::input('labelid'));
+        $count = DB::table('project_label')->where('id', '!=', $labelid)->where('projectid', $projectid)->where('title', $title)->count();
+        if ($count > 0) {
+            return Base::retError('列表名称已存在！');
+        }
+        //
+        $labelDetail = Base::DBC2A(DB::table('project_label')->where('id', $labelid)->where('projectid', $projectid)->first());
+        if (empty($labelDetail)) {
+            return Base::retError('列表不存在或已被删除！');
+        }
+        //
+        if (DB::table('project_label')->where('id', $labelDetail['id'])->update([ 'title' => $title ])) {
+            DB::table('project_log')->insert([
+                'type' => '日志',
+                'projectid' => $projectid,
+                'username' => $user['username'],
+                'detail' => '流程列表【' . $labelDetail['title'] . '】重命名【' . $title . '】',
+                'indate' => Base::time()
+            ]);
+        }
+        //
+        return Base::retSuccess('修改成功');
+    }
+
+    /**
+     * 项目子分类-删除分类
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} labelid               分类ID
+     *
+     * @throws \Throwable
+     */
+    public function label__delete()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = trim(Request::input('projectid'));
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $labelid = intval(Request::input('labelid'));
+        $labelDetail = Base::DBC2A(DB::table('project_label')->where('id', $labelid)->where('projectid', $projectid)->first());
+        if (empty($labelDetail)) {
+            return Base::retError('列表不存在或已被删除！');
+        }
+        //
+        return DB::transaction(function () use ($user, $projectid, $labelDetail) {
+            $taskLists = Base::DBC2A(DB::table('project_task')->where('labelid', $labelDetail['id'])->get());
+            $logArray = [];
+            foreach ($taskLists AS $task) {
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $projectid,
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '删除列表任务【' . $task['title'] . '】',
+                    'indate' => Base::time()
+                ];
+            }
+            $logArray[] = [
+                'type' => '日志',
+                'projectid' => $projectid,
+                'taskid' => 0,
+                'username' => $user['username'],
+                'detail' => '删除流程列表【' . $labelDetail['title'] . '】',
+                'indate' => Base::time()
+            ];
+            DB::table('project_task')->where('labelid', $labelDetail['id'])->update([
+                'delete' => 1,
+                'deletedate' => Base::time()
+            ]);
+            DB::table('project_label')->where('id', $labelDetail['id'])->delete();
+            DB::table('project_log')->insert($logArray);
+            //
+            return Base::retSuccess('删除成功');
+        });
+    }
+
+    /**
      * 项目任务-列表
      *
      * @apiParam {Number} projectid             项目ID
@@ -613,6 +781,7 @@ class ProjectController extends Controller
      * - 已超期
      * - 已完成
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
+     * @apiParam {Number} [levelsort]           是否按紧急排序（1:是）
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
@@ -635,6 +804,7 @@ class ProjectController extends Controller
         $whereArray = [];
         $whereArray[] = ['project_lists.id', '=', $projectid];
         $whereArray[] = ['project_lists.delete', '=', 0];
+        $whereArray[] = ['project_task.delete', '=', 0];
         if (intval(Request::input('labelid')) > 0) {
             $whereArray[] = ['project_task.labelid', '=', intval(Request::input('labelid'))];
         }
@@ -663,6 +833,9 @@ class ProjectController extends Controller
                 $whereArray[] = ['project_task.complete', '=', 1];
                 break;
         }
+        if (intval(Request::input('levelsort')) == 1) {
+            $orderBy = '`level` ASC,' . $orderBy;
+        }
         //
         $lists = DB::table('project_lists')
             ->join('project_task', 'project_lists.id', '=', 'project_task.projectid')
@@ -671,9 +844,9 @@ class ProjectController extends Controller
             ->orderByRaw($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if (intval(Request::input('statistics')) == 1) {
-            $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('complete', 0)->count();
-            $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('complete', 0)->whereBetween('enddate', [1, Base::time()])->count();
-            $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('complete', 1)->count();
+            $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 0)->count();
+            $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 0)->whereBetween('enddate', [1, Base::time()])->count();
+            $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 1)->count();
         }
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的任务', $lists);
@@ -738,6 +911,8 @@ class ProjectController extends Controller
         $title = trim(Request::input('title'));
         if (empty($title)) {
             return Base::retError('任务标题不能为空！');
+        } elseif (mb_strlen($title) > 255) {
+            return Base::retError('任务标题最多只能设置255个字！');
         }
         //
         $inArray = [
@@ -793,6 +968,7 @@ class ProjectController extends Controller
             ->select(['project_task.projectid', 'project_task.title', 'project_task.archived'])
             ->where([
                 ['project_lists.delete', '=', 0],
+                ['project_task.delete', '=', 0],
                 ['project_task.id', '=', $taskid],
             ])
             ->first());

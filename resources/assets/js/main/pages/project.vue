@@ -23,16 +23,17 @@
             <!-- 列表 -->
             <ul class="project-list">
                 <li v-for="(item, index) in lists">
-                    <div class="project-item" @click="handleProject('open', item)">
+                    <div class="project-item">
                         <div class="project-head">
                             <div v-if="item.loadIng === true" class="project-loading">
                                 <w-loading></w-loading>
                             </div>
-                            <div class="project-title">{{item.title}}</div>
+                            <div class="project-title" @click="handleProject('open', item)">{{item.title}}</div>
                             <div class="project-setting">
                                 <Dropdown class="right-info" trigger="click" @on-click="handleProject($event, item)" transfer>
                                     <Icon class="project-setting-icon" type="md-settings" size="16"/>
                                     <Dropdown-menu slot="list">
+                                        <Dropdown-item name="open">{{$L('打开')}}</Dropdown-item>
                                         <Dropdown-item name="favor">{{$L('收藏')}}</Dropdown-item>
                                         <Dropdown-item v-if="item.isowner" name="rename">{{$L('重命名')}}</Dropdown-item>
                                         <Dropdown-item v-if="item.isowner" name="transfer">{{$L('移交项目')}}</Dropdown-item>
@@ -42,7 +43,7 @@
                                 </Dropdown>
                             </div>
                         </div>
-                        <div class="project-num">
+                        <div class="project-num" @click="handleProject('open', item)">
                             <div class="project-complete"><em>{{item.complete}}</em>已完成数</div>
                             <div class="project-num-line"></div>
                             <div class="project-unfinished"><em>{{item.unfinished}}</em>未完成数</div>
@@ -176,11 +177,17 @@
                             text-overflow:ellipsis;
                             white-space:nowrap;
                             color: #333333;
+                            cursor: pointer;
                         }
                         .project-setting{
+                            width: 30px;
+                            text-align: right;
                             .project-setting-icon {
                                 cursor: pointer;
                                 color: #333333;
+                                &:hover {
+                                    color: #0396f2;
+                                }
                             }
                         }
                     }
@@ -190,6 +197,7 @@
                         display: flex;
                         flex-direction: row;
                         align-items: center;
+                        cursor: pointer;
                         .project-complete,
                         .project-unfinished {
                             flex: 1;
@@ -219,6 +227,7 @@
                         align-items: center;
                         border-top: 1px solid #efefef;
                         padding: 6px 0;
+                        cursor: default;
                         .project-iconbtn {
                             flex: 1;
                             text-align: center;
@@ -531,10 +540,10 @@
                                 },
                                 success: (res) => {
                                     this.$Modal.remove();
+                                    this.$set(item, 'title', title);
                                     setTimeout(() => {
                                         if (res.ret === 1) {
                                             this.$Message.success(res.msg);
-                                            this.$set(item, 'title', title);
                                         } else {
                                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                                         }
@@ -593,10 +602,10 @@
                                 },
                                 success: (res) => {
                                     this.$Modal.remove();
+                                    this.getLists();
                                     setTimeout(() => {
                                         if (res.ret === 1) {
                                             this.$Message.success(res.msg);
-                                            this.getLists();
                                         } else {
                                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                                         }

@@ -18,10 +18,10 @@ export default {
                         },
                         success: (res) => {
                             this.$Modal.remove();
+                            typeof successCallback === "function" && successCallback();
                             setTimeout(() => {
                                 if (res.ret === 1) {
                                     this.$Message.success(res.msg);
-                                    typeof successCallback === "function" && successCallback();
                                 }else{
                                     this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                 }
@@ -45,10 +45,10 @@ export default {
                 },
                 success: (res) => {
                     this.$Modal.remove();
+                    typeof successCallback === "function" && successCallback();
                     setTimeout(() => {
                         if (res.ret === 1) {
                             this.$Message.success(res.msg);
-                            typeof successCallback === "function" && successCallback();
                         }else{
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                         }
@@ -71,10 +71,10 @@ export default {
                         },
                         success: (res) => {
                             this.$Modal.remove();
+                            typeof successCallback === "function" && successCallback();
                             setTimeout(() => {
                                 if (res.ret === 1) {
                                     this.$Message.success(res.msg);
-                                    typeof successCallback === "function" && successCallback();
                                 }else{
                                     this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                 }

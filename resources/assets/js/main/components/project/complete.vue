@@ -89,10 +89,10 @@
                                             },
                                             success: (res) => {
                                                 this.$Modal.remove();
+                                                this.getLists();
                                                 setTimeout(() => {
                                                     if (res.ret === 1) {
                                                         this.$Message.success(res.msg);
-                                                        this.getLists();
                                                     }else{
                                                         this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                                     }
