@@ -1,6 +1,6 @@
 <template>
-    <div class="dtc-main" :style="myStyle">
-        <div class="dtc-body">
+    <div :class="[idDrawerTabs?'dtc-main':'']" :style="myStyle">
+        <div :class="[idDrawerTabs?'dtc-body':'']">
             <slot/>
         </div>
     </div>
@@ -32,12 +32,17 @@
         name: 'DrawerTabsContainer',
         data() {
             return {
+                idDrawerTabs: false,
                 calculateHeight: 0,
             }
         },
         mounted() {
             let el = $A(this.$el);
             let eb = el.parents(".ivu-drawer-body");
+            if (eb == 0 || eb.parents(".ivu-drawer-wrap").length == 0) {
+                return;
+            }
+            this.idDrawerTabs = true;
             this.calculateHeight = eb.outerHeight() - el.offset().top;
             setInterval(() => {
                 this.calculateHeight = eb.outerHeight() - el.offset().top;

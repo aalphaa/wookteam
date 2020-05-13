@@ -19,7 +19,7 @@
                     <span class="ft hover" @click="openProjectDrawer('lists')"><i class="ft icon">&#xE89E;</i> 任务列表</span>
                     <span class="ft hover" @click="openProjectDrawer('files')"><i class="ft icon">&#xE701;</i> 文件列表</span>
                     <span class="ft hover" @click="openProjectDrawer('logs')"><i class="ft icon">&#xE753;</i> 项目动态</span>
-                    <span class="ft hover" @click="openProjectDrawer('setting')"><i class="ft icon">&#xE7A7;</i> 设置</span>
+                    <span class="ft hover" @click="openProjectSettingDrawer('complete')"><i class="ft icon">&#xE7A7;</i> 设置</span>
                 </div>
             </div>
         </div>
@@ -55,7 +55,7 @@
                                         <div v-if="task.overdue" class="task-status">已超期</div>
                                         <div v-else-if="task.complete" class="task-status">已完成</div>
                                         <div v-else class="task-status">未完成</div>
-                                        <Tooltip class="task-userimg" :content="task.nickname || task.username"><img :src="task.userimg"/></Tooltip>
+                                        <Tooltip class="task-userimg" :content="task.nickname || task.username" transfer><img :src="task.userimg"/></Tooltip>
                                     </div>
                                 </div>
                             </div>
@@ -84,7 +84,19 @@
                 <TabPane :label="$L('项目动态')" name="logs">
                     <project-task-logs :canload="projectDrawerShow && projectDrawerTab == 'logs'" :projectid="projectid"></project-task-logs>
                 </TabPane>
-                <TabPane :label="$L('项目设置')" name="setting">
+            </Tabs>
+        </Drawer>
+
+        <Drawer v-model="projectSettingDrawerShow" width="75%">
+            <Tabs v-if="projectSettingDrawerShow" v-model="projectSettingDrawerTab">
+                <TabPane :label="$L('已归档任务')" name="complete">
+                    <project-complete :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'complete'" :projectid="projectid"></project-complete>
+                </TabPane>
+                <TabPane :label="$L('成员管理')" name="member">
+                    <project-users :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'member'" :projectid="projectid"></project-users>
+                </TabPane>
+                <TabPane :label="$L('项目统计')" name="statistics">
+                    <project-statistics :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'statistics'" :projectid="projectid"></project-statistics>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -317,9 +329,15 @@
     import ProjectTaskLists from "../components/project/task/lists";
     import ProjectTaskFiles from "../components/project/task/files";
     import ProjectTaskLogs from "../components/project/task/logs";
+    import ProjectComplete from "../components/project/complete";
+    import ProjectUsers from "../components/project/users";
+    import ProjectStatistics from "../components/project/statistics";
 
     export default {
         components: {
+            ProjectStatistics,
+            ProjectUsers,
+            ProjectComplete,
             ProjectTaskLogs,
             ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
         data () {
@@ -334,6 +352,9 @@
 
                 projectDrawerShow: false,
                 projectDrawerTab: 'lists',
+
+                projectSettingDrawerShow: false,
+                projectSettingDrawerTab: 'complete',
             }
         },
         mounted() {
@@ -601,6 +622,11 @@
             openProjectDrawer(tab) {
                 this.projectDrawerTab = tab;
                 this.projectDrawerShow = true;
+            },
+
+            openProjectSettingDrawer(tab) {
+                this.projectSettingDrawerTab = tab;
+                this.projectSettingDrawerShow = true;
             }
         },
     }

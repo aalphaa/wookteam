@@ -88,15 +88,13 @@ class UsersController extends Controller
     {
         $keys = Request::input('where');
         $whereArr = [];
-        $whereFunc = null;
         $whereRaw = null;
         if ($keys['usernameequal'])     $whereArr[] = ['username', '=', $keys['usernameequal']];
         if ($keys['identity'])          $whereArr[] = ['identity', 'like', '%,' . $keys['identity'] . ',%'];
         if ($keys['noidentity'])        $whereArr[] = ['identity', 'not like', '%,' . $keys['noidentity'] . ',%'];
         if ($keys['username']) {
-            $whereFunc = function($query) use ($keys) {
-                $query->where('username', 'like', '%' . $keys['username'] . '%')->orWhere('nickname', 'like', '%' . $keys['username'] . '%');
-            };
+            $whereRaw.= $whereRaw ? ' AND ' : '';
+            $whereRaw.= "(`username` LIKE '%" . $keys['username'] . "%' OR `nickname` LIKE '%" . $keys['username'] . "%')";
         }
         if (intval($keys['projectid']) > 0) {
             $whereRaw.= $whereRaw ? ' AND ' : '';
@@ -105,7 +103,6 @@ class UsersController extends Controller
         //
         $lists = DBCache::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession'])
             ->where($whereArr)
-            ->where($whereFunc)
             ->whereRaw($whereRaw)
             ->orderBy('id')
             ->cacheMinutes(now()->addSeconds(10))

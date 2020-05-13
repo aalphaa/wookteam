@@ -361,7 +361,7 @@ class ProjectController extends Controller
                 'type' => '日志',
                 'projectid' => $projectDetail['id'],
                 'username' => $username,
-                'detail' => '移交项目，自动加入项目',
+                'detail' => '自动加入项目',
                 'indate' => Base::time()
             ]);
         }
@@ -746,8 +746,13 @@ class ProjectController extends Controller
                     'projectid' => $projectid,
                     'taskid' => $task['id'],
                     'username' => $user['username'],
-                    'detail' => '删除列表任务【' . $task['title'] . '】',
-                    'indate' => Base::time()
+                    'detail' => '删除列表任务',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                    ])
                 ];
             }
             $logArray[] = [
@@ -963,8 +968,13 @@ class ProjectController extends Controller
                 'projectid' => $inArray['projectid'],
                 'taskid' => $taskid,
                 'username' => $inArray['createuser'],
-                'detail' => '添加任务【' . $inArray['title'] . '】',
-                'indate' => Base::time()
+                'detail' => '添加任务',
+                'indate' => Base::time(),
+                'other' => Base::array2string([
+                    'type' => 'task',
+                    'id' => $taskid,
+                    'title' => $inArray['title'],
+                ])
             ]);
             Project::updateNum($inArray['projectid']);
             //
@@ -1024,8 +1034,13 @@ class ProjectController extends Controller
                     'projectid' => $task['projectid'],
                     'taskid' => $taskid,
                     'username' => $user['username'],
-                    'detail' => '取消归档【' . $task['title'] . '】',
-                    'indate' => Base::time()
+                    'detail' => '取消归档',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $taskid,
+                        'title' => $task['title'],
+                    ])
                 ]);
                 return Base::retSuccess('取消归档成功');
             }
@@ -1041,8 +1056,13 @@ class ProjectController extends Controller
                     'projectid' => $task['projectid'],
                     'taskid' => $taskid,
                     'username' => $user['username'],
-                    'detail' => '归档【' . $task['title'] . '】',
-                    'indate' => Base::time()
+                    'detail' => '加入归档',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $taskid,
+                        'title' => $task['title'],
+                    ])
                 ]);
                 return Base::retSuccess('加入归档成功');
             }
@@ -1192,7 +1212,21 @@ class ProjectController extends Controller
             $array['id'] = $id;
             $array['path'] = Base::fillUrl($array['path']);
             $array['thumb'] = Base::fillUrl($array['thumb']);
+            $array['download'] = 0;
             $array['yetdown'] = 0;
+            DB::table('project_log')->insert([
+                'type' => '日志',
+                'projectid' => $projectid,
+                'taskid' => $taskid,
+                'username' => $user['username'],
+                'detail' => '上传文件',
+                'indate' => Base::time(),
+                'other' => Base::array2string([
+                    'type' => 'file',
+                    'id' => $id,
+                    'name' => $fileData['name'],
+                ])
+            ]);
             return Base::retSuccess('success', $array);
         }
     }
@@ -1204,19 +1238,19 @@ class ProjectController extends Controller
      */
     public function files__download()
     {
-        $row = Base::DBC2A(DB::table('project_files')->where('id', intval(Request::input('fileid')))->where('delete', 0)->first());
-        if (empty($row)) {
+        $fileDetail = Base::DBC2A(DB::table('project_files')->where('id', intval(Request::input('fileid')))->where('delete', 0)->first());
+        if (empty($fileDetail)) {
             return abort(404, '文件不存在或已被删除！');
         }
-        $filePath = public_path($row['path']);
+        $filePath = public_path($fileDetail['path']);
         if (!file_exists($filePath)) {
             return abort(404, '文件不存在或已被删除。');
         }
-        if (intval(Session::get('filesDownload:' . $row['id'])) !== 1) {
-            Session::put('filesDownload:' . $row['id'], 1);
-            DB::table('project_files')->where('id', $row['id'])->increment('download');
+        if (intval(Session::get('filesDownload:' . $fileDetail['id'])) !== 1) {
+            Session::put('filesDownload:' . $fileDetail['id'], 1);
+            DB::table('project_files')->where('id', $fileDetail['id'])->increment('download');
         }
-        return response()->download($filePath, $row['name']);
+        return response()->download($filePath, $fileDetail['name']);
     }
 
     /**
@@ -1259,8 +1293,13 @@ class ProjectController extends Controller
                 'projectid' => $fileDetail['projectid'],
                 'taskid' => $fileDetail['taskid'],
                 'username' => $user['username'],
-                'detail' => '文件【' . $fileDetail['name'] . '(' . $fileDetail['id'] . ')】重命名【' . $name . '】',
-                'indate' => Base::time()
+                'detail' => '文件【' . $fileDetail['name'] . '】重命名',
+                'indate' => Base::time(),
+                'other' => Base::array2string([
+                    'type' => 'file',
+                    'id' => $fileDetail['id'],
+                    'name' => $name,
+                ])
             ]);
         }
         //
@@ -1303,8 +1342,13 @@ class ProjectController extends Controller
             'projectid' => $fileDetail['projectid'],
             'taskid' => $fileDetail['taskid'],
             'username' => $user['username'],
-            'detail' => '删除文件【' . $fileDetail['name'] . '(' . $fileDetail['id'] . ')】',
-            'indate' => Base::time()
+            'detail' => '删除文件',
+            'indate' => Base::time(),
+            'other' => Base::array2string([
+                'type' => 'file',
+                'id' => $fileDetail['id'],
+                'name' => $fileDetail['name'],
+            ])
         ]);
         //
         return Base::retSuccess('删除成功');
@@ -1354,9 +1398,11 @@ class ProjectController extends Controller
             $item = array_merge($item, Users::username2basic($item['username']));
             $item['timeData'] = [
                 'ymd' => date(date("Y", $item['indate']) == date("Y", Base::time()) ? "m-d" : "Y-m-d", $item['indate']),
-                'week' => Base::getTimeWeek($item['indate']),
+                'hi' => date("h:i", $item['indate']) ,
+                'week' => "周" . Base::getTimeWeek($item['indate']),
                 'segment' => Base::getTimeDayeSegment($item['indate']),
             ];
+            $item['other'] = Base::string2array($item['other'], ['type' => '']);
             $lists['lists'][$key] = $item;
         }
         return Base::retSuccess('success', $lists);

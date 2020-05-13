@@ -55,7 +55,7 @@
                         <div class="project-bottom">
                             <div class="project-iconbtn" @click.stop="handleProject('complete', item)">
                                 <Icon class="project-iconbtn-icon1" type="md-checkmark-circle-outline" size="24" />
-                                <div class="project-iconbtn-text">已完成任务</div>
+                                <div class="project-iconbtn-text">已归档任务</div>
                             </div>
                             <div class="project-iconbtn" @click.stop="handleProject('member', item)">
                                 <Icon class="project-iconbtn-icon2" type="md-people" size="24" />
@@ -108,7 +108,7 @@
 
         <Drawer v-model="projectDrawerShow" width="75%">
             <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
-                <TabPane :label="$L('已完成任务')" name="complete">
+                <TabPane :label="$L('已归档任务')" name="complete">
                     <project-complete :canload="projectDrawerShow && projectDrawerTab == 'complete'" :projectid="handleProjectId"></project-complete>
                 </TabPane>
                 <TabPane :label="$L('成员管理')" name="member">
