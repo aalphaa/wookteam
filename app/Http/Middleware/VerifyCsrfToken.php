@@ -14,5 +14,8 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         //上传图片
         'api/imgupload/',
+
+        //上传项目文件
+        'api/project/files/upload/',
     ];
 }

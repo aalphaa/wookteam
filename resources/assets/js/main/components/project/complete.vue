@@ -85,7 +85,7 @@
                                             },
                                             error: () => {
                                                 this.$Modal.remove();
-                                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                                alert(this.$L('网络繁忙，请稍后再试！'));
                                             },
                                             success: (res) => {
                                                 this.$Modal.remove();

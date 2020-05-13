@@ -79,6 +79,7 @@
                     <project-task-lists :canload="projectDrawerShow && projectDrawerTab == 'lists'" :projectid="projectid" :labelLists="projectSimpleLabel"></project-task-lists>
                 </TabPane>
                 <TabPane :label="$L('文件列表')" name="files">
+                    <project-task-files :canload="projectDrawerShow && projectDrawerTab == 'files'" :projectid="projectid"></project-task-files>
                 </TabPane>
                 <TabPane :label="$L('项目动态')" name="logs">
                 </TabPane>
@@ -313,9 +314,10 @@
     import WLoading from "../components/WLoading";
     import ProjectAddTask from "../components/project/task/add";
     import ProjectTaskLists from "../components/project/task/lists";
+    import ProjectTaskFiles from "../components/project/task/files";
 
     export default {
-        components: {ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
+        components: {ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
         data () {
             return {
                 loadIng: 0,
@@ -364,8 +366,8 @@
                         this.loadDetailed = true;
                     },
                     error: () => {
-                        this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
                         this.goBack();
+                        alert(this.$L('网络繁忙，请稍后再试！'));
                     },
                     success: (res) => {
                         if (res.ret === 1) {
@@ -463,7 +465,7 @@
                                 },
                                 error: () => {
                                     this.$Modal.remove();
-                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                    alert(this.$L('网络繁忙，请稍后再试！'));
                                 },
                                 success: (res) => {
                                     this.$Modal.remove();
@@ -499,7 +501,7 @@
                             },
                             error: () => {
                                 this.$Modal.remove();
-                                this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                alert(this.$L('网络繁忙，请稍后再试！'));
                             },
                             success: (res) => {
                                 this.$Modal.remove();
@@ -559,7 +561,7 @@
                                 },
                                 error: () => {
                                     this.$Modal.remove();
-                                    this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                                    alert(this.$L('网络繁忙，请稍后再试！'));
                                 },
                                 success: (res) => {
                                     this.$Modal.remove();

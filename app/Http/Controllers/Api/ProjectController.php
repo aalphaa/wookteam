@@ -1048,4 +1048,265 @@ class ProjectController extends Controller
             }
         }
     }
+
+    /**
+     * 项目文件-列表
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} [taskid]              任务ID
+     * @apiParam {String} [name]                文件名称
+     * @apiParam {String} [username]            上传者用户名
+     * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
+     * - key: name|size|username|indate
+     * - order: asc|desc
+     * @apiParam {Number} [page]                当前页，默认:1
+     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
+     */
+    public function files__lists()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = intval(Request::input('projectid'));
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $orderBy = '`id` DESC';
+        $sorts = Base::json2array(Request::input('sorts'));
+        if (in_array($sorts['key'], ['asc', 'desc'])) {
+            switch ($sorts['key']) {
+                case 'name':
+                case 'size':
+                case 'download':
+                case 'username':
+                case 'indate':
+                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['key'] . ',`id` DESC';
+                    break;
+            }
+        }
+        //
+        $whereArray = [];
+        $whereArray[] = ['projectid', '=', $projectid];
+        $whereArray[] = ['delete', '=', 0];
+        if (intval(Request::input('taskid')) > 0) {
+            $whereArray[] = ['taskid', '=', intval(Request::input('taskid'))];
+        }
+        if (trim(Request::input('name'))) {
+            $whereArray[] = ['name', 'like', '%' . trim(Request::input('name')) . '%'];
+        }
+        if (trim(Request::input('username'))) {
+            $whereArray[] = ['username', '=', trim(Request::input('username'))];
+        }
+        //
+        $lists = DB::table('project_files')
+            ->where($whereArray)
+            ->orderByRaw($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
+        $lists = Base::getPageList($lists);
+        if ($lists['total'] == 0) {
+            return Base::retError('未找到任何相关的文件', $lists);
+        }
+        foreach ($lists['lists'] AS $key => $item) {
+            $lists['lists'][$key]['path'] = Base::fillUrl($item['path']);
+            $lists['lists'][$key]['thumb'] = Base::fillUrl($item['thumb']);
+            $lists['lists'][$key]['yetdown'] = intval(Session::get('filesDownload:' . $item['id']));
+        }
+        return Base::retSuccess('success', $lists);
+    }
+
+    /**
+     * 项目文件-上传
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} [taskid]              任务ID
+     */
+    public function files__upload()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = intval(Request::input('projectid'));
+        $taskid = intval(Request::input('taskid'));
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $data = Base::upload([
+            "file" => Request::file('files'),
+            "type" => 'file',
+            "path" => "uploads/projects/" . $projectid . "/",
+        ]);
+        if (Base::isError($data)) {
+            return Base::retError($data['msg']);
+        } else {
+            $fileData = $data['data'];
+            $thumb = 'images/files/file.png';
+            switch ($fileData['ext']) {
+                case "docx":
+                    $thumb = 'images/files/doc.png';
+                    break;
+                case "xlsx":
+                    $thumb = 'images/files/xls.png';
+                    break;
+                case "pptx":
+                    $thumb = 'images/files/ppt.png';
+                    break;
+                case "doc":
+                case "xls":
+                case "ppt":
+                case "txt":
+                case "esp":
+                case "gif":
+                    $thumb = 'images/files/' . $fileData['ext'] . '.png';
+                    break;
+                case "jpg":
+                case "jpeg":
+                case "png":
+                    if (Base::imgThumb($fileData['file'], $fileData['file'] . "_thumb.jpg", 64, 0)) {
+                        $thumb = $fileData['path'] . "_thumb.jpg";
+                    }
+                    break;
+            }
+            $array = [
+                'projectid' => $projectid,
+                'taskid' => $taskid,
+                'name' => $fileData['name'],
+                'size' => $fileData['size'] * 1024,
+                'ext' => $fileData['ext'],
+                'path' => $fileData['path'],
+                'thumb' => $thumb,
+                'username' => $user['username'],
+                'indate' => Base::time(),
+            ];
+            $id = DB::table('project_files')->insertGetId($array);
+            $array['id'] = $id;
+            $array['path'] = Base::fillUrl($array['path']);
+            $array['thumb'] = Base::fillUrl($array['thumb']);
+            $array['yetdown'] = 0;
+            return Base::retSuccess('success', $array);
+        }
+    }
+
+    /**
+     * 项目文件-上传
+     *
+     * @apiParam {Number} fileid                文件ID
+     */
+    public function files__download()
+    {
+        $row = Base::DBC2A(DB::table('project_files')->where('id', intval(Request::input('fileid')))->where('delete', 0)->first());
+        if (empty($row)) {
+            return abort(404, '文件不存在或已被删除！');
+        }
+        $filePath = public_path($row['path']);
+        if (!file_exists($filePath)) {
+            return abort(404, '文件不存在或已被删除。');
+        }
+        if (intval(Session::get('filesDownload:' . $row['id'])) !== 1) {
+            Session::put('filesDownload:' . $row['id'], 1);
+            DB::table('project_files')->where('id', $row['id'])->increment('download');
+        }
+        return response()->download($filePath, $row['name']);
+    }
+
+    /**
+     * 项目文件-重命名
+     *
+     * @apiParam {Number} fileid                文件ID
+     * @apiParam {String} name                  新文件名称
+     */
+    public function files__rename()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $fileDetail = Base::DBC2A(DB::table('project_files')->where('id', intval(Request::input('fileid')))->where('delete', 0)->first());
+        if (empty($fileDetail)) {
+            return Base::retError('文件不存在或已被删除！');
+        }
+        if ($fileDetail['username'] != $user['username']) {
+            $inRes = Project::inThe($fileDetail['projectid'], $user['username'], true);
+            if (Base::isError($inRes)) {
+                return Base::retError('此操作仅支持管理员或上传者！');
+            }
+        }
+        //
+        $name = Base::rightDelete(trim(Request::input('name')), '.' . $fileDetail['ext']);
+        if (empty($name)) {
+            return Base::retError('文件名称不能为空！');
+        } elseif (mb_strlen($name) > 32) {
+            return Base::retError('文件名称最多只能设置32个字！');
+        }
+        //
+        $name .= '.' . $fileDetail['ext'];
+        if (DB::table('project_files')->where('id', $fileDetail['id'])->update([ 'name' => $name ])) {
+            DB::table('project_log')->insert([
+                'type' => '日志',
+                'projectid' => $fileDetail['projectid'],
+                'taskid' => $fileDetail['taskid'],
+                'username' => $user['username'],
+                'detail' => '文件【' . $fileDetail['name'] . '(' . $fileDetail['id'] . ')】重命名【' . $name . '】',
+                'indate' => Base::time()
+            ]);
+        }
+        //
+        return Base::retSuccess('修改成功', [
+            'name' => $name,
+        ]);
+    }
+
+    /**
+     * 项目文件-删除
+     *
+     * @apiParam {Number} fileid                文件ID
+     */
+    public function files__delete()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $fileDetail = Base::DBC2A(DB::table('project_files')->where('id', intval(Request::input('fileid')))->where('delete', 0)->first());
+        if (empty($fileDetail)) {
+            return Base::retError('文件不存在或已被删除！');
+        }
+        if ($fileDetail['username'] != $user['username']) {
+            $inRes = Project::inThe($fileDetail['projectid'], $user['username'], true);
+            if (Base::isError($inRes)) {
+                return Base::retError('此操作仅支持管理员或上传者！');
+            }
+        }
+        //
+        DB::table('project_files')->where('id', $fileDetail['id'])->update([
+            'delete' => 1,
+            'deletedate' => Base::time()
+        ]);
+        DB::table('project_log')->insert([
+            'type' => '日志',
+            'projectid' => $fileDetail['projectid'],
+            'taskid' => $fileDetail['taskid'],
+            'username' => $user['username'],
+            'detail' => '删除文件【' . $fileDetail['name'] . '(' . $fileDetail['id'] . ')】',
+            'indate' => Base::time()
+        ]);
+        //
+        return Base::retSuccess('删除成功');
+    }
 }

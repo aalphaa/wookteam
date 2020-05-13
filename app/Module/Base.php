@@ -1794,7 +1794,7 @@ class Base
     /**
      * 上传文件
      * @param array $param [ type=[文件类型], file=>Request::file, path=>文件路径, fileName=>文件名称, scale=>[压缩原图宽,高, 压缩方式], size=>限制大小KB, autoThumb=>false不要自动生成缩略图 ]
-     * @return array [name=>原文件名, size=>文件大小(单位KB),file=>绝对地址, path=>相对地址, url=>全路径地址]
+     * @return array [name=>原文件名, size=>文件大小(单位KB),file=>绝对地址, path=>相对地址, url=>全路径地址, ext=>文件后缀名]
      */
     public static function upload($param)
     {
@@ -1829,6 +1829,9 @@ class Base
                     break;
                 case 'zip':
                     $type = ['zip'];
+                    break;
+                case 'file':
+                    $type = ['jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'esp'];
                     break;
                 default:
                     return Base::retError('错误的类型参数');
@@ -1873,6 +1876,7 @@ class Base
                 "thumb" => '',                                          //缩略图（预览图）               "https://.....hhsKzZ.jpg_thumb.jpg"
                 "width" => -1,                                          //图片宽度
                 "height" => -1,                                         //图片高度
+                "ext" => $extension,                                    //文件后缀名
             ];
             if (!is_file($array['file'])) {
                 return Base::retError('上传失败!');

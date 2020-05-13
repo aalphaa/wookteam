@@ -1505,6 +1505,22 @@
             }
             return $A.formatDate("Y-m-d", parseInt(time / 1000))
         },
+
+        /**
+         * 字节转换
+         * @param bytes
+         * @returns {string}
+         */
+        bytesToSize(bytes) {
+            if (bytes === 0) return '0 B';
+            let k = 1024;
+            let sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+            let i = Math.floor(Math.log(bytes) / Math.log(k));
+            if (typeof sizes[i] === "undefined") {
+                return '0 B';
+            }
+            return $A.runNum((bytes / Math.pow(k, i)), 2) + ' ' + sizes[i];
+        },
     });
 
     window.$A = $;

@@ -207,7 +207,7 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.$Message.error(this.$L('网络繁忙，请稍后再试！'));
+                        alert(this.$L('网络繁忙，请稍后再试！'));
                     },
                     success: (res) => {
                         if (res.ret === 1) {

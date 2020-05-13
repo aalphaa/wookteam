@@ -31,6 +31,7 @@
     "dependencies": {
         "tinymce": "^5.2.2",
         "view-design": "^4.2.0",
-        "vuedraggable": "^2.23.2"
+        "vuedraggable": "^2.23.2",
+        "vue-clipboard2": "^0.3.1"
     }
 }

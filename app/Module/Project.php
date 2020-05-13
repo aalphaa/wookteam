@@ -14,19 +14,24 @@ class Project
      * 是否在项目里
      * @param int $projectid
      * @param string $username
+     * @param bool $isowner
      * @return array
      */
-    public static function inThe($projectid, $username)
+    public static function inThe($projectid, $username, $isowner = false)
     {
-        $count = DB::table('project_users')->where([
+        $whereArray = [
             'type' => '成员',
             'projectid' => $projectid,
             'username' => $username,
-        ])->count();
-        if ($count <= 0) {
+        ];
+        if ($isowner) {
+            $whereArray['isowner'] = 1;
+        }
+        $row = Base::DBC2A(DB::table('project_users')->select(['isowner', 'indate'])->where($whereArray)->first());
+        if (empty($row)) {
             return Base::retError('你不在项目成员内！');
         } else {
-            return Base::retSuccess('你在项目内');
+            return Base::retSuccess('你在项目内', $row);
         }
     }
 
