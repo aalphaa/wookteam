@@ -214,7 +214,7 @@
                             this.addText = '';
                             this.addFocus = false;
                             this.$Message.success(res.msg);
-                            this.$emit('on-add-success');
+                            this.$emit('on-add-success', res.data);
                         } else {
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                         }

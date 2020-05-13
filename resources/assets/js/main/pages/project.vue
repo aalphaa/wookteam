@@ -38,7 +38,7 @@
                                         <Dropdown-item v-if="item.isowner" name="rename">{{$L('重命名')}}</Dropdown-item>
                                         <Dropdown-item v-if="item.isowner" name="transfer">{{$L('移交项目')}}</Dropdown-item>
                                         <Dropdown-item v-if="item.isowner" name="delete">{{$L('删除')}}</Dropdown-item>
-                                        <Dropdown-item name="out">{{$L('退出')}}</Dropdown-item>
+                                        <Dropdown-item v-else name="out">{{$L('退出')}}</Dropdown-item>
                                     </Dropdown-menu>
                                 </Dropdown>
                             </div>

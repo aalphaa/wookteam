@@ -102,7 +102,7 @@ class ProjectController extends Controller
         $label = Base::DBC2A(DB::table('project_label')->where('projectid', $projectid)->orderBy('inorder')->orderBy('id')->get());
         $simpleLabel = [];
         //任务
-        $task = Base::DBC2A(DB::table('project_task')->where([ 'projectid' => $projectid, 'delete' => 0, 'complete' => 0 ])->orderBy('level')->orderBy('id')->get());
+        $task = Base::DBC2A(DB::table('project_task')->where([ 'projectid' => $projectid, 'delete' => 0, 'complete' => 0 ])->orderByDesc('inorder')->orderByDesc('id')->get());
         //任务归类
         foreach ($label AS $index => $temp) {
             $taskLists = [];
@@ -112,7 +112,7 @@ class ProjectController extends Controller
                     $taskLists[] = array_merge($info, Users::username2basic($info['username']));
                 }
             }
-            $label[$index]['taskLists'] = Project::sortTask($taskLists);
+            $label[$index]['taskLists'] = $taskLists;
             $simpleLabel[] = ['id' => $temp['id'], 'title' => $temp['title']];
         }
         //
@@ -785,7 +785,6 @@ class ProjectController extends Controller
      * - 已完成
      * @apiParam {String} [username]            负责人用户名
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
-     * @apiParam {Number} [levelsort]           是否按紧急排序（1:是）
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
@@ -804,7 +803,7 @@ class ProjectController extends Controller
             return $inRes;
         }
         //
-        $orderBy = '`id` ASC';
+        $orderBy = '`inorder` DESC,`id` DESC';
         $whereArray = [];
         $whereArray[] = ['project_lists.id', '=', $projectid];
         $whereArray[] = ['project_lists.delete', '=', 0];
@@ -842,9 +841,6 @@ class ProjectController extends Controller
             case '已完成':
                 $whereArray[] = ['project_task.complete', '=', 1];
                 break;
-        }
-        if (intval(Request::input('levelsort')) == 1) {
-            $orderBy = '`level` ASC,' . $orderBy;
         }
         //
         $lists = DB::table('project_lists')
@@ -951,7 +947,11 @@ class ProjectController extends Controller
                 'indate' => Base::time()
             ]);
             Project::updateNum($inArray['projectid']);
-            return Base::retSuccess('添加成功！');
+            //
+            $task = Base::DBC2A(DB::table('project_task')->where('id', $taskid)->first());
+            $task['overdue'] = Project::taskIsOverdue($task);
+            $task = array_merge($task, Users::username2basic($task['username']));
+            return Base::retSuccess('添加成功！', $task);
         });
     }
 

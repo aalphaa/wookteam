@@ -35,6 +35,7 @@
                             <Dropdown trigger="click" @on-click="handleLabel($event, label)" transfer>
                                 <Icon type="ios-more"/>
                                 <DropdownMenu slot="list">
+                                    <Dropdown-item name="refresh">{{$L('刷新列表')}}</Dropdown-item>
                                     <Dropdown-item name="rename">{{$L('重命名')}}</Dropdown-item>
                                     <Dropdown-item name="delete">{{$L('删除')}}</Dropdown-item>
                                 </DropdownMenu>
@@ -42,7 +43,12 @@
                         </div>
                         <draggable v-model="label.taskLists" class="task-box" group="task" :animation="150" draggable=".task-draggable">
                             <div v-for="task in label.taskLists" :key="task.id" class="task-item task-draggable">
-                                <div class="task-shadow" :class="['p'+task.level,task.complete?'complete':'',task.overdue?'overdue':'']">
+                                <div class="task-shadow" :class="[
+                                        'p'+task.level,
+                                        task.complete ? 'complete' : '',
+                                        task.overdue ? 'overdue' : '',
+                                        task.isNewtask === true ? 'newtask' : ''
+                                    ]">
                                     <div class="task-title">{{task.title}}</div>
                                     <div class="task-more">
                                         <div v-if="task.overdue" class="task-status">已超期</div>
@@ -53,7 +59,7 @@
                                 </div>
                             </div>
                             <div slot="footer">
-                                <project-add-task :placeholder='`添加任务至"${label.title}"`' :projectid="label.projectid" :labelid="label.id" @on-add-success="addTaskSuccess(label)"></project-add-task>
+                                <project-add-task :placeholder='`添加任务至"${label.title}"`' :projectid="label.projectid" :labelid="label.id" @on-add-success="addTaskSuccess($event, label)"></project-add-task>
                             </div>
                         </draggable>
                     </div>
@@ -204,6 +210,7 @@
                                 cursor: pointer;
                                 box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
                                 transition: all 0.3s;
+                                transform: scale(1);
                                 &:hover{
                                     box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.38);
                                 }
@@ -227,15 +234,22 @@
                                     }
                                 }
                                 &.overdue {
+                                    .task-title {
+                                        font-weight: bold;
+                                    }
                                     .task-more {
                                         .task-status {
                                             color: #ff0000;
                                         }
                                     }
                                 }
+                                &.newtask {
+                                    transform: scale(1.5);
+                                }
                                 .task-title {
                                     font-size: 12px;
                                     color: #091e42;
+                                    word-break: break-all;
                                 }
                                 .task-more {
                                     min-height: 30px;
@@ -351,6 +365,10 @@
             },
             handleLabel(event, labelDetail) {
                 switch (event) {
+                    case 'refresh': {
+                        this.refreshLabel(labelDetail);
+                        break;
+                    }
                     case 'rename': {
                         this.renameLabel(labelDetail);
                         break;
@@ -360,6 +378,31 @@
                         break;
                     }
                 }
+            },
+
+            refreshLabel(item) {
+                this.$set(item, 'loadIng', true);
+                $A.aAjax({
+                    url: 'project/task/lists',
+                    data: {
+                        projectid: this.projectid,
+                        labelid: item.id,
+                        levelsort: 1
+                    },
+                    complete: () => {
+                        this.$set(item, 'loadIng', false);
+                    },
+                    error: () => {
+                        window.location.reload();
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.$set(item, 'taskLists', res.data.lists);
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
             },
 
             renameLabel(item) {
@@ -521,29 +564,17 @@
                     },
                 });
             },
-            addTaskSuccess(label) {
-                this.$set(label, 'loadIng', true);
-                $A.aAjax({
-                    url: 'project/task/lists',
-                    data: {
-                        projectid: this.projectid,
-                        labelid: label.id,
-                        levelsort: 1
-                    },
-                    complete: () => {
-                        this.$set(label, 'loadIng', false);
-                    },
-                    error: () => {
-                        window.location.reload();
-                    },
-                    success: (res) => {
-                        if (res.ret === 1) {
-                            this.$set(label, 'taskLists', res.data.lists);
-                        } else {
-                            window.location.reload();
-                        }
-                    }
-                });
+
+            addTaskSuccess(taskDetail, label) {
+                if (label.taskLists instanceof Array) {
+                    taskDetail.isNewtask = true;
+                    label.taskLists.unshift(taskDetail);
+                    this.$nextTick(() => {
+                        this.$set(taskDetail, 'isNewtask', false);
+                    });
+                } else {
+                    this.refreshLabel(label);
+                }
             },
 
             openProjectDrawer(tab) {

@@ -51,8 +51,8 @@
                 render: (h, params) => {
                     return h('img', {
                         style: {
-                            width: "36px",
-                            height: "36px",
+                            width: "32px",
+                            height: "32px",
                             verticalAlign: "middle",
                             objectFit: "cover",
                             borderRadius: "50%"
