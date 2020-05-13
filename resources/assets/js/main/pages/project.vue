@@ -8,7 +8,11 @@
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
-                    <span class="ft hover" @click="addShow=true"><i class="ft icon">&#xE740;</i> {{$L('新建项目')}}</span>
+                    <div class="page-nav-left">
+                        <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
+                        <span class="ft hover" @click="addShow=true"><i class="ft icon">&#xE740;</i> {{$L('新建项目')}}</span>
+                        <div class="page-nav-refresh" @click="getLists(true)">刷新</div>
+                    </div>
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
@@ -134,6 +138,31 @@
 
 <style lang="scss" scoped>
     .project {
+        .page-nav-left {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            &:hover {
+                .page-nav-refresh {
+                    display: block;
+                }
+            }
+            .page-nav-loading {
+                width: 18px;
+                height: 18px;
+                margin-right: 6px;
+                display: flex;
+            }
+            .page-nav-refresh {
+                display: none;
+                padding-right: 12px;
+                color: #048be0;
+                cursor: pointer;
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
         ul.project-list {
             padding: 5px;
             max-width: 2000px;

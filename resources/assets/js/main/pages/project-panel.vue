@@ -11,6 +11,7 @@
                     <div class="project-title">
                         <div v-if="loadIng > 0" class="project-title-loading"><w-loading></w-loading></div>
                         <h1>{{projectDetail.title}}</h1>
+                        <div class="project-title-refresh" @click="getDetail">刷新</div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -112,6 +113,11 @@
             display: flex;
             flex-direction: row;
             align-items: center;
+            &:hover {
+                .project-title-refresh {
+                    display: block;
+                }
+            }
             .project-title-loading {
                 width: 18px;
                 height: 18px;
@@ -121,6 +127,16 @@
             h1 {
                 font-size: 14px;
                 font-weight: 500;
+            }
+            .project-title-refresh {
+                display: none;
+                padding-left: 12px;
+                padding-right: 12px;
+                color: #048be0;
+                cursor: pointer;
+                &:hover {
+                    text-decoration: underline;
+                }
             }
         }
         .label-box {

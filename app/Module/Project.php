@@ -37,8 +37,8 @@ class Project
     public static function updateNum($projectid)
     {
         DB::table('project_lists')->where('id', $projectid)->update([
-            'unfinished' => DB::table('project_task')->where('projectid', $projectid)->where('complete', 0)->count(),
-            'complete' => DB::table('project_task')->where('projectid', $projectid)->where('complete', 1)->count(),
+            'unfinished' => DB::table('project_task')->where('projectid', $projectid)->where('complete', 0)->where('delete', 0)->count(),
+            'complete' => DB::table('project_task')->where('projectid', $projectid)->where('complete', 1)->where('delete', 0)->count(),
         ]);
     }
 
