@@ -13,7 +13,7 @@
         width: 100%;
         overflow: hidden;
         position: relative;
-        transform: rotateZ(0);
+        transform: translateZ(0);
 
         .dtc-body {
             position: absolute;
@@ -43,10 +43,10 @@
                 return;
             }
             this.idDrawerTabs = true;
-            this.calculateHeight = eb.outerHeight() - el.offset().top;
+            this.calculateHeight = Math.round(eb.outerHeight() - el.offset().top);
             setInterval(() => {
-                this.calculateHeight = eb.outerHeight() - el.offset().top;
-            }, 1000);
+                this.calculateHeight = Math.round(eb.outerHeight() - el.offset().top);
+            }, 300);
         },
         computed: {
             myStyle() {

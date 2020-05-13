@@ -11,7 +11,7 @@
                     <div class="project-title">
                         <div v-if="loadIng > 0" class="project-title-loading"><w-loading></w-loading></div>
                         <h1>{{projectDetail.title}}</h1>
-                        <div class="project-title-refresh" @click="getDetail">刷新</div>
+                        <div class="project-title-refresh" @click="getDetail(true)">刷新</div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -25,7 +25,7 @@
         </div>
 
         <w-content>
-            <draggable v-if="projectLabel.length > 0" v-model="projectLabel" class="label-box" draggable=".label-draggable" :animation="150">
+            <draggable v-if="projectLabel.length > 0" v-model="projectLabel" class="label-box" draggable=".label-draggable" :animation="150" :disabled="projectSortDisabled" @sort="projectSortUpdate(true)">
                 <div v-for="label in projectLabel" :key="label.id" class="label-item label-draggable">
                     <div class="label-body">
                         <div class="title-box">
@@ -42,7 +42,7 @@
                                 </DropdownMenu>
                             </Dropdown>
                         </div>
-                        <draggable v-model="label.taskLists" class="task-box" group="task" :animation="150" draggable=".task-draggable">
+                        <draggable v-model="label.taskLists" class="task-box" group="task" draggable=".task-draggable" :animation="150" :disabled="projectSortDisabled" @sort="projectSortUpdate(false)" @remove="projectSortUpdate(false)">
                             <div v-for="task in label.taskLists" :key="task.id" class="task-item task-draggable">
                                 <div class="task-shadow" :class="[
                                         'p'+task.level,
@@ -165,6 +165,7 @@
             width: 100%;
             height: 100%;
             padding: 15px;
+            transform: translateZ(0);
             .label-item {
                 flex-grow: 1;
                 flex-shrink: 0;
@@ -227,6 +228,7 @@
                         display: flex;
                         flex-direction: column;
                         padding: 0 12px 2px;
+                        transform: translateZ(0);
                         .task-item {
                             width: 100%;
                             .task-shadow {
@@ -349,6 +351,8 @@
                 projectDetail: {},
                 projectLabel: [],
                 projectSimpleLabel: [],
+                projectSortData: '',
+                projectSortDisabled: false,
 
                 projectDrawerShow: false,
                 projectDrawerTab: 'lists',
@@ -379,7 +383,7 @@
             }
         },
         methods: {
-            getDetail() {
+            getDetail(successTip) {
                 this.loadIng++;
                 $A.aAjax({
                     url: 'project/detail',
@@ -399,12 +403,30 @@
                             this.projectDetail = res.data.project;
                             this.projectLabel = res.data.label;
                             this.projectSimpleLabel = res.data.simpleLabel;
+                            this.projectSortData = this.getProjectSort();
+                            if (successTip === true) {
+                                this.$Message.success(this.$L('刷新成功！'));
+                            }
                         } else {
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                             this.goBack();
                         }
                     }
                 });
+            },
+            getProjectSort() {
+                let sortData = "",
+                    taskData = "";
+                this.projectLabel.forEach((label) => {
+                    taskData = "";
+                    label.taskLists.forEach((task) => {
+                        if (taskData) taskData+= "-";
+                        taskData+= task.id;
+                    });
+                    if (sortData) sortData+= ";";
+                    sortData+= label.id + ":" + taskData;
+                });
+                return sortData;
             },
             handleLabel(event, labelDetail) {
                 switch (event) {
@@ -533,6 +555,7 @@
                                 this.projectLabel.some((label, index) => {
                                     if (label.id == item.id) {
                                         this.projectLabel.splice(index, 1);
+                                        this.projectSortData = this.getProjectSort();
                                         return true;
                                     }
                                 });
@@ -591,6 +614,7 @@
                                 success: (res) => {
                                     this.$Modal.remove();
                                     this.projectLabel.push(res.data);
+                                    this.projectSortData = this.getProjectSort();
                                     setTimeout(() => {
                                         if (res.ret === 1) {
                                             this.$Message.success(res.msg);
@@ -627,7 +651,43 @@
             openProjectSettingDrawer(tab) {
                 this.projectSettingDrawerTab = tab;
                 this.projectSettingDrawerShow = true;
-            }
+            },
+
+            projectSortUpdate(isLabel) {
+                let oldSort = this.projectSortData;
+                let newSort = this.getProjectSort();
+                if (oldSort == newSort) {
+                    return;
+                }
+                this.projectSortData = newSort;
+                this.projectSortDisabled = true;
+                this.loadIng++;
+                $A.aAjax({
+                    url: 'project/sort',
+                    data: {
+                        projectid: this.projectid,
+                        oldsort: oldSort,
+                        newsort: newSort,
+                        label: isLabel === true ? 1 : 0
+                    },
+                    complete: () => {
+                        this.projectSortDisabled = false;
+                        this.loadIng--;
+                    },
+                    error: () => {
+                        this.getDetail();
+                        alert(this.$L('网络繁忙，请稍后再试！'));
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.$Message.success(res.msg);
+                        } else {
+                            this.getDetail();
+                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                        }
+                    }
+                });
+            },
         },
     }
 </script>

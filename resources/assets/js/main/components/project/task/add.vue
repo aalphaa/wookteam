@@ -47,7 +47,8 @@
     .task-input-box {
         position: relative;
         margin-top: 5px;
-        margin-bottom: 12px;
+        margin-bottom: 20px;
+        min-height: 70px;
         .input-placeholder,
         .input-enter {
             position: absolute;

@@ -258,7 +258,7 @@
                 whereData.page = Math.max(this.listPage, 1);
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.projectid = this.projectid;
-                whereData.sorts = this.sorts;
+                whereData.sorts = $A.cloneData(this.sorts);
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: whereData,

@@ -235,9 +235,9 @@ class ProjectController extends Controller
                             'detail' => '取消收藏',
                             'indate' => Base::time()
                         ]);
-                        return Base::retSuccess('取消成功');
+                        return Base::retSuccess('取消成功！');
                     }
-                    return Base::retSuccess('已取消');
+                    return Base::retSuccess('已取消！');
                 }
                 default: {
                     $row = Base::DBC2A(DB::table('project_users')->where([
@@ -260,9 +260,9 @@ class ProjectController extends Controller
                             'detail' => '收藏项目',
                             'indate' => Base::time()
                         ]);
-                        return Base::retSuccess('收藏成功');
+                        return Base::retSuccess('收藏成功！');
                     }
-                    return Base::retSuccess('已收藏');
+                    return Base::retSuccess('已收藏！');
                 }
             }
         });
@@ -310,7 +310,7 @@ class ProjectController extends Controller
             'indate' => Base::time()
         ]);
         //
-        return Base::retSuccess('修改成功');
+        return Base::retSuccess('修改成功！');
     }
 
     /**
@@ -389,7 +389,7 @@ class ProjectController extends Controller
             ])->update([
                 'isowner' => 1
             ]);
-            return Base::retSuccess('移交成功');
+            return Base::retSuccess('移交成功！');
         });
     }
 
@@ -428,7 +428,104 @@ class ProjectController extends Controller
             'indate' => Base::time()
         ]);
         //
-        return Base::retSuccess('删除成功');
+        return Base::retSuccess('删除成功！');
+    }
+
+
+
+    public function sort()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = trim(Request::input('projectid'));
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $oldSort = explode(";", Request::input('oldsort'));
+        $newSort = explode(";", Request::input('newsort'));
+        if (count($oldSort) != count($newSort)) {
+            return Base::retError('参数错误！');
+        }
+        if (intval(Request::input('label'))) {
+            //排序分类
+            foreach ($newSort AS $sort => $item) {
+                list($newLabelid, $newTask) = explode(':', $item);
+                list($oldLabelid, $oldTask) = explode(':', $oldSort[$sort]);
+                if ($newLabelid != $oldLabelid) {
+                    DB::table('project_label')->where([
+                        'id' => $newLabelid,
+                        'projectid' => $projectid
+                    ])->update([
+                        'inorder' => intval($sort)
+                    ]);
+                }
+            }
+            $detail = '调整任务列表排序';
+            $sortType = 'label';
+        } else {
+            //排序任务（调整任务归类）
+            foreach ($newSort AS $sort => $item) {
+                list($newLabelid, $newTask) = explode(':', $item);
+                list($oldLabelid, $oldTask) = explode(':', $oldSort[$sort]);
+                if ($newTask != $oldTask) {
+                    $newTask = explode('-', $newTask);
+                    $inorder = count($newTask);
+                    foreach ($newTask AS $taskid) {
+                        DB::table('project_task')->where([
+                            'id' => $taskid,
+                            'projectid' => $projectid
+                        ])->update([
+                            'labelid' => $newLabelid,
+                            'inorder' => $inorder
+                        ]);
+                        $inorder--;
+                    }
+                }
+            }
+            $detail = '调整任务排序';
+            $sortType = 'task';
+        }
+        //
+        $row = Base::DBC2A(DB::table('project_log')->where([ 'type' => '日志', 'projectid' => $projectid ])->orderByDesc('id')->first());
+        $continue = 1;
+        if ($row && $row['username'] == $user['username'] && $row['indate'] + 300 > Base::time()) {
+            $other = Base::string2array($row['other']);
+            if ($other['sortType'] == $sortType) {
+                $continue = intval($other['continue']) + 1;
+                if ($continue <= 100) {
+                    DB::table('project_log')->where('id', $row['id'])->update([
+                        'detail' => $detail . '(' . $continue . '次)',
+                        'other' => Base::array2string([
+                            'sortType' => $sortType,
+                            'continue' => $continue,
+                            'times' => $other['times'] . '|' . Base::time(),
+                        ])
+                    ]);
+                }
+            }
+        }
+        if ($continue == 1) {
+            DB::table('project_log')->insert([
+                'type' => '日志',
+                'projectid' => $projectid,
+                'username' => $user['username'],
+                'detail' => $detail,
+                'indate' => Base::time(),
+                'other' => Base::array2string([
+                    'sortType' => $sortType,
+                    'continue' => $continue,
+                    'times' => Base::time(),
+                ])
+            ]);
+        }
+        return Base::retSuccess('保存成功！');
     }
 
     /**
@@ -471,7 +568,7 @@ class ProjectController extends Controller
             'indate' => Base::time()
         ]);
         //
-        return Base::retSuccess('退出项目成功');
+        return Base::retSuccess('退出项目成功！');
     }
 
     /**
@@ -598,7 +695,7 @@ class ProjectController extends Controller
                 }
             }
         }
-        return Base::retSuccess('操作完成');
+        return Base::retSuccess('操作完成！');
     }
 
     /**
@@ -652,7 +749,7 @@ class ProjectController extends Controller
         //
         $row = Base::DBC2A(DB::table('project_label')->where('id', $id)->first());
         $row['taskLists'] = [];
-        return Base::retSuccess('添加成功', $row);
+        return Base::retSuccess('添加成功！', $row);
     }
 
     /**
@@ -705,7 +802,7 @@ class ProjectController extends Controller
             ]);
         }
         //
-        return Base::retSuccess('修改成功');
+        return Base::retSuccess('修改成功！');
     }
 
     /**
@@ -770,7 +867,7 @@ class ProjectController extends Controller
             DB::table('project_label')->where('id', $labelDetail['id'])->delete();
             DB::table('project_log')->insert($logArray);
             //
-            return Base::retSuccess('删除成功');
+            return Base::retSuccess('删除成功！');
         });
     }
 
@@ -812,8 +909,11 @@ class ProjectController extends Controller
         }
         //
         $orderBy = '`inorder` DESC,`id` DESC';
+        if (intval(Request::input('labelid')) == 0) {
+            $orderBy = '`indate` DESC,`id` DESC';
+        }
         $sorts = Base::json2array(Request::input('sorts'));
-        if (in_array($sorts['key'], ['asc', 'desc'])) {
+        if (in_array($sorts['order'], ['asc', 'desc'])) {
             switch ($sorts['key']) {
                 case 'title':
                 case 'labelid':
@@ -821,10 +921,10 @@ class ProjectController extends Controller
                 case 'username':
                 case 'level':
                 case 'indate':
-                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['key'] . ',`id` DESC';
+                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['order'] . ',`id` DESC';
                     break;
                 case 'type':
-                    $orderBy = 'CASE WHEN `complete`= 0 AND `enddate` BETWEEN 1 AND ' . Base::time() . ' THEN 0 ELSE 1 END ' . $sorts['key'] . ', `complete` ' . $sorts['key'] . ',`id` DESC';
+                    $orderBy = 'CASE WHEN `complete`= 0 AND `enddate` BETWEEN 1 AND ' . Base::time() . ' THEN 0 ELSE 1 END ' . $sorts['order'] . ', `complete` ' . $sorts['order'] . ',`id` DESC';
                     break;
             }
         }
@@ -953,6 +1053,7 @@ class ProjectController extends Controller
             'username' => $username,
             'title' => $title,
             'level' => max(1, min(4, intval(Request::input('level')))),
+            'inorder' => intval(DB::table('project_task')->where('projectid', $projectid)->orderByDesc('inorder')->value('inorder')) + 1,
             'indate' => Base::time(),
             'subtask' => Base::array2string([]),
             'files' => Base::array2string([]),
@@ -1042,7 +1143,7 @@ class ProjectController extends Controller
                         'title' => $task['title'],
                     ])
                 ]);
-                return Base::retSuccess('取消归档成功');
+                return Base::retSuccess('取消归档成功！');
             }
             default: {
                 if ($task['archived'] == 1) {
@@ -1064,7 +1165,7 @@ class ProjectController extends Controller
                         'title' => $task['title'],
                     ])
                 ]);
-                return Base::retSuccess('加入归档成功');
+                return Base::retSuccess('加入归档成功！');
             }
         }
     }
@@ -1099,14 +1200,14 @@ class ProjectController extends Controller
         //
         $orderBy = '`id` DESC';
         $sorts = Base::json2array(Request::input('sorts'));
-        if (in_array($sorts['key'], ['asc', 'desc'])) {
+        if (in_array($sorts['order'], ['asc', 'desc'])) {
             switch ($sorts['key']) {
                 case 'name':
                 case 'size':
                 case 'download':
                 case 'username':
                 case 'indate':
-                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['key'] . ',`id` DESC';
+                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['order'] . ',`id` DESC';
                     break;
             }
         }
@@ -1303,7 +1404,7 @@ class ProjectController extends Controller
             ]);
         }
         //
-        return Base::retSuccess('修改成功', [
+        return Base::retSuccess('修改成功！', [
             'name' => $name,
         ]);
     }
@@ -1351,7 +1452,7 @@ class ProjectController extends Controller
             ])
         ]);
         //
-        return Base::retSuccess('删除成功');
+        return Base::retSuccess('删除成功！');
     }
 
     /**

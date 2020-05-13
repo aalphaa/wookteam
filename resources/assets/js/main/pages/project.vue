@@ -463,8 +463,8 @@
                                     this.$set(this.formAdd, 'template', 0);
                                     //
                                     this.getLists(true);
-                                }else{
-                                    this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                } else {
+                                    this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                                 }
                             }
                         });
