@@ -785,6 +785,9 @@ class ProjectController extends Controller
      * - 已完成
      * @apiParam {String} [username]            负责人用户名
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
+     * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}（"archived=已归档"时无效）
+     * - key: title|labelid|enddate|username|level|indate|type
+     * - order: asc|desc
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
@@ -804,6 +807,23 @@ class ProjectController extends Controller
         }
         //
         $orderBy = '`inorder` DESC,`id` DESC';
+        $sorts = Base::json2array(Request::input('sorts'));
+        if (in_array($sorts['key'], ['asc', 'desc'])) {
+            switch ($sorts['key']) {
+                case 'title':
+                case 'labelid':
+                case 'enddate':
+                case 'username':
+                case 'level':
+                case 'indate':
+                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['key'] . ',`id` DESC';
+                    break;
+                case 'type':
+                    $orderBy = 'CASE WHEN `complete`= 0 AND `enddate` BETWEEN 1 AND ' . Base::time() . ' THEN 0 ELSE 1 END ' . $sorts['key'] . ', `complete` ' . $sorts['key'] . ',`id` DESC';
+                    break;
+            }
+        }
+        //
         $whereArray = [];
         $whereArray[] = ['project_lists.id', '=', $projectid];
         $whereArray[] = ['project_lists.delete', '=', 0];

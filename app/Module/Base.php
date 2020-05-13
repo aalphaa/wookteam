@@ -310,6 +310,9 @@ class Base
      */
     public static function json2array($string)
     {
+        if (is_array($string)) {
+            return $string;
+        }
         try {
             return json_decode($string, true);
         } catch (Exception $e) {
@@ -324,6 +327,9 @@ class Base
      */
     public static function array2json($array)
     {
+        if (!is_array($array)) {
+            return $array;
+        }
         try {
             return json_encode($array);
         } catch (Exception $e) {

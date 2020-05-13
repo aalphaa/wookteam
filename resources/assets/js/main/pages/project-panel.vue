@@ -387,7 +387,6 @@
                     data: {
                         projectid: this.projectid,
                         labelid: item.id,
-                        levelsort: 1
                     },
                     complete: () => {
                         this.$set(item, 'loadIng', false);

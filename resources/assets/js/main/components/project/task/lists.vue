@@ -45,7 +45,7 @@
         </Row>
 
         <!-- 列表 -->
-        <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
+        <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" @on-sort-change="sortChange" stripe></Table>
 
         <!-- 分页 -->
         <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
@@ -80,6 +80,7 @@
         data() {
             return {
                 keys: {},
+                sorts: {key:'', order:''},
 
                 loadYet: false,
 
@@ -99,10 +100,13 @@
                 "title": "任务名称",
                 "key": 'title',
                 "minWidth": 100,
+                "tooltip": true,
+                "sortable": true,
             }, {
                 "title": "阶段",
                 "key": 'labelid',
                 "minWidth": 80,
+                "sortable": true,
                 render: (h, params) => {
                     let labelid = params.row.labelid;
                     let labelDetail = this.labelLists.find((item) => { return item.id === labelid});
@@ -110,35 +114,39 @@
                 }
             }, {
                 "title": "计划时间",
+                "key": 'enddate',
                 "width": 160,
                 "align": "center",
+                "sortable": true,
                 render: (h, params) => {
                     return h('span', params.row.enddate ? $A.formatDate("Y-m-d H:i:s", params.row.enddate) : '-');
                 }
             }, {
                 "title": "负责人",
                 "key": 'username',
-                "minWidth": 80,
+                "minWidth": 90,
+                "sortable": true,
             }, {
                 "title": "优先级",
                 "key": 'level',
                 "align": "center",
-                "minWidth": 70,
-                "maxWidth": 80,
+                "minWidth": 90,
+                "maxWidth": 100,
+                "sortable": true,
                 render: (h, params) => {
                     let level = params.row.level;
                     let color;
                     switch (level) {
-                        case "1":
+                        case 1:
                             color = "#ff0000";
                             break;
-                        case "2":
+                        case 2:
                             color = "#BB9F35";
                             break;
-                        case "3":
+                        case 3:
                             color = "#449EDD";
                             break;
-                        case "4":
+                        case 4:
                             color = "#84A83B";
                             break;
                     }
@@ -150,10 +158,11 @@
                 },
             }, {
                 "title": "状态",
-                "key": 'complete',
+                "key": 'type',
                 "align": "center",
-                "minWidth": 70,
-                "maxWidth": 80,
+                "minWidth": 80,
+                "maxWidth": 100,
+                "sortable": true,
                 render: (h, params) => {
                     let color;
                     let status;
@@ -175,7 +184,9 @@
                 },
             }, {
                 "title": "创建时间",
+                "key": 'indate',
                 "width": 160,
+                "sortable": true,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
@@ -211,6 +222,11 @@
                 this.getLists(true);
             },
 
+            sortChange(info) {
+                this.sorts = {key:info.key, order:info.order};
+                this.getLists(true);
+            },
+
             setPage(page) {
                 this.listPage = page;
                 this.getLists();
@@ -238,6 +254,7 @@
                 whereData.page = Math.max(this.listPage, 1);
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.projectid = this.projectid;
+                whereData.sorts = this.sorts;
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: whereData,
