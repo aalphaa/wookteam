@@ -82,6 +82,7 @@
                     <project-task-files :canload="projectDrawerShow && projectDrawerTab == 'files'" :projectid="projectid"></project-task-files>
                 </TabPane>
                 <TabPane :label="$L('项目动态')" name="logs">
+                    <project-task-logs :canload="projectDrawerShow && projectDrawerTab == 'logs'" :projectid="projectid"></project-task-logs>
                 </TabPane>
                 <TabPane :label="$L('项目设置')" name="setting">
                 </TabPane>
@@ -315,9 +316,12 @@
     import ProjectAddTask from "../components/project/task/add";
     import ProjectTaskLists from "../components/project/task/lists";
     import ProjectTaskFiles from "../components/project/task/files";
+    import ProjectTaskLogs from "../components/project/task/logs";
 
     export default {
-        components: {ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
+        components: {
+            ProjectTaskLogs,
+            ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
         data () {
             return {
                 loadIng: 0,

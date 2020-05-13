@@ -1,49 +1,51 @@
 <template>
-    <div class="project-task-file">
+    <drawer-tabs-container>
+        <div class="project-task-file">
 
-        <!-- 搜索 -->
-        <Row class="sreachBox">
-            <div class="item">
-                <div class="item-2">
-                    <sreachTitle :val="keys.name">文件名</sreachTitle>
-                    <Input v-model="keys.name" placeholder="关键词"/>
+            <!-- 搜索 -->
+            <Row class="sreachBox">
+                <div class="item">
+                    <div class="item-2">
+                        <sreachTitle :val="keys.name">文件名</sreachTitle>
+                        <Input v-model="keys.name" placeholder="关键词"/>
+                    </div>
+                    <div class="item-2">
+                        <sreachTitle :val="keys.username">上传者</sreachTitle>
+                        <Input v-model="keys.username" placeholder="用户名"/>
+                    </div>
                 </div>
-                <div class="item-2">
-                    <sreachTitle :val="keys.username">上传者</sreachTitle>
-                    <Input v-model="keys.username" placeholder="用户名"/>
+                <div class="item item-button">
+                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
+                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button type="primary">
                 </div>
-            </div>
-            <div class="item item-button">
-                <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
-                <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button type="primary">
-            </div>
-        </Row>
+            </Row>
 
-        <!-- 按钮 -->
-        <Row class="butBox" style="float:left;margin-top:-32px;">
-            <Upload
-                name="files"
-                ref="upload"
-                :action="actionUrl"
-                :data="params"
-                multiple
-                :format="uploadFormat"
-                :show-upload-list="false"
-                :max-size="10240"
-                :on-success="handleSuccess"
-                :on-format-error="handleFormatError"
-                :on-exceeded-size="handleMaxSize">
-                <Button :loading="loadIng > 0" type="primary" icon="ios-cloud-upload-outline" @click="">上传文件</Button>
-            </Upload>
-        </Row>
+            <!-- 按钮 -->
+            <Row class="butBox" style="float:left;margin-top:-32px;">
+                <Upload
+                    name="files"
+                    ref="upload"
+                    :action="actionUrl"
+                    :data="params"
+                    multiple
+                    :format="uploadFormat"
+                    :show-upload-list="false"
+                    :max-size="10240"
+                    :on-success="handleSuccess"
+                    :on-format-error="handleFormatError"
+                    :on-exceeded-size="handleMaxSize">
+                    <Button :loading="loadIng > 0" type="primary" icon="ios-cloud-upload-outline" @click="">上传文件</Button>
+                </Upload>
+            </Row>
 
-        <!-- 列表 -->
-        <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" @on-sort-change="sortChange" stripe></Table>
+            <!-- 列表 -->
+            <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" @on-sort-change="sortChange" stripe></Table>
 
-        <!-- 分页 -->
-        <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
+            <!-- 分页 -->
+            <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
 
-    </div>
+        </div>
+    </drawer-tabs-container>
 </template>
 <style lang="scss" scoped>
     .project-task-file {
@@ -58,12 +60,14 @@
     import Vue from 'vue'
     import VueClipboard from 'vue-clipboard2'
     import WLoading from '../../../components/WLoading'
+    import DrawerTabsContainer from "../../DrawerTabsContainer";
 
     Vue.use(VueClipboard)
     Vue.component('WLoading', WLoading);
 
     export default {
         name: 'ProjectTaskFiles',
+        components: {DrawerTabsContainer},
         props: {
             projectid: {
                 default: 0

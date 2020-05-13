@@ -1,56 +1,58 @@
 <template>
-    <div class="project-task-lists">
+    <drawer-tabs-container>
+        <div class="project-task-lists">
 
-        <!-- 搜索 -->
-        <Row class="sreachBox">
-            <div class="item">
-                <div class="item-4">
-                    <sreachTitle :val="keys.type">状态</sreachTitle>
-                    <Select v-model="keys.type" placeholder="全部">
-                        <Option value="">全部</Option>
-                        <Option value="未完成">未完成</Option>
-                        <Option value="已超期">已超期</Option>
-                        <Option value="已完成">已完成</Option>
-                    </Select>
+            <!-- 搜索 -->
+            <Row class="sreachBox">
+                <div class="item">
+                    <div class="item-4">
+                        <sreachTitle :val="keys.type">状态</sreachTitle>
+                        <Select v-model="keys.type" placeholder="全部">
+                            <Option value="">全部</Option>
+                            <Option value="未完成">未完成</Option>
+                            <Option value="已超期">已超期</Option>
+                            <Option value="已完成">已完成</Option>
+                        </Select>
+                    </div>
+                    <div class="item-4">
+                        <sreachTitle :val="keys.username">负责人</sreachTitle>
+                        <Input v-model="keys.username" placeholder="用户名"/>
+                    </div>
+                    <div class="item-4">
+                        <sreachTitle :val="keys.level">级别</sreachTitle>
+                        <Select v-model="keys.level" placeholder="全部">
+                            <Option value="">全部</Option>
+                            <Option value="1">P1</Option>
+                            <Option value="2">P2</Option>
+                            <Option value="3">P3</Option>
+                            <Option value="4">P4</Option>
+                        </Select>
+                    </div>
+                    <div class="item-4">
+                        <sreachTitle :val="keys.labelid">阶段</sreachTitle>
+                        <Select v-model="keys.labelid" placeholder="全部">
+                            <Option value="">全部</Option>
+                            <Option
+                                v-for="item in labelLists"
+                                :value="item.id"
+                                :key="item.id">{{ item.title }}</Option>
+                        </Select>
+                    </div>
                 </div>
-                <div class="item-4">
-                    <sreachTitle :val="keys.username">负责人</sreachTitle>
-                    <Input v-model="keys.username" placeholder="用户名"/>
+                <div class="item item-button">
+                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
+                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button>
                 </div>
-                <div class="item-4">
-                    <sreachTitle :val="keys.level">级别</sreachTitle>
-                    <Select v-model="keys.level" placeholder="全部">
-                        <Option value="">全部</Option>
-                        <Option value="1">P1</Option>
-                        <Option value="2">P2</Option>
-                        <Option value="3">P3</Option>
-                        <Option value="4">P4</Option>
-                    </Select>
-                </div>
-                <div class="item-4">
-                    <sreachTitle :val="keys.labelid">阶段</sreachTitle>
-                    <Select v-model="keys.labelid" placeholder="全部">
-                        <Option value="">全部</Option>
-                        <Option
-                            v-for="item in labelLists"
-                            :value="item.id"
-                            :key="item.id">{{ item.title }}</Option>
-                    </Select>
-                </div>
-            </div>
-            <div class="item item-button">
-                <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
-                <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button>
-            </div>
-        </Row>
+            </Row>
 
-        <!-- 列表 -->
-        <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" @on-sort-change="sortChange" stripe></Table>
+            <!-- 列表 -->
+            <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" @on-sort-change="sortChange" stripe></Table>
 
-        <!-- 分页 -->
-        <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
+            <!-- 分页 -->
+            <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
 
-    </div>
+        </div>
+    </drawer-tabs-container>
 </template>
 <style lang="scss" scoped>
     .project-task-lists {
@@ -63,8 +65,10 @@
 
 <script>
 
+    import DrawerTabsContainer from "../../DrawerTabsContainer";
     export default {
         name: 'ProjectTaskLists',
+        components: {DrawerTabsContainer},
         props: {
             projectid: {
                 default: 0

@@ -1,31 +1,33 @@
 <template>
-    <div class="project-statistics">
-        <!-- 标签 -->
-        <ul class="state-overview">
-            <li :class="[taskType==='未完成'?'active':'']" @click="taskType='未完成'">
-                <div class="yellow">
-                    <h1 class="count">{{statistics_unfinished}}</h1>
-                    <p>未完成任务</p>
-                </div>
-            </li>
-            <li :class="[taskType==='已超期'?'active':'']" @click="taskType='已超期'">
-                <div class="red">
-                    <h1 class="count">{{statistics_overdue}}</h1>
-                    <p>超期任务</p>
-                </div>
-            </li>
-            <li :class="[taskType==='已完成'?'active':'']" @click="taskType='已完成'">
-                <div class="terques">
-                    <h1 class="count">{{statistics_complete}}</h1>
-                    <p>已完成任务</p>
-                </div>
-            </li>
-        </ul>
-        <!-- 列表 -->
-        <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
-        <!-- 分页 -->
-        <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
-    </div>
+    <drawer-tabs-container>
+        <div class="project-statistics">
+            <!-- 标签 -->
+            <ul class="state-overview">
+                <li :class="[taskType==='未完成'?'active':'']" @click="taskType='未完成'">
+                    <div class="yellow">
+                        <h1 class="count">{{statistics_unfinished}}</h1>
+                        <p>未完成任务</p>
+                    </div>
+                </li>
+                <li :class="[taskType==='已超期'?'active':'']" @click="taskType='已超期'">
+                    <div class="red">
+                        <h1 class="count">{{statistics_overdue}}</h1>
+                        <p>超期任务</p>
+                    </div>
+                </li>
+                <li :class="[taskType==='已完成'?'active':'']" @click="taskType='已完成'">
+                    <div class="terques">
+                        <h1 class="count">{{statistics_complete}}</h1>
+                        <p>已完成任务</p>
+                    </div>
+                </li>
+            </ul>
+            <!-- 列表 -->
+            <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
+            <!-- 分页 -->
+            <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
+        </div>
+    </drawer-tabs-container>
 </template>
 
 <style lang="scss" scoped>
@@ -120,8 +122,10 @@
     }
 </style>
 <script>
+    import DrawerTabsContainer from "../DrawerTabsContainer";
     export default {
         name: 'ProjectStatistics',
+        components: {DrawerTabsContainer},
         props: {
             projectid: {
                 default: 0

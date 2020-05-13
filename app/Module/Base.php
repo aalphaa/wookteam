@@ -1161,6 +1161,48 @@ class Base
     }
 
     /**
+     * 获取(时间戳转)今天是星期几，只返回（几）
+     * @param string|number $unixTime
+     * @return string
+     */
+    public static function getTimeWeek($unixTime = '')
+    {
+        $unixTime = is_numeric($unixTime) ? $unixTime : Base::time();
+        $weekarray = ['日', '一', '二', '三', '四', '五', '六'];
+        return $weekarray[date('w', $unixTime)];
+    }
+
+    /**
+     * 获取(时间戳转)现在时间段：深夜、凌晨、早晨、上午.....
+     * @param string|number $unixTime
+     * @return string
+     */
+    public static function getTimeDayeSegment($unixTime = '')
+    {
+        $unixTime = is_numeric($unixTime) ? $unixTime : Base::time();
+        $H = date('H', $unixTime);
+        if ($H >= 19) {
+            return '晚上';
+        } elseif ($H >= 18) {
+            return '傍晚';
+        } elseif ($H >= 13) {
+            return '下午';
+        } elseif ($H >= 12) {
+            return '中午';
+        } elseif ($H >= 8) {
+            return '上午';
+        } elseif ($H >= 5) {
+            return '早晨';
+        } elseif ($H >= 1) {
+            return '凌晨';
+        } elseif ($H >= 0) {
+            return '深夜';
+        } else {
+            return '';
+        }
+    }
+
+    /**
      * JSON返回
      * @param $param
      * @return string

@@ -1309,4 +1309,56 @@ class ProjectController extends Controller
         //
         return Base::retSuccess('删除成功');
     }
+
+    /**
+     * 项目动态-列表
+     *
+     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} [taskid]              任务ID
+     * @apiParam {String} [username]            用户名
+     * @apiParam {Number} [page]                当前页，默认:1
+     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
+     */
+    public function log__lists()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = intval(Request::input('projectid'));
+        $inRes = Project::inThe($projectid, $user['username']);
+        if (Base::isError($inRes)) {
+            return $inRes;
+        }
+        //
+        $whereArray = [];
+        $whereArray[] = ['projectid', '=', $projectid];
+        if (intval(Request::input('taskid')) > 0) {
+            $whereArray[] = ['taskid', '=', intval(Request::input('taskid'))];
+        }
+        if (trim(Request::input('username'))) {
+            $whereArray[] = ['username', '=', trim(Request::input('username'))];
+        }
+        //
+        $lists = DB::table('project_log')
+            ->where($whereArray)
+            ->orderByDesc('indate')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
+        $lists = Base::getPageList($lists);
+        if ($lists['total'] == 0) {
+            return Base::retError('未找到任何相关的记录', $lists);
+        }
+        foreach ($lists['lists'] AS $key => $item) {
+            $item = array_merge($item, Users::username2basic($item['username']));
+            $item['timeData'] = [
+                'ymd' => date(date("Y", $item['indate']) == date("Y", Base::time()) ? "m-d" : "Y-m-d", $item['indate']),
+                'week' => Base::getTimeWeek($item['indate']),
+                'segment' => Base::getTimeDayeSegment($item['indate']),
+            ];
+            $lists['lists'][$key] = $item;
+        }
+        return Base::retSuccess('success', $lists);
+    }
 }
