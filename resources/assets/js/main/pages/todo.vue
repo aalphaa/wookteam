@@ -12,10 +12,10 @@
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover"><i class="ft icon">&#xE706;</i> {{$L('待办日程')}}</span>
-                    <span class="ft hover"><i class="ft icon">&#xE73D;</i> {{$L('已完成的任务')}}</span>
-                    <span class="ft hover"><i class="ft icon">&#xE748;</i> {{$L('我关注的任务')}}</span>
-                    <span class="ft hover"><i class="ft icon">&#xE743;</i> {{$L('周报/日报')}}</span>
+                    <span class="ft hover" @click="handleTodo('calendar')"><i class="ft icon">&#xE706;</i> {{$L('待办日程')}}</span>
+                    <span class="ft hover" @click="handleTodo('complete')"><i class="ft icon">&#xE73D;</i> {{$L('已完成的任务')}}</span>
+                    <span class="ft hover" @click="handleTodo('attention')"><i class="ft icon">&#xE748;</i> {{$L('我关注的任务')}}</span>
+                    <span class="ft hover" @click="handleTodo('report')"><i class="ft icon">&#xE743;</i> {{$L('周报/日报')}}</span>
                 </div>
             </div>
         </div>
@@ -58,6 +58,19 @@
             </div>
         </w-content>
 
+        <Drawer v-model="todoDrawerShow" width="75%">
+            <Tabs v-if="todoDrawerShow" v-model="todoDrawerTab">
+                <TabPane :label="$L('待办日程')" name="calendar">
+                    <todo-calendar :canload="todoDrawerShow && todoDrawerTab == 'calendar'"></todo-calendar>
+                </TabPane>
+                <TabPane :label="$L('已完成的任务')" name="complete">
+                    <todo-complete :canload="todoDrawerShow && todoDrawerTab == 'complete'"></todo-complete>
+                </TabPane>
+                <TabPane :label="$L('我关注的任务')" name="attention">
+                    <todo-attention :canload="todoDrawerShow && todoDrawerTab == 'attention'"></todo-attention>
+                </TabPane>
+            </Tabs>
+        </Drawer>
     </div>
 </template>
 
@@ -275,8 +288,11 @@
     import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
     import WLoading from "../components/WLoading";
+    import TodoCalendar from "../components/project/todo/calendar";
+    import TodoComplete from "../components/project/todo/complete";
+    import TodoAttention from "../components/project/todo/attention";
     export default {
-        components: {WContent, WHeader, WLoading},
+        components: {TodoAttention, TodoComplete, TodoCalendar, WContent, WHeader, WLoading},
         data () {
             return {
                 userInfo: {},
@@ -287,6 +303,9 @@
                     "3": {lists: [], hasMorePages: false},
                     "4": {lists: [], hasMorePages: false},
                 },
+
+                todoDrawerShow: false,
+                todoDrawerTab: 'calendar',
             }
         },
         mounted() {
@@ -411,6 +430,18 @@
                         });
                     }
                 });
+            },
+
+            handleTodo(event) {
+                switch (event) {
+                    case 'calendar':
+                    case 'complete':
+                    case 'attention': {
+                        this.todoDrawerShow = true;
+                        this.todoDrawerTab = event;
+                        break;
+                    }
+                }
             }
         },
     }

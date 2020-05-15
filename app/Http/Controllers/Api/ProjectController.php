@@ -887,10 +887,14 @@ class ProjectController extends Controller
      * - 未完成
      * - 已超期
      * - 已完成
+     * @apiParam {Number} [attention]           是否仅获取关注数据（1:是）
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
-     * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}（"archived=已归档"时无效）
+     * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
      * - key: title|labelid|enddate|username|level|indate|type
      * - order: asc|desc
+     * - 【archived=已归档】或【startdate和enddate赋值】时无效
+     * @apiParam {String} [startdate]           任务开始时间，格式：YYYY-MM-DD
+     * @apiParam {String} [enddate]             任务结束时间，格式：YYYY-MM-DD
      * @apiParam {Number} [idlater]             获取数据ID之后的数据
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
@@ -933,6 +937,8 @@ class ProjectController extends Controller
             }
         }
         //
+        $whereRaw = null;
+        $whereFunc = null;
         $whereArray = [];
         $whereArray[] = ['project_task.delete', '=', 0];
         if ($projectid > 0) {
@@ -952,6 +958,10 @@ class ProjectController extends Controller
         }
         if (intval(Request::input('idlater')) > 0) {
             $whereArray[] = ['project_task.id', '<', intval(Request::input('idlater'))];
+        }
+        if (intval(Request::input('attention')) === 1) {
+            $whereRaw.= $whereRaw ? ' AND ' : '';
+            $whereRaw.= "`username` in (select username from `" . env('DB_PREFIX') . "project_users` where `type`='关注' AND `username`='" . $user['username'] . "')";
         }
         $archived = trim(Request::input('archived'));
         if (empty($archived)) $archived = "未归档";
@@ -978,10 +988,22 @@ class ProjectController extends Controller
                 $whereArray[] = ['project_task.complete', '=', 1];
                 break;
         }
+        $startdate = trim(Request::input('startdate'));
+        $enddate = trim(Request::input('enddate'));
+        if (Base::isDate($startdate) || Base::isDate($enddate)) {
+            $startdate = strtotime($startdate . ' 00:00:00');
+            $enddate = strtotime($enddate . ' 23:59:59');
+            $whereRaw.= $whereRaw ? ' AND ' : '';
+            $whereRaw.= "((`startdate` >= " . $startdate . " OR `startdate` = 0) AND (`enddate` <= " . $enddate . " OR `enddate` = 0))";
+            $orderBy = '`startdate` DESC';
+        }
         //
         $builder = DB::table('project_task');
         if ($projectid > 0) {
-            $builder = $builder->join('project_lists', 'project_lists.id', '=', 'project_task.projectid');
+            $builder->join('project_lists', 'project_lists.id', '=', 'project_task.projectid');
+        }
+        if ($whereRaw) {
+            $builder->whereRaw($whereRaw);
         }
         $lists = $builder->select(['project_task.*'])
             ->where($whereArray)
@@ -1071,6 +1093,7 @@ class ProjectController extends Controller
             'level' => max(1, min(4, intval(Request::input('level')))),
             'inorder' => intval(DB::table('project_task')->where('projectid', $projectid)->orderByDesc('inorder')->value('inorder')) + 1,
             'indate' => Base::time(),
+            'startdate' => Base::time(),
             'subtask' => Base::array2string([]),
             'files' => Base::array2string([]),
             'follower' => Base::array2string([]),
