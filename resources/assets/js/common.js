@@ -87,6 +87,22 @@
         },
 
         /**
+         * 删除左边字符串
+         * @param string
+         * @param find
+         * @param lower
+         * @returns {string}
+         */
+        leftDelete: function (string, find, lower) {
+            string += "";
+            find += "";
+            if (this.leftExists(string, find, lower)) {
+                string = string.substring(find.length)
+            }
+            return string ? string : '';
+        },
+
+        /**
          * 字符串是否右边包含
          * @param string
          * @param find

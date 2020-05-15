@@ -12,7 +12,9 @@
         right: 0;
         bottom: 0;
         overflow: auto;
-        background: url("../../../statics/images/bg1.jpg") no-repeat center;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-image: url("../../../statics/images/bg1.jpg");
         background-size: cover;
 
         .w-container {

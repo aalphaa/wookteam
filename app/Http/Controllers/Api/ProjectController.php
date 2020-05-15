@@ -874,9 +874,11 @@ class ProjectController extends Controller
     /**
      * 项目任务-列表
      *
-     * @apiParam {Number} projectid             项目ID
+     * @apiParam {Number} [projectid]           项目ID
+     * @apiParam {String} [username]            负责人用户名（如果项目ID为空时此参数无效只获取自己的任务）
      * @apiParam {Number} [labelid]             项目子分类ID
-     * @apiParam {String} [archived]            是否归档
+     * @apiParam {Number} [level]               任务等级（1~4）
+     * @apiParam {String} [archived]            任务是否归档
      * - 未归档 （默认）
      * - 已归档
      * - 全部
@@ -885,11 +887,11 @@ class ProjectController extends Controller
      * - 未完成
      * - 已超期
      * - 已完成
-     * @apiParam {String} [username]            负责人用户名
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
      * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}（"archived=已归档"时无效）
      * - key: title|labelid|enddate|username|level|indate|type
      * - order: asc|desc
+     * @apiParam {Number} [idlater]             获取数据ID之后的数据
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
@@ -903,9 +905,11 @@ class ProjectController extends Controller
         }
         //
         $projectid = intval(Request::input('projectid'));
-        $inRes = Project::inThe($projectid, $user['username']);
-        if (Base::isError($inRes)) {
-            return $inRes;
+        if ($projectid > 0) {
+            $inRes = Project::inThe($projectid, $user['username']);
+            if (Base::isError($inRes)) {
+                return $inRes;
+            }
         }
         //
         $orderBy = '`inorder` DESC,`id` DESC';
@@ -930,17 +934,24 @@ class ProjectController extends Controller
         }
         //
         $whereArray = [];
-        $whereArray[] = ['project_lists.id', '=', $projectid];
-        $whereArray[] = ['project_lists.delete', '=', 0];
         $whereArray[] = ['project_task.delete', '=', 0];
+        if ($projectid > 0) {
+            $whereArray[] = ['project_lists.id', '=', $projectid];
+            $whereArray[] = ['project_lists.delete', '=', 0];
+            if (trim(Request::input('username'))) {
+                $whereArray[] = ['project_task.username', '=', trim(Request::input('username'))];
+            }
+        } else {
+            $whereArray[] = ['project_task.username', '=', $user['username']];
+        }
         if (intval(Request::input('labelid')) > 0) {
             $whereArray[] = ['project_task.labelid', '=', intval(Request::input('labelid'))];
         }
         if (intval(Request::input('level')) > 0) {
             $whereArray[] = ['project_task.level', '=', intval(Request::input('level'))];
         }
-        if (trim(Request::input('username'))) {
-            $whereArray[] = ['project_task.username', '=', trim(Request::input('username'))];
+        if (intval(Request::input('idlater')) > 0) {
+            $whereArray[] = ['project_task.id', '<', intval(Request::input('idlater'))];
         }
         $archived = trim(Request::input('archived'));
         if (empty($archived)) $archived = "未归档";
@@ -968,11 +979,14 @@ class ProjectController extends Controller
                 break;
         }
         //
-        $lists = DB::table('project_lists')
-            ->join('project_task', 'project_lists.id', '=', 'project_task.projectid')
-            ->select(['project_task.*'])
+        $builder = DB::table('project_task');
+        if ($projectid > 0) {
+            $builder = $builder->join('project_lists', 'project_lists.id', '=', 'project_task.projectid');
+        }
+        $lists = $builder->select(['project_task.*'])
             ->where($whereArray)
-            ->orderByRaw($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
+            ->orderByRaw($orderBy)
+            ->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if (intval(Request::input('statistics')) == 1) {
             $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 0)->count();
@@ -992,13 +1006,11 @@ class ProjectController extends Controller
     /**
      * 项目任务-添加任务
      *
-     * @apiParam {Number} projectid             项目ID
-     * @apiParam {Number} labelid               项目子分类ID
      * @apiParam {String} title                 任务标题
      * @apiParam {Number} [level]               任务紧急级别（1~4，默认:2）
-     * @apiParam {String} [username]            任务负责人用户名
-     * - 0: 未归档
-     * - 1: 已归档
+     * @apiParam {String} [username]            任务负责人用户名（如果项目ID为空时此参数无效复制人为自己）
+     * @apiParam {Number} [projectid]           项目ID
+     * @apiParam {Number} [labelid]             项目子分类ID
      *
      * @throws \Throwable
      */
@@ -1012,31 +1024,35 @@ class ProjectController extends Controller
         }
         //
         $projectid = intval(Request::input('projectid'));
-        $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
-        if (empty($projectDetail)) {
-            return Base::retError('项目不存在或已被删除！');
-        }
-        //
         $labelid = intval(Request::input('labelid'));
-        $labelDetail = Base::DBC2A(DB::table('project_label')->where('id', $labelid)->where('projectid', $projectid)->first());
-        if (empty($labelDetail)) {
-            return Base::retError('项目子分类不存在或已被删除！');
-        }
-        //
-        $inRes = Project::inThe($projectid, $user['username']);
-        if (Base::isError($inRes)) {
-            return $inRes;
-        }
-        //
-        $username = trim(Request::input('username'));
-        if (empty($username)) {
-            $username = $user['username'];
-        }
-        if ($username != $user['username']) {
-            $inRes = Project::inThe($projectid, $username);
-            if (Base::isError($inRes)) {
-                return Base::retError('负责人不在项目成员内！');
+        if ($projectid > 0) {
+            $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
+            if (empty($projectDetail)) {
+                return Base::retError('项目不存在或已被删除！');
             }
+            //
+            $labelDetail = Base::DBC2A(DB::table('project_label')->where('id', $labelid)->where('projectid', $projectid)->first());
+            if (empty($labelDetail)) {
+                return Base::retError('项目子分类不存在或已被删除！');
+            }
+            //
+            $inRes = Project::inThe($projectid, $user['username']);
+            if (Base::isError($inRes)) {
+                return $inRes;
+            }
+            //
+            $username = trim(Request::input('username'));
+            if (empty($username)) {
+                $username = $user['username'];
+            }
+            if ($username != $user['username']) {
+                $inRes = Project::inThe($projectid, $username);
+                if (Base::isError($inRes)) {
+                    return Base::retError('负责人不在项目成员内！');
+                }
+            }
+        } else {
+            $username = $user['username'];
         }
         //
         $title = trim(Request::input('title'));
