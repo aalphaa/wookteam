@@ -22,8 +22,8 @@
 
         <w-content>
             <div class="todo-main">
-                <ul v-for="subs in [['1', '2'], ['3', '4']]">
-                    <li v-for="index in subs">
+                <div v-for="subs in [['1', '2'], ['3', '4']]" class="todo-ul">
+                    <div v-for="index in subs" class="todo-li">
                         <div class="todo-card">
                             <div class="todo-card-head" :class="['p' + index]">
                                 <i class="ft icon flag">&#xE753;</i>
@@ -40,21 +40,30 @@
                                 </label>
                             </div>
                             <div class="todo-card-content">
-                                <ul v-if="taskDatas[index].lists.length > 0">
-                                    <li v-for="task in taskDatas[index].lists" :key="task.id" :class="{complete:task.complete}">
+                                <draggable
+                                    v-if="taskDatas[index].lists.length > 0"
+                                    v-model="taskDatas[index].lists"
+                                    class="content-ul"
+                                    group="task"
+                                    draggable=".task-draggable"
+                                    :animation="150"
+                                    :disabled="taskSortDisabled"
+                                    @sort="taskSortUpdate"
+                                    @remove="taskSortUpdate">
+                                    <div v-for="task in taskDatas[index].lists" class="content-li task-draggable" :key="task.id" :class="{complete:task.complete}">
                                         <Icon v-if="task.complete" class="task-check" type="md-checkbox-outline" />
                                         <Icon v-else class="task-check" type="md-square-outline" />
                                         <div v-if="task.overdue" class="task-overdue">[超期]</div>
-                                        <div class="task-title">{{task.title}}</div>
-                                    </li>
-                                    <li v-if="taskDatas[index].hasMorePages === true" class="more" @click="getTask(index, true)">加载更多</li>
-                                </ul>
+                                        <div class="task-title">{{task.id}}、{{task.title}}</div>
+                                    </div>
+                                    <div v-if="taskDatas[index].hasMorePages === true" class="content-li more" @click="getTaskLists(index, true)">加载更多</div>
+                                </draggable>
                                 <div v-else-if="taskDatas[index].loadIng == 0" class="content-empty">{{$L('恭喜你！已完成了所有待办')}}</div>
                                 <div v-if="taskDatas[index].loadIng > 0" class="content-loading"><w-loading></w-loading></div>
                             </div>
                         </div>
-                    </li>
-                </ul>
+                    </div>
+                </div>
             </div>
         </w-content>
 
@@ -93,14 +102,14 @@
             height: 100%;
             min-height: 500px;
             padding: 5px;
-            ul {
+            .todo-ul {
                 flex: 1;
                 display: flex;
                 flex-direction: row;
                 align-items: center;
                 justify-content: center;
                 width: 100%;
-                li {
+                .todo-li {
                     flex: 1;
                     height: 100%;
                     position: relative;
@@ -201,10 +210,10 @@
                             border-radius: 0 0 4px 4px;
                             overflow: auto;
                             transform: translateZ(0);
-                            ul {
+                            .content-ul {
                                 display: flex;
                                 flex-direction: column;
-                                li {
+                                .content-li {
                                     display: flex;
                                     flex-direction: row;
                                     align-items: flex-start;
@@ -262,9 +271,9 @@
         @media (max-width: 780px) {
             .todo-main {
                 height: auto;
-                ul {
+                .todo-ul {
                     flex-direction: column;
-                    li {
+                    .todo-li {
                         width: 100%;
                         .todo-card {
                             position: static;
@@ -285,14 +294,17 @@
     }
 </style>
 <script>
+    import draggable from 'vuedraggable'
+
     import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
     import WLoading from "../components/WLoading";
     import TodoCalendar from "../components/project/todo/calendar";
     import TodoComplete from "../components/project/todo/complete";
     import TodoAttention from "../components/project/todo/attention";
+
     export default {
-        components: {TodoAttention, TodoComplete, TodoCalendar, WContent, WHeader, WLoading},
+        components: {draggable, TodoAttention, TodoComplete, TodoCalendar, WContent, WHeader, WLoading},
         data () {
             return {
                 userInfo: {},
@@ -304,6 +316,9 @@
                     "4": {lists: [], hasMorePages: false},
                 },
 
+                taskSortData: '',
+                taskSortDisabled: false,
+
                 todoDrawerShow: false,
                 todoDrawerTab: 'calendar',
             }
@@ -311,10 +326,8 @@
         mounted() {
             this.userInfo = $A.getUserInfo((res) => {
                 this.userInfo = res;
+                this.refreshTask();
             });
-            for (let i = 1; i <= 4; i++) {
-                this.getTask(i.toString());
-            }
         },
         computed: {
 
@@ -336,26 +349,41 @@
                 }
             },
 
-            getTask(index, isNext) {
+            refreshTask() {
+                this.taskDatas = {
+                    "1": {lists: [], hasMorePages: false},
+                    "2": {lists: [], hasMorePages: false},
+                    "3": {lists: [], hasMorePages: false},
+                    "4": {lists: [], hasMorePages: false},
+                };
+                for (let i = 1; i <= 4; i++) {
+                    this.getTaskLists(i.toString());
+                }
+            },
+
+            getTaskLists(index, isNext) {
                 let taskData = this.taskDatas[index];
-                let idlater = 0;
+                let currentPage = 1;
                 if (isNext === true) {
                     if (taskData.hasMorePages !== true) {
                         return;
                     }
-                    idlater = taskData.lists[taskData.lists.length - 1].id
+                    currentPage = Math.max(1, $A.runNum(taskData['currentPage']));
+                    currentPage++;
                 }
                 this.$set(taskData, 'hasMorePages', false);
                 this.$set(taskData, 'loadIng', $A.runNum(taskData.loadIng) + 1);
+                this.taskSortDisabled = true;
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
                         level: index,
-                        idlater: idlater,
-                        page: 1,
+                        sorts: {key:'userorder', order:'desc'},
+                        page: currentPage,
                         pagesize: 10,
                     },
                     complete: () => {
+                        this.taskSortDisabled = false;
                         this.$set(taskData, 'loadIng', $A.runNum(taskData.loadIng) - 1);
                     },
                     success: (res) => {
@@ -373,6 +401,8 @@
                                     taskData.lists.push(data);
                                 }
                             });
+                            this.taskSortData = this.getTaskSort();
+                            this.$set(taskData, 'currentPage', res.data.currentPage);
                             this.$set(taskData, 'hasMorePages', res.data.hasMorePages);
                         } else {
                             this.$set(taskData, 'lists', []);
@@ -397,11 +427,15 @@
                     title: title,
                     loadIng: true,
                 });
+                this.taskSortDisabled = true;
                 $A.aAjax({
                     url: 'project/task/add',
                     data: {
                         title: title,
                         level: index,
+                    },
+                    complete: () => {
+                        this.taskSortDisabled = false;
                     },
                     error: () => {
                         taskData.lists.some((item, i) => {
@@ -428,8 +462,24 @@
                                 return true;
                             }
                         });
+                        this.taskSortData = this.getTaskSort();
                     }
                 });
+            },
+
+            getTaskSort() {
+                let sortData = "",
+                    taskData = "";
+                for (let level in this.taskDatas) {
+                    taskData = "";
+                    this.taskDatas[level].lists.forEach((task) => {
+                        if (taskData) taskData += "-";
+                        taskData += task.id;
+                    });
+                    if (sortData) sortData += ";";
+                    sortData += level + ":" + taskData;
+                }
+                return sortData;
             },
 
             handleTodo(event) {
@@ -442,7 +492,42 @@
                         break;
                     }
                 }
-            }
+            },
+
+            taskSortUpdate() {
+                let oldSort = this.taskSortData;
+                let newSort = this.getTaskSort();
+                if (oldSort == newSort) {
+                    return;
+                }
+                this.taskSortData = newSort;
+                this.taskSortDisabled = true;
+                $A.aAjax({
+                    url: 'project/sort/todo',
+                    data: {
+                        oldsort: oldSort,
+                        newsort: newSort,
+                    },
+                    complete: () => {
+                        this.taskSortDisabled = false;
+                    },
+                    error: () => {
+                        this.refreshTask();
+                        alert(this.$L('网络繁忙，请稍后再试！'));
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.$Message.success(res.msg);
+                            res.data.forEach((level) => {
+                                this.getTaskLists(level.toString());
+                            });
+                        } else {
+                            this.refreshTask();
+                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                        }
+                    }
+                });
+            },
         },
     }
 </script>

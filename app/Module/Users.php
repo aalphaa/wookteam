@@ -57,7 +57,7 @@ class Users
         $authorization = Base::getToken();
         $id = 0;
         if ($authorization) {
-            list($id, $username, $encrypt, $timestamp) = explode("@", base64_decode($authorization));
+            list($id, $username, $encrypt, $timestamp) = explode("@", base64_decode($authorization) . "@@@@");
         }
         return intval($id);
     }
@@ -71,7 +71,7 @@ class Users
         $authorization = Base::getToken();
         $username = '';
         if ($authorization) {
-            list($id, $username, $encrypt, $timestamp) = explode("@", base64_decode($authorization));
+            list($id, $username, $encrypt, $timestamp) = explode("@", base64_decode($authorization) . "@@@@");
         }
         return Base::isMobile($username) ? $username : '';
     }
@@ -88,8 +88,8 @@ class Users
         }
         $authorization = Base::getToken();
         if ($authorization) {
-            list($id, $username, $encrypt, $timestamp) = explode("@", base64_decode($authorization));
-            if ($id > 0 && $timestamp + 2592000 > Base::time()) {
+            list($id, $username, $encrypt, $timestamp) = explode("@", base64_decode($authorization) . "@@@@");
+            if (intval($id) > 0 && intval($timestamp) + 2592000 > Base::time()) {
                 $userinfo = DB::table('users')->where(['id' => $id, 'username' => $username, 'encrypt' => $encrypt])->first();
                 Base::coll2array($userinfo);
                 if ($userinfo['token']) {

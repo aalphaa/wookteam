@@ -25,7 +25,14 @@
         </div>
 
         <w-content>
-            <draggable v-if="projectLabel.length > 0" v-model="projectLabel" class="label-box" draggable=".label-draggable" :animation="150" :disabled="projectSortDisabled" @sort="projectSortUpdate(true)">
+            <draggable
+                v-if="projectLabel.length > 0"
+                v-model="projectLabel"
+                class="label-box"
+                draggable=".label-draggable"
+                :animation="150"
+                :disabled="projectSortDisabled"
+                @sort="projectSortUpdate(true)">
                 <div v-for="label in projectLabel" :key="label.id" class="label-item label-draggable">
                     <div class="label-body">
                         <div class="title-box">
@@ -42,7 +49,15 @@
                                 </DropdownMenu>
                             </Dropdown>
                         </div>
-                        <draggable v-model="label.taskLists" class="task-box" group="task" draggable=".task-draggable" :animation="150" :disabled="projectSortDisabled" @sort="projectSortUpdate(false)" @remove="projectSortUpdate(false)">
+                        <draggable
+                            v-model="label.taskLists"
+                            class="task-box"
+                            group="task"
+                            draggable=".task-draggable"
+                            :animation="150"
+                            :disabled="projectSortDisabled"
+                            @sort="projectSortUpdate(false)"
+                            @remove="projectSortUpdate(false)">
                             <div v-for="task in label.taskLists" :key="task.id" class="task-item task-draggable">
                                 <div class="task-shadow" :class="[
                                         'p'+task.level,

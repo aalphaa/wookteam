@@ -431,8 +431,14 @@ class ProjectController extends Controller
         return Base::retSuccess('删除成功！');
     }
 
-
-
+    /**
+     * 排序任务
+     *
+     * @apiParam {Number} projectid     项目ID
+     * @apiParam {String} oldsort       旧排序数据
+     * @apiParam {String} newsort       新排序数据
+     * @apiParam {Number} label         赋值表示排序分类，否则排序任务(调整任务所属分类)
+     */
     public function sort()
     {
         $user = Users::authE();
@@ -526,6 +532,88 @@ class ProjectController extends Controller
             ]);
         }
         return Base::retSuccess('保存成功！');
+    }
+
+    /**
+     * 排序任务（todo待办）
+     *
+     * @apiParam {String} oldsort       旧排序数据
+     * @apiParam {String} newsort       新排序数据
+     */
+    public function sort__todo()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $oldSort = explode(";", Request::input('oldsort'));
+        $newSort = explode(";", Request::input('newsort'));
+        if (count($oldSort) != count($newSort)) {
+            return Base::retError('参数错误！');
+        }
+        //
+        $levels = [];
+        $logArray = [];
+        foreach ($newSort AS $sort => $item) {
+            list($newLevel, $newTask) = explode(':', $item);
+            list($oldLevel, $oldTask) = explode(':', $oldSort[$sort]);
+            if ($newTask != $oldTask) {
+                $newTask = explode('-', $newTask);
+                $oldTask = explode('-', $oldTask);
+                $userorder = intval(DB::table('project_task')->select('userorder')->where([
+                    'delete' => 0,
+                    'archived' => 0,
+                    'level' => $newLevel,
+                    'username' => $user['username'],
+                ])->orderByDesc('userorder')->value('userorder'));
+                if (count($newTask) < count($oldTask)) {
+                    $userorder--;
+                } else {
+                    $userorder++;
+                }
+                foreach ($newTask AS $taskid) {
+                    $task = Base::DBC2A(DB::table('project_task')->select(['id', 'title', 'projectid', 'level', 'userorder'])->where([
+                        'id' => $taskid,
+                        'username' => $user['username']
+                    ])->first());
+                    $upArray = [];
+                    if ($task) {
+                        if ($task['level'] != $newLevel) {
+                            $upArray['level'] = $newLevel;
+                            $logArray[] = [
+                                'type' => '日志',
+                                'projectid' => $task['projectid'],
+                                'taskid' => $task['id'],
+                                'username' => $user['username'],
+                                'detail' => '调整任务等级为【P' . $newLevel . '】',
+                                'indate' => Base::time(),
+                                'other' => Base::array2string([
+                                    'type' => 'task',
+                                    'id' => $task['id'],
+                                    'title' => $task['title'],
+                                ])
+                            ];
+                        }
+                        if ($task['userorder'] != $userorder) {
+                            $upArray['userorder'] = $userorder;
+                        }
+                    }
+                    if ($upArray) {
+                        DB::table('project_task')->where('id', $taskid)->update($upArray);
+                    }
+                    $userorder--;
+                }
+                $levels[] = $newLevel;
+            }
+        }
+        if ($logArray) {
+            DB::table('project_log')->insert($logArray);
+        }
+        //
+        return Base::retSuccess('保存成功！', $levels);
     }
 
     /**
@@ -889,13 +977,14 @@ class ProjectController extends Controller
      * - 已完成
      * @apiParam {Number} [attention]           是否仅获取关注数据（1:是）
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
-     * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
-     * - key: title|labelid|enddate|username|level|indate|type
-     * - order: asc|desc
-     * - 【archived=已归档】或【startdate和enddate赋值】时无效
      * @apiParam {String} [startdate]           任务开始时间，格式：YYYY-MM-DD
      * @apiParam {String} [enddate]             任务结束时间，格式：YYYY-MM-DD
-     * @apiParam {Number} [idlater]             获取数据ID之后的数据
+     *
+     * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
+     * - key: title|labelid|enddate|username|level|indate|type|inorder(默认)|userorder
+     * - order: asc|desc
+     * - 【archived=已归档】或【startdate和enddate赋值】时无效
+     *
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
      */
@@ -917,9 +1006,6 @@ class ProjectController extends Controller
         }
         //
         $orderBy = '`inorder` DESC,`id` DESC';
-        if (intval(Request::input('labelid')) == 0) {
-            $orderBy = '`indate` DESC,`id` DESC';
-        }
         $sorts = Base::json2array(Request::input('sorts'));
         if (in_array($sorts['order'], ['asc', 'desc'])) {
             switch ($sorts['key']) {
@@ -929,6 +1015,8 @@ class ProjectController extends Controller
                 case 'username':
                 case 'level':
                 case 'indate':
+                case 'inorder':
+                case 'userorder':
                     $orderBy = '`' . $sorts['key'] . '` ' . $sorts['order'] . ',`id` DESC';
                     break;
                 case 'type':
@@ -955,9 +1043,6 @@ class ProjectController extends Controller
         }
         if (intval(Request::input('level')) > 0) {
             $whereArray[] = ['project_task.level', '=', intval(Request::input('level'))];
-        }
-        if (intval(Request::input('idlater')) > 0) {
-            $whereArray[] = ['project_task.id', '<', intval(Request::input('idlater'))];
         }
         if (intval(Request::input('attention')) === 1) {
             $whereRaw.= $whereRaw ? ' AND ' : '';
@@ -1084,14 +1169,16 @@ class ProjectController extends Controller
             return Base::retError('任务标题最多只能设置255个字！');
         }
         //
+        $level = max(1, min(4, intval(Request::input('level'))));
         $inArray = [
             'projectid' => $projectid,
             'labelid' => $labelid,
             'createuser' => $user['username'],
             'username' => $username,
             'title' => $title,
-            'level' => max(1, min(4, intval(Request::input('level')))),
-            'inorder' => intval(DB::table('project_task')->where('projectid', $projectid)->orderByDesc('inorder')->value('inorder')) + 1,
+            'level' => $level,
+            'inorder' => empty($projectid) ? 0 : intval(DB::table('project_task')->where('projectid', $projectid)->orderByDesc('inorder')->value('inorder')) + 1,
+            'userorder' => intval(DB::table('project_task')->where('username', $user['username'])->where('level', $level)->orderByDesc('userorder')->value('userorder')) + 1,
             'indate' => Base::time(),
             'startdate' => Base::time(),
             'subtask' => Base::array2string([]),
