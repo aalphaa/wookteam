@@ -54,7 +54,7 @@
                                         <Icon v-if="task.complete" class="task-check" type="md-checkbox-outline" />
                                         <Icon v-else class="task-check" type="md-square-outline" />
                                         <div v-if="task.overdue" class="task-overdue">[超期]</div>
-                                        <div class="task-title">{{task.id}}、{{task.title}}</div>
+                                        <div class="task-title">{{task.title}}</div>
                                     </div>
                                     <div v-if="taskDatas[index].hasMorePages === true" class="content-li more" @click="getTaskLists(index, true)">加载更多</div>
                                 </draggable>
