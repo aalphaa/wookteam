@@ -1584,8 +1584,8 @@ class ProjectController extends Controller
     /**
      * 项目动态-列表
      *
-     * @apiParam {Number} projectid             项目ID
-     * @apiParam {Number} [taskid]              任务ID
+     * @apiParam {Number} [projectid]           项目ID
+     * @apiParam {Number} [taskid]              任务ID（如果项目ID为空时此参必须赋值且任务必须是自己负责人）
      * @apiParam {String} [username]            用户名
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
@@ -1600,15 +1600,29 @@ class ProjectController extends Controller
         }
         //
         $projectid = intval(Request::input('projectid'));
-        $inRes = Project::inThe($projectid, $user['username']);
-        if (Base::isError($inRes)) {
-            return $inRes;
+        if ($projectid > 0) {
+            $inRes = Project::inThe($projectid, $user['username']);
+            if (Base::isError($inRes)) {
+                return $inRes;
+            }
         }
         //
+        $taskid = intval(Request::input('taskid'));
         $whereArray = [];
-        $whereArray[] = ['projectid', '=', $projectid];
-        if (intval(Request::input('taskid')) > 0) {
-            $whereArray[] = ['taskid', '=', intval(Request::input('taskid'))];
+        if ($projectid > 0) {
+            $whereArray[] = ['projectid', '=', $projectid];
+            if ($taskid > 0) {
+                $whereArray[] = ['taskid', '=', $taskid];
+            }
+        } else {
+            if ($taskid < 0) {
+                return Base::retError('参数错误！');
+            }
+            $count = DB::table('project_task')->where([ 'id' => $taskid, 'username' => $user['username']])->count();
+            if ($count <= 0) {
+                return Base::retError('你不是任务负责人！');
+            }
+            $whereArray[] = ['taskid', '=', $taskid];
         }
         if (trim(Request::input('username'))) {
             $whereArray[] = ['username', '=', trim(Request::input('username'))];

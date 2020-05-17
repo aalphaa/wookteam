@@ -50,7 +50,10 @@
         },
         computed: {
             myStyle() {
-                const {calculateHeight} = this;
+                const {calculateHeight, idDrawerTabs} = this;
+                if (!idDrawerTabs) {
+                    return {};
+                }
                 return {
                     height: Math.max(0, calculateHeight - 16) + 'px'
                 }

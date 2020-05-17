@@ -20,6 +20,9 @@ Vue.component('VTitle', Title);
 Vue.component('UseridInput', UseridInput);
 Vue.component('sreachTitle', sreachTitle);
 
+import TaskDetail from './components/project/task/detail'
+Vue.prototype.taskDetail = TaskDetail;
+
 const router = new VueRouter({routes});
 
 //进度条配置

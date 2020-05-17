@@ -50,7 +50,7 @@
                                     :disabled="taskSortDisabled"
                                     @sort="taskSortUpdate"
                                     @remove="taskSortUpdate">
-                                    <div v-for="task in taskDatas[index].lists" class="content-li task-draggable" :key="task.id" :class="{complete:task.complete}">
+                                    <div v-for="task in taskDatas[index].lists" class="content-li task-draggable" :key="task.id" :class="{complete:task.complete}" @click="taskDetail(task)">
                                         <Icon v-if="task.complete" class="task-check" type="md-checkbox-outline" />
                                         <Icon v-else class="task-check" type="md-square-outline" />
                                         <div v-if="task.overdue" class="task-overdue">[超期]</div>

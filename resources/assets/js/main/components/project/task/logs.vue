@@ -1,7 +1,7 @@
 <template>
     <drawer-tabs-container>
         <div class="project-task-logs">
-            <ul class="logs-activity">
+            <ul class="logs-activity" :class="`${taskid>0?'istaskid':''}`">
                 <li v-for="(items, key) in lists">
                     <div class="logs-date">{{key}}</div>
                     <div class="logs-section">
@@ -13,14 +13,15 @@
                                 <div class="log-summary">
                                     <span class="log-creator">{{item.username}}</span>
                                     <span class="log-text-secondary">{{item.detail}}</span>
-                                    <span v-if="item.other.type=='task'" class="log-text-link">{{item.other.title}}</span>
+                                    <span v-if="item.other.type=='task' && taskid == 0" class="log-text-link">{{item.other.title}}</span>
                                     <a v-if="item.other.type=='file'" class="log-text-link" target="_blank" :href="fileDownUrl(item.other.id)">{{item.other.name}}</a>
                                     <span class="log-text-info">{{item.timeData.ymd}} {{item.timeData.segment}} {{item.timeData.hi}}</span></div>
                             </TimelineItem>
                         </Timeline>
                     </div>
                 </li>
-                <li v-if="hasMorePages" class="logs-more" @click="getMore">加载更多</li>
+                <li v-if="loadIng > 0" class="logs-loading"><w-loading></w-loading></li>
+                <li v-else-if="hasMorePages" class="logs-more" @click="getMore">加载更多</li>
             </ul>
         </div>
     </drawer-tabs-container>
@@ -32,8 +33,19 @@
             position: relative;
             word-break: break-all;
             padding: 12px 12px;
+            &.istaskid {
+                > li {
+                    padding-top: 0;
+                }
+            }
             > li {
                 padding-top: 22px;
+                &.logs-loading {
+                    margin: 8px 0;
+                    width: 22px;
+                    height: 22px;
+                    display: flex;
+                }
                 &.logs-more {
                     cursor: pointer;
                     &:hover {
@@ -42,6 +54,11 @@
                 }
                 &:first-child {
                     padding-top: 0;
+                }
+                &:last-child {
+                    .logs-section {
+                        margin-bottom: -20px;
+                    }
                 }
                 .logs-date {
                     color: rgba(0, 0, 0, .36);
@@ -86,15 +103,20 @@
 <script>
 
     import DrawerTabsContainer from "../../DrawerTabsContainer";
+    import WLoading from '../../WLoading'
+
     export default {
         name: 'ProjectTaskLogs',
-        components: {DrawerTabsContainer},
+        components: {DrawerTabsContainer, WLoading},
         props: {
             projectid: {
                 default: 0
             },
             taskid: {
                 default: 0
+            },
+            pagesize: {
+                default: 100
             },
             canload: {
                 type: Boolean,
@@ -148,11 +170,6 @@
                 if (resetLoad === true) {
                     this.listPage = 1;
                 }
-                if (this.projectid == 0) {
-                    this.lists = {};
-                    this.hasMorePages = false;
-                    return;
-                }
                 this.loadIng++;
                 $A.aAjax({
                     url: 'project/log/lists',
@@ -160,7 +177,7 @@
                         projectid: this.projectid,
                         taskid: this.taskid,
                         page: Math.max(this.listPage, 1),
-                        pagesize: 100,
+                        pagesize: this.pagesize,
                     },
                     complete: () => {
                         this.loadIng--;
@@ -177,10 +194,9 @@
                                 }
                                 this.lists[key].push(item);
                             });
-                            console.log(this.lists);
                             this.hasMorePages = res.data.hasMorePages;
                         } else {
-                            this.lists = [];
+                            this.lists = {};
                             this.hasMorePages = false;
                         }
                     }

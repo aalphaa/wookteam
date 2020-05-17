@@ -1,7 +1,7 @@
 <template>
     <div class="task-input-box">
         <div v-if="!addText" class="input-placeholder">
-            <Icon type="md-create" size="18"/>&nbsp;{{placeholder}}
+            <Icon type="md-create" size="18"/>&nbsp;{{addFocus?`输入任务，回车即可保存`:placeholder}}
         </div>
         <div class="input-enter">
             <Input
@@ -13,7 +13,8 @@
                 @on-focus="addFocus=true"
                 @on-blur="addFocus=false"
                 :autosize="{ minRows: 1, maxRows: 6 }"
-                :maxlength="255"/>
+                :maxlength="255"
+                @on-keydown="addKeydown"/>
             <div v-if="!!addText" class="input-enter-module">
                 <Tooltip content="重要且紧急" placement="bottom" transfer><div @click="addLevel=1" class="enter-module-icon p1"><Icon v-if="addLevel=='1'" type="md-checkmark" /></div></Tooltip>
                 <Tooltip content="重要不紧急" placement="bottom" transfer><div @click="addLevel=2" class="enter-module-icon p2"><Icon v-if="addLevel=='2'" type="md-checkmark" /></div></Tooltip>
@@ -195,13 +196,17 @@
                 this.addUserimg = user.userimg;
             },
             clickAdd() {
+                let addText = this.addText.trim();
+                if ($A.count(addText) == 0 || this.loadIng > 0) {
+                    return;
+                }
                 this.loadIng++;
                 $A.aAjax({
                     url: 'project/task/add',
                     data: {
                         projectid: this.projectid,
                         labelid: this.labelid,
-                        title: this.addText,
+                        title: addText,
                         level: this.addLevel,
                         username: this.addUsername,
                     },
@@ -222,6 +227,16 @@
                         }
                     }
                 });
+            },
+            addKeydown(e) {
+                e = e || event;
+                if (e.keyCode == 13) {
+                    if (e.shiftKey) {
+                        return;
+                    }
+                    this.clickAdd();
+                    e.preventDefault();
+                }
             }
         }
     }
