@@ -57,12 +57,17 @@
                 }
                 &:last-child {
                     .logs-section {
-                        margin-bottom: -20px;
+                        margin-bottom: -8px;
                     }
                 }
                 .logs-date {
                     color: rgba(0, 0, 0, .36);
                     padding-bottom: 14px;
+                }
+                .logs-section {
+                    .ivu-timeline-item {
+                        padding-bottom: 2px;
+                    }
                 }
                 .logs-dot {
                     width: 18px;
@@ -166,11 +171,13 @@
         },
 
         methods: {
-            getLists(resetLoad) {
+            getLists(resetLoad, noLoading) {
                 if (resetLoad === true) {
                     this.listPage = 1;
                 }
-                this.loadIng++;
+                if (noLoading !== true) {
+                    this.loadIng++;
+                }
                 $A.aAjax({
                     url: 'project/log/lists',
                     data: {
@@ -180,12 +187,17 @@
                         pagesize: this.pagesize,
                     },
                     complete: () => {
-                        this.loadIng--;
+                        if (noLoading !== true) {
+                            this.loadIng--;
+                        }
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             let timeData,
                                 key;
+                            if (resetLoad === true) {
+                                this.lists = {};
+                            }
                             res.data.lists.forEach((item) => {
                                 timeData = item.timeData;
                                 key = timeData.ymd + " " + timeData.week;

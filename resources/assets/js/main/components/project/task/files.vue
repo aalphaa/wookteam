@@ -3,7 +3,7 @@
         <div class="project-task-file">
 
             <!-- 搜索 -->
-            <Row class="sreachBox">
+            <Row v-if="!simple" class="sreachBox">
                 <div class="item">
                     <div class="item-2">
                         <sreachTitle :val="keys.name">文件名</sreachTitle>
@@ -21,7 +21,7 @@
             </Row>
 
             <!-- 按钮 -->
-            <Row class="butBox" style="float:left;margin-top:-32px;">
+            <Row class="butBox" :style="`float:left;margin-top:-32px;${simple?'display:none':''}`">
                 <Upload
                     name="files"
                     ref="upload"
@@ -39,10 +39,10 @@
             </Row>
 
             <!-- 列表 -->
-            <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" @on-sort-change="sortChange" stripe></Table>
+            <Table class="tableFill" ref="tableRef" :size="!simple?'default':'small'" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" @on-sort-change="sortChange" stripe></Table>
 
             <!-- 分页 -->
-            <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
+            <Page v-if="lastPage > 1 || !simple" :simple="simple" class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
 
         </div>
     </drawer-tabs-container>
@@ -72,9 +72,16 @@
             projectid: {
                 default: 0
             },
+            taskid: {
+                default: 0
+            },
             canload: {
                 type: Boolean,
                 default: true
+            },
+            simple: {
+                type: Boolean,
+                default: false
             },
         },
         data() {
@@ -91,17 +98,19 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
+                lastPage: 0,
                 noDataText: "数据加载中.....",
 
                 uploadFormat: ['jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'],
                 actionUrl: $A.aUrl('project/files/upload'),
-                params: {'token': $A.token(), projectid:this.projectid},
+                params: {'token': $A.token(), taskid:this.taskid, projectid:this.projectid},
                 uploadList: [],
             }
         },
 
         created() {
-            this.columns = [{
+            let columns = [];
+            columns.push({
                 "title": "",
                 "width": 60,
                 render: (h, params) => {
@@ -125,7 +134,8 @@
                         },
                     });
                 }
-            }, {
+            });
+            columns.push({
                 "title": "文件名",
                 "key": 'name',
                 "minWidth": 100,
@@ -146,7 +156,8 @@
                     }
                     return h('div', arr);
                 },
-            }, {
+            });
+            columns.push({
                 "title": "大小",
                 "key": 'size',
                 "minWidth": 90,
@@ -156,27 +167,33 @@
                 render: (h, params) => {
                     return h('span', $A.bytesToSize(params.row.size));
                 },
-            }, {
-                "title": "下载次数",
-                "key": 'download',
-                "align": "center",
-                "sortable": true,
-                "width": 100,
-            }, {
-                "title": "上传者",
-                "key": 'username',
-                "minWidth": 90,
-                "maxWidth": 130,
-                "sortable": true,
-            }, {
-                "title": "上传时间",
-                "key": 'indate',
-                "width": 160,
-                "sortable": true,
-                render: (h, params) => {
-                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
-                }
-            }, {
+            });
+            if (!this.simple) {
+                columns.push({
+                    "title": "下载次数",
+                    "key": 'download',
+                    "align": "center",
+                    "sortable": true,
+                    "width": 100,
+                });
+                columns.push({
+                    "title": "上传者",
+                    "key": 'username',
+                    "minWidth": 90,
+                    "maxWidth": 130,
+                    "sortable": true,
+                });
+                columns.push({
+                    "title": "上传时间",
+                    "key": 'indate',
+                    "width": 160,
+                    "sortable": true,
+                    render: (h, params) => {
+                        return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
+                    }
+                });
+            }
+            columns.push({
                 "title": " ",
                 "key": 'action',
                 "align": 'right',
@@ -244,7 +261,8 @@
                         })]),
                     ]);
                 }
-            }];
+            });
+            this.columns = columns;
         },
 
         mounted() {
@@ -261,6 +279,11 @@
                     this.getLists(true);
                 }
             },
+            taskid() {
+                if (this.loadYet) {
+                    this.getLists(true);
+                }
+            },
             canload(val) {
                 if (val && !this.loadYet) {
                     this.loadYet = true;
@@ -272,7 +295,8 @@
                     if (typeof file.username === "undefined") {
                         file.username = $A.getUserName();
                         file.indate = Math.round(new Date().getTime()/1000);
-                        this.lists.unshift(file)
+                        this.lists.unshift(file);
+                        this.$emit('change', 'up');
                     }
                 });
             }
@@ -307,10 +331,10 @@
                 if (resetLoad === true) {
                     this.listPage = 1;
                 }
-                if (this.projectid == 0) {
+                if (this.projectid == 0 && this.taskid == 0) {
                     this.lists = [];
                     this.listTotal = 0;
-                    this.noDataText = "没有相关的数据";
+                    this.noDataText = "没有相关的文件";
                     return;
                 }
                 this.loadIng++;
@@ -318,6 +342,7 @@
                 whereData.page = Math.max(this.listPage, 1);
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.projectid = this.projectid;
+                whereData.taskid = this.taskid;
                 whereData.sorts = this.sorts;
                 $A.aAjax({
                     url: 'project/files/lists',
@@ -329,9 +354,12 @@
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
+                            this.lastPage = res.data.lastPage;
+                            this.noDataText = "没有相关的文件";
                         } else {
                             this.lists = [];
                             this.listTotal = 0;
+                            this.lastPage = 0;
                             this.noDataText = res.msg;
                         }
                     }
@@ -427,6 +455,7 @@
                                 setTimeout(() => {
                                     if (res.ret === 1) {
                                         this.$Message.success(res.msg);
+                                        this.$emit('change', 'delete');
                                     } else {
                                         this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                     }
@@ -437,6 +466,10 @@
                 });
             },
 
+            uploadHandleClick() {
+                this.$refs.upload.handleClick();
+            },
+
             handleSuccess (res, file) {
                 //上传完成
                 if (res.ret === 1) {
@@ -445,12 +478,20 @@
                             file[key] = res.data[key];
                         }
                     }
+                    this.$emit('change', 'add');
                 } else {
                     this.$Modal.warning({
                         title: '上传失败',
                         content: '文件 ' + file.name + ' 上传失败，' + res.msg
                     });
                     this.$refs.upload.fileList.pop();
+                    this.lists.some((item, index) => {
+                        if (item.id == res.id) {
+                            this.lists.splice(index, 1);
+                            return true;
+                        }
+                    });
+                    this.$emit('change', 'error');
                 }
                 this.uploadList = this.$refs.upload.fileList;
             },

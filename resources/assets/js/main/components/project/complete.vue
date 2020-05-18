@@ -82,9 +82,9 @@
                                     loading: true,
                                     onOk: () => {
                                         $A.aAjax({
-                                            url: 'project/task/archived',
+                                            url: 'project/task/edit',
                                             data: {
-                                                act: 'cancel',
+                                                act: 'unarchived',
                                                 taskid: params.row.id,
                                             },
                                             error: () => {

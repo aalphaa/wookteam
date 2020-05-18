@@ -59,7 +59,7 @@
          * @param lower
          * @returns {boolean}
          */
-        strExists: function (string, find, lower) {
+        strExists: function (string, find, lower = false) {
             string += "";
             find += "";
             if (lower !== true) {
@@ -76,7 +76,7 @@
          * @param lower
          * @returns {boolean}
          */
-        leftExists: function (string, find, lower) {
+        leftExists: function (string, find, lower = false) {
             string += "";
             find += "";
             if (lower !== true) {
@@ -93,7 +93,7 @@
          * @param lower
          * @returns {string}
          */
-        leftDelete: function (string, find, lower) {
+        leftDelete: function (string, find, lower = false) {
             string += "";
             find += "";
             if (this.leftExists(string, find, lower)) {
@@ -109,7 +109,7 @@
          * @param lower
          * @returns {boolean}
          */
-        rightExists: function (string, find, lower) {
+        rightExists: function (string, find, lower = false) {
             string += "";
             find += "";
             if (lower !== true) {
@@ -127,6 +127,7 @@
          * @returns {*}
          */
         getMiddle: function (string, start, end) {
+            string = string.toString();
             if (this.ishave(start) && this.strExists(string, start)) {
                 string = string.substring(string.indexOf(start) + start.length);
             }

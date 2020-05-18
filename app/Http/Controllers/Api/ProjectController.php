@@ -1213,14 +1213,24 @@ class ProjectController extends Controller
     }
 
     /**
-     * 项目任务-归档、取消归档
+     * 项目任务-修改
      *
-     * @apiParam {String} act
-     * - cancel: 取消归档
-     * - else: 加入归档
-     * @apiParam {Number} taskid             任务ID
+     * @apiParam {Number} taskid            任务ID
+     * @apiParam {String} act               修改字段
+     * - title: 标题
+     * - desc: 描述
+     * - level: 优先级
+     * - username: 负责人
+     * - plannedtime: 设置计划时间
+     * - unplannedtime: 取消计划时间
+     * - complete: 标记完成
+     * - unfinished: 标记未完成
+     * - archived: 归档
+     * - unarchived: 取消归档
+     * - delete: 删除任务
+     * @apiParam {String} [content]         修改内容
      */
-    public function task__archived()
+    public function task__edit()
     {
         $user = Users::authE();
         if (Base::isError($user)) {
@@ -1230,77 +1240,351 @@ class ProjectController extends Controller
         }
         //
         $taskid = intval(Request::input('taskid'));
-        $task = Base::DBC2A(DB::table('project_lists')
-            ->join('project_task', 'project_lists.id', '=', 'project_task.projectid')
-            ->select(['project_task.projectid', 'project_task.title', 'project_task.archived'])
+        $task = Base::DBC2A(DB::table('project_task')
             ->where([
-                ['project_lists.delete', '=', 0],
-                ['project_task.delete', '=', 0],
-                ['project_task.id', '=', $taskid],
+                ['delete', '=', 0],
+                ['id', '=', $taskid],
             ])
             ->first());
         if (empty($task)) {
             return Base::retError('任务不存在！');
         }
-        $inRes = Project::inThe($task['projectid'], $user['username']);
-        if (Base::isError($inRes)) {
-            return $inRes;
+        if ($task['projectid'] > 0) {
+            $inRes = Project::inThe($task['projectid'], $user['username']);
+            if (Base::isError($inRes)) {
+                return $inRes;
+            }
+            if (!$inRes['data']['isowner'] && $task['username'] != $user['username']) {
+                return Base::retError('此操作只允许项目管理员或者任务负责人！');
+            }
+        } else {
+            if ($task['username'] != $user['username']) {
+                return Base::retError('此操作只允许任务负责人！');
+            }
         }
         //
-        switch (Request::input('act')) {
-            case 'cancel': {
-                if ($task['archived'] == 0) {
-                    return Base::retError('任务未归档！');
+        $act = trim(Request::input('act'));
+        $content = trim(Request::input('content'));
+        $message = "";
+        $upArray = [];
+        $logArray = [];
+        switch ($act) {
+            /**
+             * 修改标题
+             */
+            case 'title': {
+                if ($content == $task['title']) {
+                    return Base::retError('标题未做改变！');
                 }
-                DB::table('project_task')->where('id', $taskid)->update([
-                    'archived' => 1,
-                    'archiveddate' => Base::time()
-                ]);
-                DB::table('project_log')->insert([
+                $upArray['title'] = $content;
+                $logArray[] = [
                     'type' => '日志',
                     'projectid' => $task['projectid'],
-                    'taskid' => $taskid,
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '修改任务标题',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $content,
+                        'old_title' => $task['title'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 修改描述
+             */
+            case 'desc': {
+                if ($content == $task['desc']) {
+                    return Base::retError('描述未做改变！');
+                }
+                $upArray['desc'] = $content;
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '修改任务描述',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                        'old_desc' => $task['desc'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 调整任务等级
+             */
+            case 'level': {
+                $content = intval($content);
+                if ($content == $task['level']) {
+                    return Base::retError('优先级未做改变！');
+                }
+                if ($content > 4 || $content < 1) {
+                    return Base::retError('优先级参数错误！');
+                }
+                $upArray['level'] = $content;
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '调整任务等级为【P' . $content . '】',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                        'old_level' => $task['level'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 修改任务负责人
+             */
+            case 'username': {
+                if ($content == $task['username']) {
+                    return Base::retError('负责人未做改变！');
+                }
+                if ($task['projectid'] > 0) {
+                    $inRes = Project::inThe($task['projectid'], $content);
+                    if (Base::isError($inRes)) {
+                        return Base::retError($content . '不在成员列表内！');
+                    }
+                }
+                $upArray['username'] = $content;
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '修改负责人',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                        'old_username' => $task['username'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 修改计划时间
+             */
+            case 'plannedtime': {
+                list($startdate, $enddate) = explode(",", $content);
+                if (!Base::isDate($startdate) || !Base::isDate($enddate)) {
+                    return Base::retError('计划时间参数错误！');
+                }
+                $startdate = strtotime($startdate);
+                $enddate = strtotime($enddate);
+                if ($startdate == $task['startdate'] && $enddate == $task['enddate']) {
+                    return Base::retError('与原计划时间一致！');
+                }
+                $upArray['startdate'] = $startdate;
+                $upArray['enddate'] = $enddate;
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '设置计划时间',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                        'old_startdate' => $task['startdate'],
+                        'old_enddate' => $task['enddate'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 取消计划时间
+             */
+            case 'unplannedtime': {
+                $startdate = 0;
+                $enddate = 0;
+                if ($startdate == $task['startdate'] && $enddate == $task['enddate']) {
+                    return Base::retError('与原计划时间一致！');
+                }
+                $upArray['startdate'] = $startdate;
+                $upArray['enddate'] = $enddate;
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '取消计划时间',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                        'old_startdate' => $task['startdate'],
+                        'old_enddate' => $task['enddate'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 标记完成
+             */
+            case 'complete': {
+                if ($task['complete'] == 1) {
+                    return Base::retError('任务已标记完成，请勿重复操作！');
+                }
+                $upArray['complete'] = 1;
+                $upArray['completedate'] = Base::time();
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '标记已完成',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 标记未完成
+             */
+            case 'unfinished': {
+                if ($task['complete'] == 0) {
+                    return Base::retError('任务未完成，无法标记未完成！');
+                }
+                $upArray['complete'] = 0;
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '标记未完成',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 归档
+             */
+            case 'archived': {
+                if ($task['archived'] == 1) {
+                    return Base::retError('任务已经归档，请勿重复操作！');
+                }
+                $upArray['archived'] = 1;
+                $upArray['archiveddate'] = Base::time();
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => '任务归档',
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                    ])
+                ];
+                break;
+            }
+
+            /**
+             * 取消归档
+             */
+            case 'unarchived': {
+                if ($task['archived'] == 0) {
+                    return Base::retError('任务未归档，无法取消归档操作！');
+                }
+                $upArray['archived'] = 0;
+                $logArray[] = [
+                    'type' => '日志',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
                     'username' => $user['username'],
                     'detail' => '取消归档',
                     'indate' => Base::time(),
                     'other' => Base::array2string([
                         'type' => 'task',
-                        'id' => $taskid,
+                        'id' => $task['id'],
                         'title' => $task['title'],
                     ])
-                ]);
-                return Base::retSuccess('取消归档成功！');
+                ];
+                break;
             }
-            default: {
-                if ($task['archived'] == 1) {
-                    return Base::retError('任务已归档！');
+
+            /**
+             * 删除任务
+             */
+            case 'delete': {
+                if ($task['delete'] == 1) {
+                    return Base::retError('任务已删除，请勿重复操作！');
                 }
-                DB::table('project_task')->where('id', $taskid)->update([
-                    'archived' => 0,
-                ]);
-                DB::table('project_log')->insert([
+                $upArray['delete'] = 1;
+                $upArray['deletedate'] = Base::time();
+                $logArray[] = [
                     'type' => '日志',
                     'projectid' => $task['projectid'],
-                    'taskid' => $taskid,
+                    'taskid' => $task['id'],
                     'username' => $user['username'],
-                    'detail' => '加入归档',
+                    'detail' => '删除任务',
                     'indate' => Base::time(),
                     'other' => Base::array2string([
                         'type' => 'task',
-                        'id' => $taskid,
+                        'id' => $task['id'],
                         'title' => $task['title'],
                     ])
-                ]);
-                return Base::retSuccess('加入归档成功！');
+                ];
+                $message = "删除成功！";
+                break;
+            }
+
+            default: {
+                return Base::retError('参数错误！');
+                break;
             }
         }
+        //
+        if ($upArray) {
+            DB::table('project_task')->where('id', $taskid)->update($upArray);
+        }
+        if ($logArray) {
+            DB::table('project_log')->insert($logArray);
+        }
+        return Base::retSuccess($message ?: '修改成功！', array_merge($task, $upArray));
     }
 
     /**
      * 项目文件-列表
      *
-     * @apiParam {Number} projectid             项目ID
-     * @apiParam {Number} [taskid]              任务ID
+     * @apiParam {Number} [projectid]           项目ID
+     * @apiParam {Number} [taskid]              任务ID（如果项目ID为空时此参必须赋值且任务必须是自己负责人）
      * @apiParam {String} [name]                文件名称
      * @apiParam {String} [username]            上传者用户名
      * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
@@ -1319,9 +1603,11 @@ class ProjectController extends Controller
         }
         //
         $projectid = intval(Request::input('projectid'));
-        $inRes = Project::inThe($projectid, $user['username']);
-        if (Base::isError($inRes)) {
-            return $inRes;
+        if ($projectid > 0) {
+            $inRes = Project::inThe($projectid, $user['username']);
+            if (Base::isError($inRes)) {
+                return $inRes;
+            }
         }
         //
         $orderBy = '`id` DESC';
@@ -1338,8 +1624,23 @@ class ProjectController extends Controller
             }
         }
         //
+        $taskid = intval(Request::input('taskid'));
         $whereArray = [];
-        $whereArray[] = ['projectid', '=', $projectid];
+        if ($projectid > 0) {
+            $whereArray[] = ['projectid', '=', $projectid];
+            if ($taskid > 0) {
+                $whereArray[] = ['taskid', '=', $taskid];
+            }
+        } else {
+            if ($taskid < 0) {
+                return Base::retError('参数错误！');
+            }
+            $count = DB::table('project_task')->where([ 'id' => $taskid, 'username' => $user['username']])->count();
+            if ($count <= 0) {
+                return Base::retError('你不是任务负责人！');
+            }
+            $whereArray[] = ['taskid', '=', $taskid];
+        }
         $whereArray[] = ['delete', '=', 0];
         if (intval(Request::input('taskid')) > 0) {
             $whereArray[] = ['taskid', '=', intval(Request::input('taskid'))];
@@ -1369,8 +1670,8 @@ class ProjectController extends Controller
     /**
      * 项目文件-上传
      *
-     * @apiParam {Number} projectid             项目ID
-     * @apiParam {Number} [taskid]              任务ID
+     * @apiParam {Number} [projectid]           项目ID
+     * @apiParam {Number} [taskid]              任务ID（如果项目ID为空时此参必须赋值且任务必须是自己负责人）
      */
     public function files__upload()
     {
@@ -1383,9 +1684,20 @@ class ProjectController extends Controller
         //
         $projectid = intval(Request::input('projectid'));
         $taskid = intval(Request::input('taskid'));
-        $inRes = Project::inThe($projectid, $user['username']);
-        if (Base::isError($inRes)) {
-            return $inRes;
+        if ($projectid > 0) {
+            $inRes = Project::inThe($projectid, $user['username']);
+            if (Base::isError($inRes)) {
+                return $inRes;
+            }
+        } else {
+            if ($taskid <= 0) {
+                return Base::retError('参数错误！');
+            }
+            $row = Base::DBC2A(DB::table('project_task')->select(['projectid'])->where([ 'id' => $taskid, 'username' => $user['username']])->first());
+            if (empty($row)) {
+                return Base::retError('你不是任务负责人！');
+            }
+            $projectid = $row['projectid'];
         }
         //
         $data = Base::upload([
@@ -1454,12 +1766,15 @@ class ProjectController extends Controller
                     'name' => $fileData['name'],
                 ])
             ]);
+            if ($taskid > 0) {
+                DB::table('project_task')->where('id', $taskid)->increment('filenum');
+            }
             return Base::retSuccess('success', $array);
         }
     }
 
     /**
-     * 项目文件-上传
+     * 项目文件-下载
      *
      * @apiParam {Number} fileid                文件ID
      */
@@ -1577,6 +1892,9 @@ class ProjectController extends Controller
                 'name' => $fileDetail['name'],
             ])
         ]);
+        if ($fileDetail['taskid'] > 0) {
+            DB::table('project_task')->where('id', $fileDetail['taskid'])->decrement('filenum');
+        }
         //
         return Base::retSuccess('删除成功！');
     }
