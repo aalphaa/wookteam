@@ -649,6 +649,7 @@
                     success: (res) => {
                         if (res.ret === 1) {
                             this.$Message.success(res.msg);
+                            $A.triggerTaskInfoListener('leveltask', res.data.levelTask);
                         } else {
                             this.refreshTask();
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});

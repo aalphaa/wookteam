@@ -223,15 +223,23 @@ import '../../sass/main.scss';
         /**
          * 监听任务发生变化
          * @param callback
+         * @param callSpecial 是否监听几种特殊情况
          */
-        setOnTaskInfoListener(callback) {
+        setOnTaskInfoListener(callback, callSpecial) {
             if (typeof callback === "function") {
-                $A.__taskInfoListener.push(callback);
+                $A.__taskInfoListener.push({
+                    special: callSpecial === true,
+                    callback: callback,
+                });
             }
         },
         triggerTaskInfoListener(act, taskDetail) {
-            $A.__taskInfoListener.forEach((callback) => {
-                typeof callback === "function" && callback(act, taskDetail);
+            $A.__taskInfoListener.forEach((item) => {
+                if (typeof item.callback === "function") {
+                    if (act.indexOf(['deleteproject', 'deletelabel', 'leveltask']) === -1 || item.special === true) {
+                        item.callback(act, taskDetail);
+                    }
+                }
             });
         },
         __taskInfoListener: [],

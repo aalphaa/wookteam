@@ -557,6 +557,7 @@ class ProjectController extends Controller
         //
         $levels = [];
         $logArray = [];
+        $upLevel = [];
         foreach ($newSort AS $sort => $item) {
             list($newLevel, $newTask) = explode(':', $item);
             list($oldLevel, $oldTask) = explode(':', $oldSort[$sort]);
@@ -596,6 +597,10 @@ class ProjectController extends Controller
                                     'title' => $task['title'],
                                 ])
                             ];
+                            $upLevel[] = [
+                                'id' => $task['id'],
+                                'level' => $newLevel,
+                            ];
                         }
                         if ($task['userorder'] != $userorder) {
                             $upArray['userorder'] = $userorder;
@@ -613,7 +618,10 @@ class ProjectController extends Controller
             DB::table('project_log')->insert($logArray);
         }
         //
-        return Base::retSuccess('保存成功！', $levels);
+        return Base::retSuccess('保存成功！', [
+            'levels' => $levels,
+            'levelTask' => $upLevel,
+        ]);
     }
 
     /**
