@@ -19,7 +19,7 @@
 <script>
     import DrawerTabsContainer from "../DrawerTabsContainer";
     export default {
-        name: 'ProjectComplete',
+        name: 'ProjectArchived',
         components: {DrawerTabsContainer},
         props: {
             projectid: {

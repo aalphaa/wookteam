@@ -53,7 +53,7 @@
                             <div class="project-unfinished"><em>{{item.unfinished}}</em>未完成数</div>
                         </div>
                         <div class="project-bottom">
-                            <div class="project-iconbtn" @click.stop="handleProject('complete', item)">
+                            <div class="project-iconbtn" @click.stop="handleProject('archived', item)">
                                 <Icon class="project-iconbtn-icon1" type="md-checkmark-circle-outline" size="24" />
                                 <div class="project-iconbtn-text">已归档任务</div>
                             </div>
@@ -108,8 +108,8 @@
 
         <Drawer v-model="projectDrawerShow" width="75%">
             <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
-                <TabPane :label="$L('已归档任务')" name="complete">
-                    <project-complete :canload="projectDrawerShow && projectDrawerTab == 'complete'" :projectid="handleProjectId"></project-complete>
+                <TabPane :label="$L('已归档任务')" name="archived">
+                    <project-archived :canload="projectDrawerShow && projectDrawerTab == 'archived'" :projectid="handleProjectId"></project-archived>
                 </TabPane>
                 <TabPane :label="$L('成员管理')" name="member">
                     <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
@@ -142,6 +142,7 @@
             display: flex;
             flex-direction: row;
             align-items: center;
+            min-width: 138px;
             &:hover {
                 .page-nav-refresh {
                     display: block;
@@ -300,7 +301,7 @@
     import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
     import WLoading from "../components/WLoading";
-    import ProjectComplete from "../components/project/complete";
+    import ProjectArchived from "../components/project/archived";
     import ProjectUsers from "../components/project/users";
     import ProjectStatistics from "../components/project/statistics";
     import ProjectMyFavor from "../components/project/my/favor";
@@ -311,7 +312,7 @@
         components: {
             ProjectMyManage,
             ProjectMyJoin,
-            ProjectMyFavor, ProjectStatistics, ProjectUsers, ProjectComplete, WLoading, WContent, WHeader},
+            ProjectMyFavor, ProjectStatistics, ProjectUsers, ProjectArchived, WLoading, WContent, WHeader},
         mixins: [
             Project
         ],
@@ -343,7 +344,7 @@
                 listTotal: 0,
 
                 projectDrawerShow: false,
-                projectDrawerTab: 'complete',
+                projectDrawerTab: 'archived',
 
                 projectListDrawerShow: false,
                 projectListDrawerTab: 'myjoin',
@@ -506,7 +507,7 @@
                         this.openProject(item.id, item);
                         break;
                     }
-                    case 'complete':
+                    case 'archived':
                     case 'member':
                     case 'statistics': {
                         this.projectDrawerShow = true;

@@ -8,7 +8,11 @@
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
-                    <i class="ft icon">&#xE787;</i> {{$L('我的待办')}}
+                    <div class="page-nav-left">
+                        <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
+                        <span><i class="ft icon">&#xE787;</i> {{$L('我的待办')}}</span>
+                        <div class="page-nav-refresh" @click="refreshTask">刷新</div>
+                    </div>
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
@@ -94,6 +98,32 @@
 </style>
 <style lang="scss" scoped>
     .todo {
+        .page-nav-left {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            min-width: 138px;
+            &:hover {
+                .page-nav-refresh {
+                    display: block;
+                }
+            }
+            .page-nav-loading {
+                width: 18px;
+                height: 18px;
+                margin-right: 6px;
+                display: flex;
+            }
+            .page-nav-refresh {
+                display: none;
+                padding-right: 12px;
+                color: #048be0;
+                cursor: pointer;
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
         .todo-main {
             display: flex;
             flex-direction: column;
@@ -319,6 +349,8 @@
         ],
         data () {
             return {
+                loadIng: 0,
+
                 userInfo: {},
 
                 taskDatas: {
@@ -394,6 +426,7 @@
                 this.$set(taskData, 'hasMorePages', false);
                 this.$set(taskData, 'loadIng', $A.runNum(taskData.loadIng) + 1);
                 this.taskSortDisabled = true;
+                this.loadIng++;
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
@@ -403,6 +436,7 @@
                         pagesize: pagesize,
                     },
                     complete: () => {
+                        this.loadIng--;
                         this.taskSortDisabled = false;
                         this.$set(taskData, 'loadIng', $A.runNum(taskData.loadIng) - 1);
                     },
@@ -512,6 +546,10 @@
                     case 'attention': {
                         this.todoDrawerShow = true;
                         this.todoDrawerTab = event;
+                        break;
+                    }
+                    case 'report': {
+                        this.$Message.info("敬请期待！");
                         break;
                     }
                 }

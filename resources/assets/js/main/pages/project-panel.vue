@@ -19,7 +19,7 @@
                     <span class="ft hover" @click="openProjectDrawer('lists')"><i class="ft icon">&#xE89E;</i> 任务列表</span>
                     <span class="ft hover" @click="openProjectDrawer('files')"><i class="ft icon">&#xE701;</i> 文件列表</span>
                     <span class="ft hover" @click="openProjectDrawer('logs')"><i class="ft icon">&#xE753;</i> 项目动态</span>
-                    <span class="ft hover" @click="openProjectSettingDrawer('complete')"><i class="ft icon">&#xE7A7;</i> 设置</span>
+                    <span class="ft hover" @click="openProjectSettingDrawer('archived')"><i class="ft icon">&#xE7A7;</i> 设置</span>
                 </div>
             </div>
         </div>
@@ -104,8 +104,8 @@
 
         <Drawer v-model="projectSettingDrawerShow" width="75%">
             <Tabs v-if="projectSettingDrawerShow" v-model="projectSettingDrawerTab">
-                <TabPane :label="$L('已归档任务')" name="complete">
-                    <project-complete :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'complete'" :projectid="projectid"></project-complete>
+                <TabPane :label="$L('已归档任务')" name="archived">
+                    <project-archived :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'archived'" :projectid="projectid"></project-archived>
                 </TabPane>
                 <TabPane :label="$L('成员管理')" name="member">
                     <project-users :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'member'" :projectid="projectid"></project-users>
@@ -346,7 +346,7 @@
     import ProjectTaskLists from "../components/project/task/lists";
     import ProjectTaskFiles from "../components/project/task/files";
     import ProjectTaskLogs from "../components/project/task/logs";
-    import ProjectComplete from "../components/project/complete";
+    import ProjectArchived from "../components/project/archived";
     import ProjectUsers from "../components/project/users";
     import ProjectStatistics from "../components/project/statistics";
 
@@ -354,7 +354,7 @@
         components: {
             ProjectStatistics,
             ProjectUsers,
-            ProjectComplete,
+            ProjectArchived,
             ProjectTaskLogs,
             ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
         data () {
@@ -373,7 +373,7 @@
                 projectDrawerTab: 'lists',
 
                 projectSettingDrawerShow: false,
-                projectSettingDrawerTab: 'complete',
+                projectSettingDrawerTab: 'archived',
             }
         },
         mounted() {
