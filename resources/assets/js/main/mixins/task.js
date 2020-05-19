@@ -22,7 +22,7 @@ export default {
                 success: (res) => {
                     if (res.ret === 1) {
                         this.$Message.success(res.msg);
-                        typeof callback === "function" && callback(res.date);
+                        typeof callback === "function" && callback(res.data);
                     } else {
                         this.$set(taskDetail, 'complete', !complete);
                         this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
