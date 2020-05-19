@@ -2,11 +2,11 @@
     <drawer-tabs-container>
         <div class="project-task-logs">
             <ul class="logs-activity" :class="`${taskid>0?'istaskid':''}`">
-                <li v-for="(items, key) in lists">
-                    <div class="logs-date">{{key}}</div>
+                <li v-for="items in lists">
+                    <div class="logs-date">{{items | logDate}}</div>
                     <div class="logs-section">
                         <Timeline>
-                            <TimelineItem v-for="(item, index) in items" :key="index">
+                            <TimelineItem v-for="(item, index) in items.lists" :key="index">
                                 <div slot="dot" class="logs-dot">
                                     <img :src="item.userimg"/>
                                 </div>
@@ -22,6 +22,7 @@
                 </li>
                 <li v-if="loadIng > 0" class="logs-loading"><w-loading></w-loading></li>
                 <li v-else-if="hasMorePages" class="logs-more" @click="getMore">加载更多</li>
+                <li v-else-if="totalNum == 0" class="logs-none" @click="getLists(true)">没有相关{{logtype.indexOf(['日志', '评论'])===-1?logtype:'数据'}}</li>
             </ul>
         </div>
     </drawer-tabs-container>
@@ -51,6 +52,11 @@
                     &:hover {
                         color: #048be0;
                     }
+                }
+                &.logs-none {
+                    cursor: pointer;
+                    color: #666666;
+                    line-height: 26px;
                 }
                 &:first-child {
                     padding-top: 0;
@@ -123,6 +129,9 @@
             pagesize: {
                 default: 100
             },
+            logtype: {
+                default: '全部'
+            },
             canload: {
                 type: Boolean,
                 default: true
@@ -137,6 +146,7 @@
                 lists: {},
                 listPage: 1,
                 hasMorePages: false,
+                totalNum: -1,
             }
         },
 
@@ -151,14 +161,29 @@
             }
         },
 
+        filters: {
+            logDate(items) {
+                let md = $A.formatDate("m-d");
+                return md == items.ymd ? (items.ymd + ' 今天') : items.key;
+            }
+        },
+
         watch: {
             projectid() {
                 if (this.loadYet) {
+                    this.lists = {};
                     this.getLists(true);
                 }
             },
             taskid() {
                 if (this.loadYet) {
+                    this.lists = {};
+                    this.getLists(true);
+                }
+            },
+            logtype() {
+                if (this.loadYet) {
+                    this.lists = {};
                     this.getLists(true);
                 }
             },
@@ -183,6 +208,7 @@
                     data: {
                         projectid: this.projectid,
                         taskid: this.taskid,
+                        type: this.logtype,
                         page: Math.max(this.listPage, 1),
                         pagesize: this.pagesize,
                     },
@@ -202,14 +228,20 @@
                                 timeData = item.timeData;
                                 key = timeData.ymd + " " + timeData.week;
                                 if (typeof this.lists[key] !== "object") {
-                                    this.$set(this.lists, key, []);
+                                    this.$set(this.lists, key, {
+                                        key: key,
+                                        ymd: timeData.ymd,
+                                        lists: [],
+                                    });
                                 }
-                                this.lists[key].push(item);
+                                this.lists[key].lists.push(item);
                             });
                             this.hasMorePages = res.data.hasMorePages;
+                            this.totalNum = res.data.total;
                         } else {
                             this.lists = {};
                             this.hasMorePages = false;
+                            this.totalNum = 0;
                         }
                     }
                 });

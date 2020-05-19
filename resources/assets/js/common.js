@@ -1430,9 +1430,10 @@
         /**
          * 获取一些指定时间
          * @param str
+         * @param retInt
          * @returns {*|string}
          */
-        getData(str) {
+        getData(str, retInt = false) {
             let now = new Date();                   //当前日期
             let nowDayOfWeek = now.getDay();        //今天本周的第几天
             let nowDay = now.getDate();             //当前日
@@ -1519,6 +1520,9 @@
                     let quarterEndMonth = getQuarterStartMonth() + 2;
                     time = new Date(nowYear, quarterEndMonth, getMonthDays(quarterEndMonth));
                     break;
+            }
+            if (retInt === true) {
+                return time;
             }
             return $A.formatDate("Y-m-d", parseInt(time / 1000))
         },

@@ -965,6 +965,7 @@ class ProjectController extends Controller
      * @apiParam {Number} [projectid]           项目ID
      * @apiParam {String} [username]            负责人用户名（如果项目ID为空时此参数无效只获取自己的任务）
      * @apiParam {Number} [labelid]             项目子分类ID
+     * @apiParam {Number} [taskid]              任务ID (赋值返回详细数据，不返回列表数据)
      * @apiParam {Number} [level]               任务等级（1~4）
      * @apiParam {String} [archived]            任务是否归档
      * - 未归档 （默认）
@@ -1025,6 +1026,7 @@ class ProjectController extends Controller
             }
         }
         //
+        $taskid = intval(Request::input('taskid'));
         $whereRaw = null;
         $whereFunc = null;
         $whereArray = [];
@@ -1037,6 +1039,9 @@ class ProjectController extends Controller
             }
         } else {
             $whereArray[] = ['project_task.username', '=', $user['username']];
+        }
+        if ($taskid > 0) {
+            $whereArray[] = ['project_task.id', '=', intval(Request::input('taskid'))];
         }
         if (intval(Request::input('labelid')) > 0) {
             $whereArray[] = ['project_task.labelid', '=', intval(Request::input('labelid'))];
@@ -1094,7 +1099,7 @@ class ProjectController extends Controller
             ->where($whereArray)
             ->orderByRaw($orderBy)
             ->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
-        $lists = Base::getPageList($lists);
+        $lists = Base::getPageList($lists, $taskid > 0 ? false : true);
         if (intval(Request::input('statistics')) == 1) {
             $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 0)->count();
             $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 0)->whereBetween('enddate', [1, Base::time()])->count();
@@ -1107,7 +1112,11 @@ class ProjectController extends Controller
             $info['overdue'] = Project::taskIsOverdue($info);
             $lists['lists'][$key] = array_merge($info, Users::username2basic($info['username']));
         }
-        return Base::retSuccess('success', $lists);
+        if ($taskid > 0) {
+            return Base::retSuccess('success', $lists['lists'][0]);
+        } else {
+            return Base::retSuccess('success', $lists);
+        }
     }
 
     /**
@@ -1182,7 +1191,6 @@ class ProjectController extends Controller
             'indate' => Base::time(),
             'startdate' => Base::time(),
             'subtask' => Base::array2string([]),
-            'files' => Base::array2string([]),
             'follower' => Base::array2string([]),
         ];
         return DB::transaction(function () use ($inArray) {
@@ -1216,7 +1224,7 @@ class ProjectController extends Controller
      * 项目任务-修改
      *
      * @apiParam {Number} taskid            任务ID
-     * @apiParam {String} act               修改字段
+     * @apiParam {String} act               修改字段|操作类型
      * - title: 标题
      * - desc: 描述
      * - level: 优先级
@@ -1228,7 +1236,8 @@ class ProjectController extends Controller
      * - archived: 归档
      * - unarchived: 取消归档
      * - delete: 删除任务
-     * @apiParam {String} [content]         修改内容
+     * - comment: 评论
+     * @apiParam {String} [content]         内容数据
      */
     public function task__edit()
     {
@@ -1565,6 +1574,30 @@ class ProjectController extends Controller
                 break;
             }
 
+            /**
+             * 评论任务
+             */
+            case 'comment': {
+                if (mb_strlen($content) < 2) {
+                    return Base::retError('评论内容至少2个字！');
+                }
+                $logArray[] = [
+                    'type' => '评论',
+                    'projectid' => $task['projectid'],
+                    'taskid' => $task['id'],
+                    'username' => $user['username'],
+                    'detail' => $content,
+                    'indate' => Base::time(),
+                    'other' => Base::array2string([
+                        'type' => 'task',
+                        'id' => $task['id'],
+                        'title' => $task['title'],
+                    ])
+                ];
+                $message = "评论成功！";
+                break;
+            }
+
             default: {
                 return Base::retError('参数错误！');
                 break;
@@ -1577,7 +1610,11 @@ class ProjectController extends Controller
         if ($logArray) {
             DB::table('project_log')->insert($logArray);
         }
-        return Base::retSuccess($message ?: '修改成功！', array_merge($task, $upArray));
+        //
+        $task = array_merge($task, $upArray);
+        $task['overdue'] = Project::taskIsOverdue($task);
+        $task = array_merge($task, Users::username2basic($task['username']));
+        return Base::retSuccess($message ?: '修改成功！', $task);
     }
 
     /**
@@ -1904,6 +1941,10 @@ class ProjectController extends Controller
      *
      * @apiParam {Number} [projectid]           项目ID
      * @apiParam {Number} [taskid]              任务ID（如果项目ID为空时此参必须赋值且任务必须是自己负责人）
+     * @apiParam {String} [type]                类型
+     * - 全部: 日志+评论（默认）
+     * - 日志
+     * - 评论
      * @apiParam {String} [username]            用户名
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
@@ -1927,6 +1968,7 @@ class ProjectController extends Controller
         //
         $taskid = intval(Request::input('taskid'));
         $whereArray = [];
+        $whereFunc = null;
         if ($projectid > 0) {
             $whereArray[] = ['projectid', '=', $projectid];
             if ($taskid > 0) {
@@ -1945,9 +1987,26 @@ class ProjectController extends Controller
         if (trim(Request::input('username'))) {
             $whereArray[] = ['username', '=', trim(Request::input('username'))];
         }
+        switch (trim(Request::input('type'))) {
+            case '日志': {
+                $whereArray[] = ['type', '=', '日志'];
+                break;
+            }
+            case '评论': {
+                $whereArray[] = ['type', '=', '评论'];
+                break;
+            }
+            default: {
+                $whereFunc = function ($query) {
+                    $query->whereIn('type', ['日志', '评论']);
+                };
+                break;
+            }
+        }
         //
         $lists = DB::table('project_log')
             ->where($whereArray)
+            ->where($whereFunc)
             ->orderByDesc('indate')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {

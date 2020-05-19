@@ -50,7 +50,7 @@
                                     :disabled="taskSortDisabled"
                                     @sort="taskSortUpdate"
                                     @remove="taskSortUpdate">
-                                    <div v-for="task in taskDatas[index].lists" class="content-li task-draggable" :key="task.id" :class="{complete:task.complete}" @click="taskDetail(task)">
+                                    <div v-for="task in taskDatas[index].lists" class="content-li task-draggable" :key="task.id" :class="{complete:task.complete}" @click="openTaskModal(task)">
                                         <Icon v-if="task.complete" class="task-check" type="md-checkbox-outline" />
                                         <Icon v-else class="task-check" type="md-square-outline" />
                                         <div v-if="task.overdue" class="task-overdue">[超期]</div>
@@ -380,7 +380,7 @@
                         level: index,
                         sorts: {key:'userorder', order:'desc'},
                         page: currentPage,
-                        pagesize: 10,
+                        pagesize: 20,
                     },
                     complete: () => {
                         this.taskSortDisabled = false;
@@ -528,6 +528,30 @@
                     }
                 });
             },
+
+            openTaskModal(task) {
+                this.taskDetail(task, (act, detail) => {
+                    for (let key in detail) {
+                        if (detail.hasOwnProperty(key)) {
+                            this.$set(task, key, detail[key])
+                        }
+                    }
+                    switch (act) {
+                        case "title": // 标题
+                        case "desc": // 描述
+                        case "level": // 优先级
+                        case "username": // 负责人
+                        case "plannedtime": // 设置计划时间
+                        case "unplannedtime": // 取消计划时间
+                        case "complete": // 标记完成
+                        case "unfinished": // 标记未完成
+                        case "archived": // 归档
+                        case "unarchived": // 取消归档
+                        case "delete": // 删除任务
+                        case "comment": // 评论
+                    }
+                })
+            }
         },
     }
 </script>

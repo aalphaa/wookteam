@@ -11,13 +11,14 @@
                     </div>
                 </div>
                 <div class="detail-desc-box detail-icon">
-                    <div class="detail-h2"><strong>描述</strong></div>
+                    <div class="detail-h2"><strong class="active">描述</strong></div>
                     <textarea v-model="detail.desc" placeholder="添加详细描述..." @blur="handleTask('desc')"></textarea>
                 </div>
                 <ul class="detail-text-box">
                     <li v-if="detail.startdate > 0 && detail.enddate > 0" class="text-time detail-icon">
                         计划时间：
                         <em>{{$A.formatDate("Y-m-d H:i", detail.startdate)}} 至 {{$A.formatDate("Y-m-d H:i", detail.enddate)}}</em>
+                        <em v-if="detail.overdue" class="overdue">[已超期]</em>
                     </li>
                     <li class="text-username detail-icon">
                         负责人：
@@ -29,79 +30,70 @@
                     </li>
                     <li class="text-status detail-icon">
                         任务状态：
-                        <em v-if="detail.overdue" class="overdue">已超期</em>
-                        <em v-else-if="detail.complete" class="complete">已完成</em>
+                        <em v-if="detail.complete" class="complete">已完成</em>
                         <em v-else class="unfinished">未完成</em>
                     </li>
                 </ul>
                 <div :style="`${detail.filenum>0?'':'display:none'}`">
-                    <div class="detail-h2 detail-file-box detail-icon"><strong>附件</strong></div>
+                    <div class="detail-h2 detail-file-box detail-icon"><strong class="active">附件</strong></div>
                     <project-task-files ref="upload" :taskid="taskid" :simple="true" @change="handleTask('filechange', $event)"></project-task-files>
                 </div>
-                <div class="detail-h2 detail-comment-box detail-icon"><strong>评论</strong><em></em><strong>操作记录</strong></div>
+                <div class="detail-h2 detail-comment-box detail-icon"><strong class="link" :class="{active:logType=='评论'}" @click="logType='评论'">评论</strong><em></em><strong class="link" :class="{active:logType=='日志'}" @click="logType='日志'">操作记录</strong></div>
                 <div class="detail-log-box">
-                    <project-task-logs ref="log" :projectid="detail.projectid" :taskid="taskid" :pagesize="5"></project-task-logs>
+                    <project-task-logs ref="log" :logtype="logType" :projectid="detail.projectid" :taskid="taskid" :pagesize="5"></project-task-logs>
                 </div>
                 <div class="detail-footer-box">
                     <Input class="comment-input" v-model="commentText" type="textarea" :rows="1" :autosize="{ minRows: 1, maxRows: 3 }" :maxlength="255" @on-keydown="commentKeydown" placeholder="输入评论，Enter发表评论，Shift+Enter换行" />
-                    <Button type="primary">评 论</Button>
+                    <Button :loading="!!loadData.comment" :disabled="!commentText" type="primary" @click="handleTask('comment')">评 论</Button>
                 </div>
             </div>
             <div class="detail-right">
                 <div class="cancel"><em @click="visible=false"></em></div>
-                <div class="btn">
-                    <Dropdown trigger="click" @on-click="handleTask">
-                        <i class="ft icon">&#xE6CB;</i>标记{{detail.complete?'未完成':'已完成'}}
-                        <DropdownMenu slot="list">
-                            <DropdownItem name="complete">标记已完成<Icon v-if="detail.complete && !detail.archived" type="md-checkmark" class="checkmark"/></DropdownItem>
-                            <DropdownItem name="unfinished">标记未完成<Icon v-if="!detail.complete" type="md-checkmark" class="checkmark"/></DropdownItem>
-                            <DropdownItem name="archived2">完成并归档<Icon v-if="detail.complete && detail.archived" type="md-checkmark" class="checkmark"/></DropdownItem>
-                        </DropdownMenu>
-                    </Dropdown>
-                </div>
-                <div class="btn">
-                    <Dropdown trigger="click" @on-click="handleTask">
-                        <i class="ft icon">&#xE7AD;</i>优先级
-                        <DropdownMenu slot="list">
-                            <DropdownItem v-for="level in [1,2,3,4]" :key="level" :name="`level-${level}`" :class="`p${level}`">{{levelFormt(level)}}<Icon v-if="detail.level==level" type="md-checkmark" class="checkmark"/></DropdownItem>
-                        </DropdownMenu>
-                    </Dropdown>
-                </div>
-                <div class="btn">
-                    <Poptip placement="bottom" transfer>
-                        <i class="ft icon">&#xE6FD;</i>负责人
-                        <div slot="content">
-                            <div style="width:240px">
-                                选择负责人
-                                <UseridInput :projectid="detail.projectid" @change="handleTask('username', $event)" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
-                            </div>
+                <Dropdown trigger="click" class="block" @on-click="handleTask">
+                    <Button :loading="!!loadData.unfinished || !!loadData.complete" icon="md-checkmark-circle-outline" class="btn">标记{{detail.complete?'未完成':'已完成'}}</Button>
+                    <DropdownMenu slot="list">
+                        <DropdownItem name="unfinished">标记未完成<Icon v-if="!detail.complete" type="md-checkmark" class="checkmark"/></DropdownItem>
+                        <DropdownItem name="complete">标记已完成<Icon v-if="detail.complete" type="md-checkmark" class="checkmark"/></DropdownItem>
+                        <DropdownItem name="archived2">完成并归档<Icon v-if="detail.complete && detail.archived" type="md-checkmark" class="checkmark"/></DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
+                <Dropdown trigger="click" class="block" @on-click="handleTask">
+                    <Button :loading="!!loadData.level" icon="md-funnel" class="btn">优先级</Button>
+                    <DropdownMenu slot="list">
+                        <DropdownItem v-for="level in [1,2,3,4]" :key="level" :name="`level-${level}`" :class="`p${level}`">{{levelFormt(level)}}<Icon v-if="detail.level==level" type="md-checkmark" class="checkmark"/></DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
+                <Poptip placement="bottom" class="block" transfer>
+                    <Button :loading="!!loadData.username" icon="md-person" class="btn">负责人</Button>
+                    <div slot="content">
+                        <div style="width:240px">
+                            选择负责人
+                            <UseridInput :projectid="detail.projectid" @change="handleTask('username', $event)" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
                         </div>
-                    </Poptip>
-                </div>
-                <div class="btn">
-                    <Poptip ref="timeRef" placement="bottom" @on-popper-show="handleTask('opentime')" transfer>
-                        <i class="ft icon">&#xE706;</i>计划时间
-                        <div slot="content">
-                            <div style="width:280px">
-                                选择日期范围
-                                <Date-picker
-                                    v-model="timeValue"
-                                    :options="timeOptions"
-                                    :placeholder="$L('日期范围')"
-                                    format="yyyy-MM-dd HH:mm"
-                                    type="datetimerange"
-                                    placement="bottom"
-                                    @on-ok="handleTask('plannedtime')"
-                                    @on-clear="handleTask('unplannedtime')"
-                                    style="display:block;margin:5px 0 3px"></Date-picker>
-                            </div>
+                    </div>
+                </Poptip>
+                <Poptip ref="timeRef" placement="bottom" class="block" @on-popper-show="handleTask('opentime')" transfer>
+                    <Button :loading="!!loadData.plannedtime || !!loadData.unplannedtime" icon="md-calendar" class="btn">计划时间</Button>
+                    <div slot="content">
+                        <div style="width:280px">
+                            选择日期范围
+                            <Date-picker
+                                v-model="timeValue"
+                                :options="timeOptions"
+                                :placeholder="$L('日期范围')"
+                                format="yyyy-MM-dd HH:mm"
+                                type="datetimerange"
+                                placement="bottom"
+                                @on-ok="handleTask('plannedtime')"
+                                @on-clear="handleTask('unplannedtime')"
+                                style="display:block;margin:5px 0 3px"></Date-picker>
                         </div>
-                    </Poptip>
-                </div>
-                <div class="btn" @click="handleTask('fileupload')"><i class="ft icon">&#xE701;</i>添加附件</div>
-                <div v-if="!detail.archived" class="btn" @click="handleTask('archived')"><i class="ft icon">&#xE85F;</i>归档</div>
-                <div v-else class="btn" @click="handleTask('unarchived')"><i class="ft icon">&#xE85F;</i>取消归档</div>
-                <div class="btn remove" @click="handleTask('deleteb')"><i class="ft icon">&#xE6FB;</i>删除</div>
+                    </div>
+                </Poptip>
+                <Button icon="md-attach" class="btn" @click="handleTask('fileupload')">添加附件</Button>
+                <Button v-if="!detail.archived" :loading="!!loadData.archived" icon="md-filing" class="btn" @click="handleTask('archived')">归档</Button>
+                <Button v-else :loading="!!loadData.unarchived" icon="md-filing" class="btn" @click="handleTask('unarchived')">取消归档</Button>
+                <Button :loading="!!loadData.delete" icon="md-trash" class="btn" type="error" ghost @click="handleTask('deleteb')">删除</Button>
             </div>
         </div>
     </div>
@@ -114,12 +106,17 @@
         components: {ProjectTaskFiles, ProjectTaskLogs},
         data() {
             return {
-                visible: false,
                 taskid: 0,
                 detail: {},
+                callback: null,
+
+                visible: false,
+
                 bakData: {},
                 loadData: {},
+
                 commentText: '',
+                logType: '评论',
 
                 timeValue: [],
                 timeOptions: {
@@ -138,12 +135,12 @@
                     }, {
                         text: '本周',
                         value() {
-                            return [$A.getData('今天'), $A.getData('本周结束')];
+                            return [$A.getData('今天', true), $A.getData('本周结束', true)];
                         }
                     }, {
                         text: '本月',
                         value() {
-                            return [$A.getData('今天'), $A.getData('本月结束')];
+                            return [$A.getData('今天', true), $A.getData('本月结束', true)];
                         }
                     }, {
                         text: '3天',
@@ -195,10 +192,12 @@
                 }, 0)
             });
             this.bakData = $A.cloneData(this.detail);
+            this.getTaskDetail();
         },
         watch: {
             taskid() {
                 this.bakData = $A.cloneData(this.detail);
+                this.getTaskDetail();
             }
         },
         methods: {
@@ -222,10 +221,43 @@
                         return;
                     }
                     e.preventDefault();
+                    this.handleTask('comment');
                 }
             },
 
+            getTaskDetail() {
+                $A.aAjax({
+                    url: 'project/task/lists',
+                    data: {
+                        taskid: this.taskid
+                    },
+                    error: () => {
+                        alert(this.$L('网络繁忙，请稍后再试！'));
+                        this.visible = false;
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.detail = res.data;
+                            this.bakData = $A.cloneData(this.detail);
+                        } else {
+                            this.$Modal.error({
+                                title: this.$L('温馨提示'),
+                                content: res.msg,
+                                onOk: () => {
+                                    this.visible = false;
+                                }
+                            });
+                        }
+                    }
+                });
+            },
+
             handleTask(act, eve) {
+                if (!!this.loadData[act]) {
+                    this.$Message.info(this.$L('请稍候...'));
+                    return;
+                }
+                //
                 let ajaxData = {
                     act: act,
                     taskid: this.taskid,
@@ -240,6 +272,7 @@
                         }
                         if (!this.detail[act]) {
                             this.$set(this.detail, act, this.bakData[act]);
+                            return;
                         }
                         ajaxData.content = this.detail[act];
                         ajaxCallback = (res) => {
@@ -265,7 +298,7 @@
                                 break;
                         }
                         if (eve == 'add' || eve == 'delete') {
-                            this.$refs.log.getLists(true, true);
+                            this.logType == '日志' && this.$refs.log.getLists(true, true);
                         }
                         return;
 
@@ -300,7 +333,13 @@
                         ajaxData.content = eve.username;
                         ajaxCallback = (res) => {
                             if (res === 1) {
-                                this.visible = false;
+                                this.$Modal.info({
+                                    title: '温馨提示',
+                                    content: '任务负责人已改变，点击确定关闭窗口。',
+                                    onOk: () => {
+                                        this.visible = false;
+                                    }
+                                });
                             }
                         };
                         break;
@@ -321,7 +360,7 @@
 
                     case 'unplannedtime':
                         this.$refs.timeRef.handleClose();
-                        return;
+                        break;
 
                     case 'deleteb':
                         this.$Modal.confirm({
@@ -336,18 +375,41 @@
                     case 'delete':
                         ajaxCallback = (res) => {
                             if (res === 1) {
-                                this.visible = false;
+                                this.$Modal.info({
+                                    title: '温馨提示',
+                                    content: '任务已删除，点击确定关闭窗口。',
+                                    onOk: () => {
+                                        this.visible = false;
+                                    }
+                                });
                             }
                         };
                         break;
+
+                    case 'comment':
+                        if (!this.commentText) {
+                            return;
+                        }
+                        ajaxData.content = this.commentText;
+                        ajaxCallback = (res) => {
+                            if (res === 1) {
+                                this.commentText = "";
+                                this.logType == '评论' && this.$refs.log.getLists(true, true);
+                            }
+                        };
+                        break;
+
+                    default: {
+                        return;
+                    }
                 }
                 //
-                this.$set(this.loadData, act, true);
+                this.$set(this.loadData, ajaxData.act, true);
                 $A.aAjax({
                     url: 'project/task/edit',
                     data: ajaxData,
                     complete: () => {
-                        this.$set(this.loadData, act, false);
+                        this.$set(this.loadData, ajaxData.act, false);
                     },
                     error: () => {
                         ajaxCallback(-1);
@@ -358,8 +420,11 @@
                             this.detail = res.data;
                             this.bakData = $A.cloneData(this.detail);
                             if (ajaxCallback(1) !== false) {
+                                this.logType == '日志' && this.$refs.log.getLists(true, true);
                                 this.$Message.success(res.msg);
-                                this.$refs.log.getLists(true, true);
+                            }
+                            if (typeof this.callback === "function") {
+                                this.callback(ajaxData.act, res.data, ajaxData);
                             }
                         } else {
                             ajaxCallback(0);
@@ -396,9 +461,9 @@
         .task-detail-main {
             display: flex;
             flex-direction: row;
-            width: 96%;
+            width: 92%;
             max-width: 800px;
-            max-height: 96%;
+            max-height: 92%;
             background: #ffffff;
             overflow: hidden;
             border-radius: 4px;
@@ -415,8 +480,19 @@
                     display: flex;
                     align-items: center;
                     line-height: 26px;
+                    strong {
+                        font-size: 14px;
+                        font-weight: normal;
+                        &.link {
+                            cursor: pointer;
+                        }
+                        &.active {
+                            font-size: 16px;
+                            font-weight: bold;
+                        }
+                    }
                     em {
-                        margin: 0 11px;
+                        margin: 0 9px;
                         width: 1px;
                         height: 10px;
                         background: #cccccc;
@@ -492,14 +568,14 @@
                     li {
                         color: #606266;
                         font-size: 14px;
-                        line-height: 30px;
+                        line-height: 32px;
                         word-break: break-all;
                         &:before {
                             font-weight: normal;
                             color: #606266;
                             font-size: 14px;
                             padding-left: 4px;
-                            line-height: 30px;
+                            line-height: 32px;
                         }
                         &.text-time {
                             &:before {
@@ -611,28 +687,8 @@
                         }
                     }
                 }
-                .btn {
-                    background: rgba(9, 30, 66, 0.04);
-                    border: 1px solid #E8EAEE;
-                    border-radius: 4px;
-                    padding: 4px 8px;
-                    margin-top: 6px;
-                    color: #172b4d;
-                    cursor: pointer;
+                .block {
                     display: block;
-                    &:hover {
-                        border-color: #409EFF;
-                        background: #409EFF;
-                        color: #fff;
-                    }
-                    &.remove {
-                        color: rgba(248, 14, 21, 0.5);
-                        &:hover {
-                            border-color: #ffa5a3;
-                            background: #ffa5a3;
-                            color: #ffffff;
-                        }
-                    }
                     .p1 {
                         color: #ed3f14;
                     }
@@ -645,13 +701,18 @@
                     .p4 {
                         color: #666666;
                     }
-                    .icon {
-                        margin-right: 4px;
-                    }
                     .checkmark {
                         margin-left: 8px;
                         margin-right: -8px;
                     }
+                }
+                .btn {
+                    display: block;
+                    width: 118px;
+                    text-align: left;
+                    margin-top: 8px;
+                    padding-left: 10px;
+                    padding-right: 10px;
                 }
             }
         }

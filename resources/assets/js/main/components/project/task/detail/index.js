@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import component from './detail.vue'
 
-const detailElement = (taskid, detail = {}) => {
+const detailElement = (taskid, detail = {}, callback = null) => {
     let cloneData = (myObj) => {
         if (typeof (myObj) !== 'object') return myObj;
         if (myObj === null) return myObj;
@@ -16,6 +16,11 @@ const detailElement = (taskid, detail = {}) => {
     };
     return new Promise(() => {
         let custom = Vue.extend(component);
+
+        if (typeof detail === "function") {
+            callback = detail;
+            detail = {};
+        }
 
         if (typeof taskid === 'object' && taskid !== null) {
             detail = cloneData(taskid);
@@ -36,6 +41,7 @@ const detailElement = (taskid, detail = {}) => {
         let data = {
             taskid: taskid,
             detail: detail,
+            callback: callback,
         };
 
         let instance = new custom({
