@@ -26,7 +26,7 @@
                                      @click="eventClick(event,$event)">
                                     <img class="avatar" v-if="event.avatar" :src="event.avatar" @error="($set(event, 'avatar', null))"/>
                                     <span v-else :class="`icon icon${event.id%4}`">{{event.name}}</span>
-                                    <p class="info">{{isBegin(event, day.date, day.weekDay)}}</p>
+                                    <p class="info" v-html="isBegin(event, day.date, day.weekDay)"></p>
                                     <div id="card" :class="cardClass" v-if="event &&showCard == event.id" @click.stop>
                                         <slot name="body-card"></slot>
                                     </div>
@@ -65,7 +65,7 @@
                                  @click="eventClick(event,$event)">
                                 <img class="avatar" v-if="event.avatar" :src="event.avatar" @error="($set(event, 'avatar', null))"/>
                                 <span v-else :class="`icon icon${event.id%4}`">{{event.name}}</span>
-                                <p class="info">{{event.title}}</p>
+                                <p class="info" v-html="event.title"></p>
                                 <div id="card" :class="cardClass" v-if="event && showCard == event.id" @click.stop>
                                     <slot name="body-card"></slot>
                                 </div>

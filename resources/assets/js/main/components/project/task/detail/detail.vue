@@ -3,7 +3,7 @@
         <div class="task-detail-main">
             <div class="detail-left">
                 <div class="detail-title-box detail-icon">
-                    <input v-model="detail.title" :disabled="!!loadData.title" type="text" maxlength="60" @blur="handleTask('title')">
+                    <input v-model="detail.title" :disabled="!!loadData.title" type="text" maxlength="60" @keydown.enter="(e)=>{e.target.blur()}" @blur="handleTask('title')">
                     <div class="time">
                         <span class="z-nick">{{detail.createuser}}</span>
                         创建于：
@@ -12,7 +12,7 @@
                 </div>
                 <div class="detail-desc-box detail-icon">
                     <div class="detail-h2"><strong class="active">描述</strong></div>
-                    <textarea v-model="detail.desc" placeholder="添加详细描述..." @blur="handleTask('desc')"></textarea>
+                    <textarea v-model="detail.desc" placeholder="添加详细描述..."  @keydown="descKeydown" @blur="handleTask('desc')"></textarea>
                 </div>
                 <ul class="detail-text-box">
                     <li v-if="detail.startdate > 0 && detail.enddate > 0" class="text-time detail-icon">
@@ -63,7 +63,7 @@
                         <DropdownItem v-for="level in [1,2,3,4]" :key="level" :name="`level-${level}`" :class="`p${level}`">{{levelFormt(level)}}<Icon v-if="detail.level==level" type="md-checkmark" class="checkmark"/></DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
-                <Poptip placement="bottom" class="block" transfer>
+                <Poptip placement="bottom" class="block">
                     <Button :loading="!!loadData.username" icon="md-person" class="btn">负责人</Button>
                     <div slot="content">
                         <div style="width:240px">
@@ -72,7 +72,7 @@
                         </div>
                     </div>
                 </Poptip>
-                <Poptip ref="timeRef" placement="bottom" class="block" @on-popper-show="handleTask('opentime')" transfer>
+                <Poptip ref="timeRef" placement="bottom" class="block" @on-popper-show="handleTask('opentime')">
                     <Button :loading="!!loadData.plannedtime || !!loadData.unplannedtime" icon="md-calendar" class="btn">计划时间</Button>
                     <div slot="content">
                         <div style="width:280px">
@@ -211,6 +211,17 @@
                         return "紧急不重要 (P3)";
                     case 4:
                         return "不重要不紧急 (P4)";
+                }
+            },
+
+            descKeydown(e) {
+                e = e || event;
+                if (e.keyCode == 13) {
+                    if (e.shiftKey) {
+                        return;
+                    }
+                    e.preventDefault();
+                    e.target.blur();
                 }
             },
 
@@ -440,7 +451,7 @@
 <style lang="scss" scoped>
     .project-task-detail-window {
         position: fixed;
-        z-index: 99;
+        z-index: 1001;
         top: 0;
         left: 0;
         height: 100%;
@@ -465,7 +476,7 @@
             max-width: 800px;
             max-height: 92%;
             background: #ffffff;
-            overflow: hidden;
+            overflow: visible;
             border-radius: 4px;
             padding: 10px 20px 2px;
             transform: translateZ(0);

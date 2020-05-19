@@ -37,8 +37,34 @@
         },
 
         methods: {
-            clickEvent(event, jsEvent){
-                console.log(event, jsEvent)
+            clickEvent(event){
+                this.taskDetail(event.id, (act, detail) => {
+                    let data = this.formatTaskData(detail);
+                    for (let key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            this.$set(event, key, data[key])
+                        }
+                    }
+                    //
+                    switch (act) {
+                        case "username":    // 负责人
+                        case "delete":      // 删除任务
+                        case "archived":    // 归档
+                            this.lists.some((task, i) => {
+                                if (task.id == detail.id) {
+                                    this.lists.splice(i, 1);
+                                    return true;
+                                }
+                            });
+                            break;
+
+                        case "unarchived":  // 取消归档
+                            this.lists.push(data);
+                            break;
+                    }
+                    //
+                    this.$emit("change", act, detail);
+                });
             },
 
             changeDateRange(startdate, enddate){
@@ -66,23 +92,7 @@
                             let inLists,
                                 data;
                             res.data.lists.forEach((temp) => {
-                                let title = temp.title;
-                                let startdate = temp.startdate || temp.indate;
-                                let enddate = temp.enddate || temp.indate;
-                                if (startdate != enddate) {
-                                    title = $A.formatDate('H:i', startdate) + "~" + $A.formatDate('H:i', enddate) + " " + title;
-                                } else {
-                                    title = $A.formatDate('H:i', startdate) + " " + title;
-                                }
-                                data = {
-                                    "id": temp.id,
-                                    "start": $A.formatDate('Y-m-d H:i:s', startdate),
-                                    "end": $A.formatDate('Y-m-d H:i:s', enddate),
-                                    "title": title,
-                                    "color": "#D8F8F2",
-                                    "avatar": temp.userimg,
-                                    "name": temp.nickname || temp.username
-                                };
+                                data = this.formatTaskData(temp);
                                 inLists = false;
                                 this.lists.some((item, i) => {
                                     if (item.id == data.id) {
@@ -101,6 +111,48 @@
                     }
                 });
             },
+
+            formatTaskData(taskData) {
+                let title = taskData.title;
+                let startdate = taskData.startdate || taskData.indate;
+                let enddate = taskData.enddate || taskData.indate;
+                if (startdate != enddate) {
+                    let ymd1 = $A.formatDate('Y-m-d', startdate)
+                    let ymd2 = $A.formatDate('Y-m-d', enddate)
+                    let time = ymd1 + "~" + ymd2;
+                    if (ymd1 == ymd2) {
+                        time = $A.formatDate('H:i', startdate) + "~" + $A.formatDate('H:i', enddate);
+                    } else if (ymd1.substring(0, 4) == ymd2.substring(0, 4)) {
+                        time = $A.formatDate('m-d', startdate) + "~" + $A.formatDate('m-d', enddate);
+                    }
+                    title = time + " " + title;
+                } else {
+                    title = $A.formatDate('H:i', startdate) + " " + title;
+                }
+                //
+                if (taskData.complete) {
+                    title = '<span style="text-decoration:line-through">' + title + '</span>';
+                }
+                let color = '#D8F8F2';
+                if (taskData.level === 1) {
+                    color = 'rgba(248, 14, 21, 0.6)';
+                }else if (taskData.level === 2) {
+                    color = 'rgba(236, 196, 2, 0.5)';
+                }else if (taskData.level === 3) {
+                    color = 'rgba(0, 159, 227, 0.7)';
+                }else if (taskData.level === 4) {
+                    color = 'rgba(121, 170, 28, 0.7)';
+                }
+                return {
+                    "id": taskData.id,
+                    "start": $A.formatDate('Y-m-d H:i:s', startdate),
+                    "end": $A.formatDate('Y-m-d H:i:s', enddate),
+                    "title": title,
+                    "color": color,
+                    "avatar": taskData.userimg,
+                    "name": taskData.nickname || taskData.username
+                };
+            }
         }
     }
 </script>

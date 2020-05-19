@@ -51,8 +51,9 @@
                                     @sort="taskSortUpdate"
                                     @remove="taskSortUpdate">
                                     <div v-for="task in taskDatas[index].lists" class="content-li task-draggable" :key="task.id" :class="{complete:task.complete}" @click="openTaskModal(task)">
-                                        <Icon v-if="task.complete" class="task-check" type="md-checkbox-outline" />
-                                        <Icon v-else class="task-check" type="md-square-outline" />
+                                        <Icon v-if="task.complete" class="task-check" type="md-checkbox-outline" @click.stop="taskComplete(task, false)"/>
+                                        <Icon v-else class="task-check" type="md-square-outline" @click.stop="taskComplete(task, true)"/>
+                                        <div v-if="!!task.loadIng" class="task-loading"><w-loading></w-loading></div>
                                         <div v-if="task.overdue" class="task-overdue">[超期]</div>
                                         <div class="task-title">{{task.title}}</div>
                                     </div>
@@ -70,13 +71,13 @@
         <Drawer v-model="todoDrawerShow" width="75%">
             <Tabs v-if="todoDrawerShow" v-model="todoDrawerTab">
                 <TabPane :label="$L('待办日程')" name="calendar">
-                    <todo-calendar :canload="todoDrawerShow && todoDrawerTab == 'calendar'"></todo-calendar>
+                    <todo-calendar :canload="todoDrawerShow && todoDrawerTab == 'calendar'" @change="changeTaskProcess"></todo-calendar>
                 </TabPane>
                 <TabPane :label="$L('已完成的任务')" name="complete">
-                    <todo-complete :canload="todoDrawerShow && todoDrawerTab == 'complete'"></todo-complete>
+                    <todo-complete :canload="todoDrawerShow && todoDrawerTab == 'complete'" @change="changeTaskProcess"></todo-complete>
                 </TabPane>
                 <TabPane :label="$L('我关注的任务')" name="attention">
-                    <todo-attention :canload="todoDrawerShow && todoDrawerTab == 'attention'"></todo-attention>
+                    <todo-attention :canload="todoDrawerShow && todoDrawerTab == 'attention'" @change="changeTaskProcess"></todo-attention>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -236,7 +237,13 @@
                                     .task-check {
                                         font-size: 16px;
                                         padding-right: 6px;
-                                        padding-top: 2px;
+                                        padding-top: 3px;
+                                    }
+                                    .task-loading {
+                                        width: 15px;
+                                        height: 15px;
+                                        margin-right: 6px;
+                                        margin-top: 3px;
                                     }
                                     .task-overdue {
                                         color: #ff0000;
@@ -303,8 +310,13 @@
     import TodoComplete from "../components/project/todo/complete";
     import TodoAttention from "../components/project/todo/attention";
 
+    import Task from "../mixins/task";
+
     export default {
         components: {draggable, TodoAttention, TodoComplete, TodoCalendar, WContent, WHeader, WLoading},
+        mixins: [
+            Task
+        ],
         data () {
             return {
                 userInfo: {},
@@ -364,12 +376,20 @@
             getTaskLists(index, isNext) {
                 let taskData = this.taskDatas[index];
                 let currentPage = 1;
+                let pagesize = 20;
+                let withNextPage = false;
+                //
                 if (isNext === true) {
                     if (taskData.hasMorePages !== true) {
                         return;
                     }
                     currentPage = Math.max(1, $A.runNum(taskData['currentPage']));
-                    currentPage++;
+                    let tempLists = this.taskDatas[detail.level].lists.filter((item) => { return item.complete == 0; });
+                    if (tempLists.length >= currentPage * pagesize) {
+                        currentPage++;
+                    } else {
+                        withNextPage = true;
+                    }
                 }
                 this.$set(taskData, 'hasMorePages', false);
                 this.$set(taskData, 'loadIng', $A.runNum(taskData.loadIng) + 1);
@@ -380,7 +400,7 @@
                         level: index,
                         sorts: {key:'userorder', order:'desc'},
                         page: currentPage,
-                        pagesize: 20,
+                        pagesize: pagesize,
                     },
                     complete: () => {
                         this.taskSortDisabled = false;
@@ -404,6 +424,9 @@
                             this.taskSortData = this.getTaskSort();
                             this.$set(taskData, 'currentPage', res.data.currentPage);
                             this.$set(taskData, 'hasMorePages', res.data.hasMorePages);
+                            if (res.data.currentPage && withNextPage) {
+                                this.getTaskLists(index, true);
+                            }
                         } else {
                             this.$set(taskData, 'lists', []);
                             this.$set(taskData, 'hasMorePages', false);
@@ -518,9 +541,6 @@
                     success: (res) => {
                         if (res.ret === 1) {
                             this.$Message.success(res.msg);
-                            res.data.forEach((level) => {
-                                this.getTaskLists(level.toString());
-                            });
                         } else {
                             this.refreshTask();
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
@@ -529,28 +549,85 @@
                 });
             },
 
-            openTaskModal(task) {
-                this.taskDetail(task, (act, detail) => {
-                    for (let key in detail) {
-                        if (detail.hasOwnProperty(key)) {
-                            this.$set(task, key, detail[key])
+            openTaskModal(taskDetail) {
+                this.taskDetail(taskDetail, (act, detail) => {
+                    this.changeTaskProcess(act, detail);
+                });
+            },
+
+            changeTaskProcess(act, detail) {
+                for (let level in this.taskDatas) {
+                    this.taskDatas[level].lists.some((task, i) => {
+                        if (task.id == detail.id) {
+                            for (let key in detail) {
+                                if (detail.hasOwnProperty(key)) {
+                                    this.$set(task, key, detail[key])
+                                }
+                            }
+                            return true;
                         }
-                    }
-                    switch (act) {
-                        case "title": // 标题
-                        case "desc": // 描述
-                        case "level": // 优先级
-                        case "username": // 负责人
-                        case "plannedtime": // 设置计划时间
-                        case "unplannedtime": // 取消计划时间
-                        case "complete": // 标记完成
-                        case "unfinished": // 标记未完成
-                        case "archived": // 归档
-                        case "unarchived": // 取消归档
-                        case "delete": // 删除任务
-                        case "comment": // 评论
-                    }
-                })
+                    });
+                }
+                //
+                switch (act) {
+                    case "title": // 标题
+                    case "desc": // 描述
+                    case "plannedtime": // 设置计划时间
+                    case "unplannedtime": // 取消计划时间
+                    case "complete": // 标记完成
+                    case "unfinished": // 标记未完成
+                    case "comment": // 评论
+                        // 这些都不用处理
+                        break;
+
+                    case "level":       // 优先级
+                        for (let level in this.taskDatas) {
+                            this.taskDatas[level].lists.some((task, i) => {
+                                if (task.id == detail.id) {
+                                    this.taskDatas[level].lists.splice(i, 1);
+                                    return true;
+                                }
+                            });
+                            if (level == detail.level) {
+                                this.taskDatas[level].lists.some((task, i) => {
+                                    if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
+                                        this.taskDatas[level].lists.splice(i, 0, detail);
+                                        return true;
+                                    }
+                                });
+                            }
+                        }
+                        this.taskSortData = this.getTaskSort();
+                        break;
+
+                    case "username":    // 负责人
+                    case "delete":      // 删除任务
+                    case "archived":    // 归档
+                        for (let level in this.taskDatas) {
+                            this.taskDatas[level].lists.some((task, i) => {
+                                if (task.id == detail.id) {
+                                    this.taskDatas[level].lists.splice(i, 1);
+                                    return true;
+                                }
+                            });
+                        }
+                        this.taskSortData = this.getTaskSort();
+                        break;
+
+                    case "unarchived":  // 取消归档
+                        for (let level in this.taskDatas) {
+                            if (level == detail.level) {
+                                this.taskDatas[level].lists.some((task, i) => {
+                                    if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
+                                        this.taskDatas[level].lists.splice(i, 0, detail);
+                                        return true;
+                                    }
+                                });
+                            }
+                        }
+                        this.taskSortData = this.getTaskSort();
+                        break;
+                }
             }
         },
     }

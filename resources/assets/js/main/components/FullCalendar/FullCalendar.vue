@@ -15,12 +15,8 @@
 
             <div slot="header-right" class="btn-group">
                 <div>
-                    <button :class="{cancel:tableType=='month',primary:tableType=='week'}" @click="changeType('week')">
-                        周
-                    </button>
-                    <button :class="{cancel:tableType=='week',primary:tableType=='month'}" @click="changeType('month')">
-                        月
-                    </button>
+                    <button :class="{cancel:tableType=='month',primary:tableType=='week'}" @click="changeType('week')">周</button>
+                    <button :class="{cancel:tableType=='week',primary:tableType=='month'}" @click="changeType('month')">月</button>
                 </Div>
             </div>
         </fc-header>
