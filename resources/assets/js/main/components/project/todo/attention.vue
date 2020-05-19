@@ -52,18 +52,7 @@
                 "key": 'title',
                 "minWidth": 120,
                 render: (h, params) => {
-                    return this.renderTaskTitle(h, params, (act, detail) => {
-                        switch (act) {
-                            case "delete":      // 删除任务
-                                this.lists.some((task, i) => {
-                                    if (task.id == detail.id) {
-                                        this.lists.splice(i, 1);
-                                        return true;
-                                    }
-                                });
-                                break;
-                        }
-                    });
+                    return this.renderTaskTitle(h, params);
                 }
             }, {
                 "title": "创建人",
@@ -98,6 +87,25 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
+            $A.setOnTaskInfoListener((act, detail) => {
+                this.lists.some((task, i) => {
+                    if (task.id == detail.id) {
+                        this.lists.splice(i, 1, detail);
+                        return true;
+                    }
+                });
+                //
+                switch (act) {
+                    case "delete":      // 删除任务
+                        this.lists.some((task, i) => {
+                            if (task.id == detail.id) {
+                                this.lists.splice(i, 1);
+                                return true;
+                            }
+                        });
+                        break;
+                }
+            });
         },
 
         watch: {

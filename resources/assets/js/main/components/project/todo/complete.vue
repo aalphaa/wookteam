@@ -75,6 +75,39 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
+            $A.setOnTaskInfoListener((act, detail) => {
+                this.lists.some((task, i) => {
+                    if (task.id == detail.id) {
+                        this.lists.splice(i, 1, detail);
+                        return true;
+                    }
+                });
+                //
+                switch (act) {
+                    case "username":    // 负责人
+                    case "delete":      // 删除任务
+                    case "archived":    // 归档
+                        this.lists.some((task, i) => {
+                            if (task.id == detail.id) {
+                                this.lists.splice(i, 1);
+                                return true;
+                            }
+                        });
+                        break;
+
+                    case "unarchived":  // 取消归档
+                        let has = false;
+                        this.lists.some((task) => {
+                            if (task.id == detail.id) {
+                                return has = true;
+                            }
+                        });
+                        if (!has) {
+                            this.lists.unshift(detail);
+                        }
+                        break;
+                }
+            })
         },
 
         watch: {

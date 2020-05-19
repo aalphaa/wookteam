@@ -108,7 +108,6 @@
             return {
                 taskid: 0,
                 detail: {},
-                callback: null,
 
                 visible: false,
 
@@ -435,9 +434,7 @@
                                 this.logType == '日志' && this.$refs.log.getLists(true, true);
                                 this.$Message.success(res.msg);
                             }
-                            if (typeof this.callback === "function") {
-                                this.callback(ajaxData.act, res.data, ajaxData);
-                            }
+                            $A.triggerTaskInfoListener(ajaxData.act, res.data);
                         } else {
                             ajaxCallback(0);
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});

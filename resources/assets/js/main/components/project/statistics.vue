@@ -165,51 +165,7 @@
                 "key": 'title',
                 "minWidth": 120,
                 render: (h, params) => {
-                    return this.renderTaskTitle(h, params, (act, detail) => {
-                        switch (act) {
-                            case "delete":      // 删除任务
-                            case "archived":    // 归档
-                                this.lists.some((task, i) => {
-                                    if (task.id == detail.id) {
-                                        this.lists.splice(i, 1);
-                                        if (task.complete) {
-                                            this.statistics_complete--;
-                                        } else {
-                                            this.statistics_unfinished++;
-                                        }
-                                        return true;
-                                    }
-                                });
-                                break;
-
-                            case "unarchived":  // 取消归档
-                                let has = false;
-                                this.lists.some((task) => {
-                                    if (task.id == detail.id) {
-                                        if (task.complete) {
-                                            this.statistics_complete++;
-                                        } else {
-                                            this.statistics_unfinished--;
-                                        }
-                                        return has = true;
-                                    }
-                                });
-                                if (!has) {
-                                    this.lists.unshift(detail);
-                                }
-                                break;
-
-                            case "complete":    // 标记完成
-                                this.statistics_complete++;
-                                this.statistics_unfinished--;
-                                break;
-
-                            case "unfinished":  // 标记未完成
-                                this.statistics_complete--;
-                                this.statistics_unfinished++;
-                                break;
-                        }
-                    });
+                    return this.renderTaskTitle(h, params);
                 }
             }, {
                 "title": "创建人",
@@ -232,6 +188,61 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
+            $A.setOnTaskInfoListener((act, detail) => {
+                if (this.projectid > 0 && detail.projectid != this.projectid) {
+                    return;
+                }
+                this.lists.some((task, i) => {
+                    if (task.id == detail.id) {
+                        this.lists.splice(i, 1, detail);
+                        return true;
+                    }
+                });
+                //
+                switch (act) {
+                    case "delete":      // 删除任务
+                    case "archived":    // 归档
+                        this.lists.some((task, i) => {
+                            if (task.id == detail.id) {
+                                this.lists.splice(i, 1);
+                                if (task.complete) {
+                                    this.statistics_complete--;
+                                } else {
+                                    this.statistics_unfinished++;
+                                }
+                                return true;
+                            }
+                        });
+                        break;
+
+                    case "unarchived":  // 取消归档
+                        let has = false;
+                        this.lists.some((task) => {
+                            if (task.id == detail.id) {
+                                if (task.complete) {
+                                    this.statistics_complete++;
+                                } else {
+                                    this.statistics_unfinished--;
+                                }
+                                return has = true;
+                            }
+                        });
+                        if (!has) {
+                            this.lists.unshift(detail);
+                        }
+                        break;
+
+                    case "complete":    // 标记完成
+                        this.statistics_complete++;
+                        this.statistics_unfinished--;
+                        break;
+
+                    case "unfinished":  // 标记未完成
+                        this.statistics_complete--;
+                        this.statistics_unfinished++;
+                        break;
+                }
+            });
         },
 
         watch: {

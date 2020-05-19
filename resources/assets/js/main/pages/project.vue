@@ -109,13 +109,13 @@
         <Drawer v-model="projectDrawerShow" width="75%">
             <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
                 <TabPane :label="$L('已归档任务')" name="archived">
-                    <project-archived :canload="projectDrawerShow && projectDrawerTab == 'archived'" :projectid="handleProjectId" @change="changeTaskProcess"></project-archived>
+                    <project-archived :canload="projectDrawerShow && projectDrawerTab == 'archived'" :projectid="handleProjectId"></project-archived>
                 </TabPane>
                 <TabPane :label="$L('成员管理')" name="member">
                     <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
                 </TabPane>
                 <TabPane :label="$L('项目统计')" name="statistics">
-                    <project-statistics :canload="projectDrawerShow && projectDrawerTab == 'statistics'" :projectid="handleProjectId" @change="changeTaskProcess"></project-statistics>
+                    <project-statistics :canload="projectDrawerShow && projectDrawerTab == 'statistics'" :projectid="handleProjectId"></project-statistics>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -362,6 +362,28 @@
         },
         mounted() {
             this.getLists(true);
+            $A.setOnTaskInfoListener((act, detail) => {
+                switch (act) {
+                    case "complete":    // 标记完成
+                        this.lists.some((item) => {
+                            if (item.id == detail.projectid) {
+                                item.complete++;
+                                item.unfinished--;
+                                return true;
+                            }
+                        })
+                        break;
+                    case "unfinished":  // 标记未完成
+                        this.lists.some((item) => {
+                            if (item.id == detail.projectid) {
+                                item.complete--;
+                                item.unfinished++;
+                                return true;
+                            }
+                        })
+                        break;
+                }
+            });
         },
         deactivated() {
             this.addShow = false;
@@ -648,29 +670,6 @@
                     },
                 });
             },
-
-            changeTaskProcess(act, detail) {
-                switch (act) {
-                    case "complete":    // 标记完成
-                        this.lists.some((item) => {
-                            if (item.id == detail.projectid) {
-                                item.complete++;
-                                item.unfinished--;
-                                return true;
-                            }
-                        })
-                        break;
-                    case "unfinished":  // 标记未完成
-                        this.lists.some((item) => {
-                            if (item.id == detail.projectid) {
-                                item.complete--;
-                                item.unfinished++;
-                                return true;
-                            }
-                        })
-                        break;
-                }
-            }
         },
     }
 </script>

@@ -220,6 +220,22 @@ import '../../sass/main.scss';
         },
         __userInfoListener: [],
 
+        /**
+         * 监听任务发生变化
+         * @param callback
+         */
+        setOnTaskInfoListener(callback) {
+            if (typeof callback === "function") {
+                $A.__taskInfoListener.push(callback);
+            }
+        },
+        triggerTaskInfoListener(act, taskDetail) {
+            $A.__taskInfoListener.forEach((callback) => {
+                typeof callback === "function" && callback(act, taskDetail);
+            });
+        },
+        __taskInfoListener: [],
+
     });
 
     window.$A = $;

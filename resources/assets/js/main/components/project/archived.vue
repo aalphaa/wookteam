@@ -54,31 +54,7 @@
                 "key": 'title',
                 "minWidth": 120,
                 render: (h, params) => {
-                    return this.renderTaskTitle(h, params, (act, detail) => {
-                        switch (act) {
-                            case "delete":      // 删除任务
-                            case "unarchived":  // 取消归档
-                                this.lists.some((task, i) => {
-                                    if (task.id == detail.id) {
-                                        this.lists.splice(i, 1);
-                                        return true;
-                                    }
-                                });
-                                break;
-
-                            case "archived":    // 归档
-                                let has = false;
-                                this.lists.some((task) => {
-                                    if (task.id == detail.id) {
-                                        return has = true;
-                                    }
-                                });
-                                if (!has) {
-                                    this.lists.unshift(detail);
-                                }
-                                break;
-                        }
-                    });
+                    return this.renderTaskTitle(h, params);
                 }
             }, {
                 "title": "创建人",
@@ -128,8 +104,9 @@
                                                 setTimeout(() => {
                                                     if (res.ret === 1) {
                                                         this.$Message.success(res.msg);
-                                                    }else{
-                                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                                        $A.triggerTaskInfoListener('unarchived', res.data);
+                                                    } else {
+                                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                                                     }
                                                 }, 350);
                                             }
@@ -147,6 +124,41 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
+            $A.setOnTaskInfoListener((act, detail) => {
+                if (this.projectid > 0 && detail.projectid != this.projectid) {
+                    return;
+                }
+                this.lists.some((task, i) => {
+                    if (task.id == detail.id) {
+                        this.lists.splice(i, 1, detail);
+                        return true;
+                    }
+                });
+                //
+                switch (act) {
+                    case "delete":      // 删除任务
+                    case "unarchived":  // 取消归档
+                        this.lists.some((task, i) => {
+                            if (task.id == detail.id) {
+                                this.lists.splice(i, 1);
+                                return true;
+                            }
+                        });
+                        break;
+
+                    case "archived":    // 归档
+                        let has = false;
+                        this.lists.some((task) => {
+                            if (task.id == detail.id) {
+                                return has = true;
+                            }
+                        });
+                        if (!has) {
+                            this.lists.unshift(detail);
+                        }
+                        break;
+                }
+            });
         },
 
         watch: {

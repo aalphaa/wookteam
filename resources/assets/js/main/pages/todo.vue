@@ -75,13 +75,13 @@
         <Drawer v-model="todoDrawerShow" width="75%">
             <Tabs v-if="todoDrawerShow" v-model="todoDrawerTab">
                 <TabPane :label="$L('待办日程')" name="calendar">
-                    <todo-calendar :canload="todoDrawerShow && todoDrawerTab == 'calendar'" @change="changeTaskProcess"></todo-calendar>
+                    <todo-calendar :canload="todoDrawerShow && todoDrawerTab == 'calendar'"></todo-calendar>
                 </TabPane>
                 <TabPane :label="$L('已完成的任务')" name="complete">
-                    <todo-complete :canload="todoDrawerShow && todoDrawerTab == 'complete'" @change="changeTaskProcess"></todo-complete>
+                    <todo-complete :canload="todoDrawerShow && todoDrawerTab == 'complete'"></todo-complete>
                 </TabPane>
                 <TabPane :label="$L('我关注的任务')" name="attention">
-                    <todo-attention :canload="todoDrawerShow && todoDrawerTab == 'attention'" @change="changeTaskProcess"></todo-attention>
+                    <todo-attention :canload="todoDrawerShow && todoDrawerTab == 'attention'"></todo-attention>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -372,6 +372,76 @@
                 this.userInfo = res;
                 this.refreshTask();
             });
+            $A.setOnTaskInfoListener((act, detail) => {
+                for (let level in this.taskDatas) {
+                    this.taskDatas[level].lists.some((task, i) => {
+                        if (task.id == detail.id) {
+                            this.taskDatas[level].lists.splice(i, 1, detail);
+                            return true;
+                        }
+                    });
+                }
+                //
+                switch (act) {
+                    case "title": // 标题
+                    case "desc": // 描述
+                    case "plannedtime": // 设置计划时间
+                    case "unplannedtime": // 取消计划时间
+                    case "complete": // 标记完成
+                    case "unfinished": // 标记未完成
+                    case "comment": // 评论
+                        // 这些都不用处理
+                        break;
+
+                    case "level":       // 优先级
+                        for (let level in this.taskDatas) {
+                            this.taskDatas[level].lists.some((task, i) => {
+                                if (task.id == detail.id) {
+                                    this.taskDatas[level].lists.splice(i, 1);
+                                    return true;
+                                }
+                            });
+                            if (level == detail.level) {
+                                this.taskDatas[level].lists.some((task, i) => {
+                                    if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
+                                        this.taskDatas[level].lists.splice(i, 0, detail);
+                                        return true;
+                                    }
+                                });
+                            }
+                        }
+                        this.taskSortData = this.getTaskSort();
+                        break;
+
+                    case "username":    // 负责人
+                    case "delete":      // 删除任务
+                    case "archived":    // 归档
+                        for (let level in this.taskDatas) {
+                            this.taskDatas[level].lists.some((task, i) => {
+                                if (task.id == detail.id) {
+                                    this.taskDatas[level].lists.splice(i, 1);
+                                    return true;
+                                }
+                            });
+                        }
+                        this.taskSortData = this.getTaskSort();
+                        break;
+
+                    case "unarchived":  // 取消归档
+                        for (let level in this.taskDatas) {
+                            if (level == detail.level) {
+                                this.taskDatas[level].lists.some((task, i) => {
+                                    if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
+                                        this.taskDatas[level].lists.splice(i, 0, detail);
+                                        return true;
+                                    }
+                                });
+                            }
+                        }
+                        this.taskSortData = this.getTaskSort();
+                        break;
+                }
+            });
         },
         computed: {
 
@@ -588,85 +658,8 @@
             },
 
             openTaskModal(taskDetail) {
-                this.taskDetail(taskDetail, (act, detail) => {
-                    this.changeTaskProcess(act, detail);
-                });
+                this.taskDetail(taskDetail);
             },
-
-            changeTaskProcess(act, detail) {
-                for (let level in this.taskDatas) {
-                    this.taskDatas[level].lists.some((task, i) => {
-                        if (task.id == detail.id) {
-                            for (let key in detail) {
-                                if (detail.hasOwnProperty(key)) {
-                                    this.$set(task, key, detail[key])
-                                }
-                            }
-                            return true;
-                        }
-                    });
-                }
-                //
-                switch (act) {
-                    case "title": // 标题
-                    case "desc": // 描述
-                    case "plannedtime": // 设置计划时间
-                    case "unplannedtime": // 取消计划时间
-                    case "complete": // 标记完成
-                    case "unfinished": // 标记未完成
-                    case "comment": // 评论
-                        // 这些都不用处理
-                        break;
-
-                    case "level":       // 优先级
-                        for (let level in this.taskDatas) {
-                            this.taskDatas[level].lists.some((task, i) => {
-                                if (task.id == detail.id) {
-                                    this.taskDatas[level].lists.splice(i, 1);
-                                    return true;
-                                }
-                            });
-                            if (level == detail.level) {
-                                this.taskDatas[level].lists.some((task, i) => {
-                                    if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
-                                        this.taskDatas[level].lists.splice(i, 0, detail);
-                                        return true;
-                                    }
-                                });
-                            }
-                        }
-                        this.taskSortData = this.getTaskSort();
-                        break;
-
-                    case "username":    // 负责人
-                    case "delete":      // 删除任务
-                    case "archived":    // 归档
-                        for (let level in this.taskDatas) {
-                            this.taskDatas[level].lists.some((task, i) => {
-                                if (task.id == detail.id) {
-                                    this.taskDatas[level].lists.splice(i, 1);
-                                    return true;
-                                }
-                            });
-                        }
-                        this.taskSortData = this.getTaskSort();
-                        break;
-
-                    case "unarchived":  // 取消归档
-                        for (let level in this.taskDatas) {
-                            if (level == detail.level) {
-                                this.taskDatas[level].lists.some((task, i) => {
-                                    if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
-                                        this.taskDatas[level].lists.splice(i, 0, detail);
-                                        return true;
-                                    }
-                                });
-                            }
-                        }
-                        this.taskSortData = this.getTaskSort();
-                        break;
-                }
-            }
         },
     }
 </script>
