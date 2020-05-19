@@ -1101,9 +1101,9 @@ class ProjectController extends Controller
             ->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists, $taskid > 0 ? false : true);
         if (intval(Request::input('statistics')) == 1) {
-            $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 0)->count();
-            $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 0)->whereBetween('enddate', [1, Base::time()])->count();
-            $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('complete', 1)->count();
+            $lists['statistics_unfinished'] = $type === '未完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('archived', 0)->where('complete', 0)->count();
+            $lists['statistics_overdue'] = $type === '已超期' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('archived', 0)->where('complete', 0)->whereBetween('enddate', [1, Base::time()])->count();
+            $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('archived', 0)->where('complete', 1)->count();
         }
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的任务', $lists);
@@ -1113,6 +1113,9 @@ class ProjectController extends Controller
             $lists['lists'][$key] = array_merge($info, Users::username2basic($info['username']));
         }
         if ($taskid > 0) {
+            if (count($lists['lists']) == 0) {
+                return Base::retError('未能找到任何相关的任务');
+            }
             return Base::retSuccess('success', $lists['lists'][0]);
         } else {
             return Base::retSuccess('success', $lists);
@@ -1609,6 +1612,10 @@ class ProjectController extends Controller
         }
         if ($logArray) {
             DB::table('project_log')->insert($logArray);
+        }
+        //
+        if (in_array($act, ['complete', 'unfinished'])) {
+            Project::updateNum($task['projectid']);
         }
         //
         $task = array_merge($task, $upArray);

@@ -26,7 +26,7 @@
         <w-content>
             <!-- 列表 -->
             <ul class="project-list">
-                <li v-for="(item, index) in lists">
+                <li v-for="item in lists">
                     <div class="project-item">
                         <div class="project-head">
                             <div v-if="item.loadIng === true" class="project-loading">
@@ -54,7 +54,7 @@
                         </div>
                         <div class="project-bottom">
                             <div class="project-iconbtn" @click.stop="handleProject('archived', item)">
-                                <Icon class="project-iconbtn-icon1" type="md-checkmark-circle-outline" size="24" />
+                                <Icon class="project-iconbtn-icon1" type="md-filing" size="24" />
                                 <div class="project-iconbtn-text">已归档任务</div>
                             </div>
                             <div class="project-iconbtn" @click.stop="handleProject('member', item)">
@@ -109,13 +109,13 @@
         <Drawer v-model="projectDrawerShow" width="75%">
             <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
                 <TabPane :label="$L('已归档任务')" name="archived">
-                    <project-archived :canload="projectDrawerShow && projectDrawerTab == 'archived'" :projectid="handleProjectId"></project-archived>
+                    <project-archived :canload="projectDrawerShow && projectDrawerTab == 'archived'" :projectid="handleProjectId" @change="changeTaskProcess"></project-archived>
                 </TabPane>
                 <TabPane :label="$L('成员管理')" name="member">
                     <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
                 </TabPane>
                 <TabPane :label="$L('项目统计')" name="statistics">
-                    <project-statistics :canload="projectDrawerShow && projectDrawerTab == 'statistics'" :projectid="handleProjectId"></project-statistics>
+                    <project-statistics :canload="projectDrawerShow && projectDrawerTab == 'statistics'" :projectid="handleProjectId" @change="changeTaskProcess"></project-statistics>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -648,6 +648,29 @@
                     },
                 });
             },
+
+            changeTaskProcess(act, detail) {
+                switch (act) {
+                    case "complete":    // 标记完成
+                        this.lists.some((item) => {
+                            if (item.id == detail.projectid) {
+                                item.complete++;
+                                item.unfinished--;
+                                return true;
+                            }
+                        })
+                        break;
+                    case "unfinished":  // 标记未完成
+                        this.lists.some((item) => {
+                            if (item.id == detail.projectid) {
+                                item.complete--;
+                                item.unfinished++;
+                                return true;
+                            }
+                        })
+                        break;
+                }
+            }
         },
     }
 </script>

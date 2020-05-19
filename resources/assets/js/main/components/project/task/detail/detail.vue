@@ -240,7 +240,8 @@
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
-                        taskid: this.taskid
+                        taskid: this.taskid,
+                        archived: '全部'
                     },
                     error: () => {
                         alert(this.$L('网络繁忙，请稍后再试！'));

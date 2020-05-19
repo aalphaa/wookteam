@@ -50,55 +50,20 @@
             this.columns = [{
                 "title": "任务名称",
                 "key": 'title',
-                "minWidth": 100,
+                "minWidth": 120,
                 render: (h, params) => {
-                    return h('div', [
-                        h('Icon', {
-                            props: { type: params.row.complete ? 'md-checkbox-outline' : 'md-square-outline' },
-                            style: {marginRight: '4px', cursor: 'pointer', fontSize: '15px'},
-                            on: {
-                                click: () => {
-                                    this.taskComplete(params.row, !params.row.complete, (detail) => {
-                                        this.$emit("change", detail.complete ? 'complete' : 'unfinished', detail);
-                                    });
-                                }
-                            }
-                        }),
-                        h('span', {
-                            style: {cursor: 'pointer'},
-                            on: {
-                                click: () => {
-                                    let taskDetail = params.row;
-                                    this.taskDetail(taskDetail, (act, detail) => {
-                                        for (let key in detail) {
-                                            if (detail.hasOwnProperty(key)) {
-                                                this.$set(taskDetail, key, detail[key])
-                                            }
-                                        }
-                                        //
-                                        switch (act) {
-                                            case "username":    // 负责人
-                                            case "delete":      // 删除任务
-                                            case "archived":    // 归档
-                                                this.lists.some((task, i) => {
-                                                    if (task.id == detail.id) {
-                                                        this.lists.splice(i, 1);
-                                                        return true;
-                                                    }
-                                                });
-                                                break;
-
-                                            case "unarchived":  // 取消归档
-                                                this.lists.unshift(detail);
-                                                break;
-                                        }
-                                        //
-                                        this.$emit("change", act, detail);
-                                    });
-                                }
-                            }
-                        }, params.row.title)
-                    ]);
+                    return this.renderTaskTitle(h, params, (act, detail) => {
+                        switch (act) {
+                            case "delete":      // 删除任务
+                                this.lists.some((task, i) => {
+                                    if (task.id == detail.id) {
+                                        this.lists.splice(i, 1);
+                                        return true;
+                                    }
+                                });
+                                break;
+                        }
+                    });
                 }
             }, {
                 "title": "创建人",
@@ -108,6 +73,18 @@
                 "title": "负责人",
                 "key": 'username',
                 "minWidth": 80,
+            }, {
+                "title": "完成",
+                "minWidth": 70,
+                render: (h, params) => {
+                    return h('span', params.row.complete ? '√' : '-');
+                }
+            }, {
+                "title": "归档",
+                "minWidth": 70,
+                render: (h, params) => {
+                    return h('span', params.row.archived ? '√' : '-');
+                }
             }, {
                 "title": "添加时间",
                 "width": 160,

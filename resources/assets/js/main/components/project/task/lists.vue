@@ -64,8 +64,9 @@
 </style>
 
 <script>
-
     import DrawerTabsContainer from "../../DrawerTabsContainer";
+    import Task from "../../../mixins/task";
+
     export default {
         name: 'ProjectTaskLists',
         components: {DrawerTabsContainer},
@@ -81,6 +82,9 @@
                 type: Array,
             },
         },
+        mixins: [
+            Task
+        ],
         data() {
             return {
                 keys: {},
@@ -103,9 +107,10 @@
             this.columns = [{
                 "title": "任务名称",
                 "key": 'title',
-                "minWidth": 100,
-                "tooltip": true,
-                "sortable": true,
+                "minWidth": 120,
+                render: (h, params) => {
+                    return this.renderTaskTitle(h, params);
+                }
             }, {
                 "title": "阶段",
                 "key": 'labelid',
@@ -123,7 +128,18 @@
                 "align": "center",
                 "sortable": true,
                 render: (h, params) => {
-                    return h('span', params.row.enddate ? $A.formatDate("Y-m-d H:i:s", params.row.enddate) : '-');
+                    if (!params.row.startdate && !params.row.enddate) {
+                        return h('span', '-');
+                    }
+                    return h('div', {
+                        style: {
+                            fontSize: '12px',
+                            lineHeight: '14px'
+                        }
+                    }, [
+                        h('div', params.row.startdate ? $A.formatDate("Y-m-d H:i:s", params.row.startdate) : '-'),
+                        h('div', params.row.enddate ? $A.formatDate("Y-m-d H:i:s", params.row.enddate) : '-'),
+                    ]);
                 }
             }, {
                 "title": "负责人",
