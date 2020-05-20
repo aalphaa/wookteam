@@ -984,6 +984,7 @@ class ProjectController extends Controller
      * - 未完成
      * - 已超期
      * - 已完成
+     * @apiParam {Number} [createuser]          是否仅获取自己创建的项目（1:是；赋值时projectid和username不强制）
      * @apiParam {Number} [attention]           是否仅获取关注数据（1:是）
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
      * @apiParam {String} [startdate]           任务开始时间，格式：YYYY-MM-DD
@@ -1044,14 +1045,25 @@ class ProjectController extends Controller
         $whereFunc = null;
         $whereArray = [];
         $whereArray[] = ['project_task.delete', '=', 0];
-        if ($projectid > 0) {
-            $whereArray[] = ['project_lists.id', '=', $projectid];
-            $whereArray[] = ['project_lists.delete', '=', 0];
+        if (intval(Request::input('createuser')) === 1) {
+            $whereArray[] = ['project_task.createuser', '=', $user['username']];
+            if ($projectid > 0) {
+                $whereArray[] = ['project_lists.id', '=', $projectid];
+                $whereArray[] = ['project_lists.delete', '=', 0];
+            }
             if (trim(Request::input('username'))) {
                 $whereArray[] = ['project_task.username', '=', trim(Request::input('username'))];
             }
         } else {
-            $whereArray[] = ['project_task.username', '=', $user['username']];
+            if ($projectid > 0) {
+                $whereArray[] = ['project_lists.id', '=', $projectid];
+                $whereArray[] = ['project_lists.delete', '=', 0];
+                if (trim(Request::input('username'))) {
+                    $whereArray[] = ['project_task.username', '=', trim(Request::input('username'))];
+                }
+            } else {
+                $whereArray[] = ['project_task.username', '=', $user['username']];
+            }
         }
         if ($taskid > 0) {
             $whereArray[] = ['project_task.id', '=', intval(Request::input('taskid'))];
@@ -1119,7 +1131,7 @@ class ProjectController extends Controller
             $lists['statistics_complete'] = $type === '已完成' ? $lists['total'] : DB::table('project_task')->where('projectid', $projectid)->where('delete', 0)->where('archived', 0)->where('complete', 1)->count();
         }
         if ($lists['total'] == 0) {
-            return Base::retError('未找到任何相关的任务', $lists);
+            return Base::retError('未找到任何相关的任务！', $lists);
         }
         foreach ($lists['lists'] AS $key => $info) {
             $info['overdue'] = Project::taskIsOverdue($info);
@@ -1127,7 +1139,7 @@ class ProjectController extends Controller
         }
         if ($taskid > 0) {
             if (count($lists['lists']) == 0) {
-                return Base::retError('未能找到任何相关的任务');
+                return Base::retError('未能找到此任务或无法管理此任务！');
             }
             return Base::retSuccess('success', $lists['lists'][0]);
         } else {

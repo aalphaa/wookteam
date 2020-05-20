@@ -17,15 +17,13 @@
     }
 </style>
 <script>
-    import DrawerTabsContainer from "../DrawerTabsContainer";
-    import Task from "../../mixins/task";
+    import DrawerTabsContainer from "../../DrawerTabsContainer";
+    import Task from "../../../mixins/task";
+
     export default {
-        name: 'ProjectArchived',
+        name: 'HeaderArchived',
         components: {DrawerTabsContainer},
         props: {
-            projectid: {
-                default: 0
-            },
             canload: {
                 type: Boolean,
                 default: true
@@ -131,10 +129,7 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
-            $A.setOnTaskInfoListener('components/project/archived', (act, detail) => {
-                if (this.projectid > 0 && detail.projectid != this.projectid) {
-                    return;
-                }
+            $A.setOnTaskInfoListener('components/project/header/archived', (act, detail) => {
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);
@@ -169,11 +164,6 @@
         },
 
         watch: {
-            projectid() {
-                if (this.loadYet) {
-                    this.getLists(true);
-                }
-            },
             canload(val) {
                 if (val && !this.loadYet) {
                     this.loadYet = true;
@@ -199,19 +189,12 @@
                 if (resetLoad === true) {
                     this.listPage = 1;
                 }
-                if (this.projectid == 0) {
-                    this.lists = [];
-                    this.listTotal = 0;
-                    this.noDataText = "没有相关的数据";
-                    return;
-                }
                 this.loadIng++;
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
                         page: Math.max(this.listPage, 1),
                         pagesize: Math.max($A.runNum(this.listPageSize), 10),
-                        projectid: this.projectid,
                         archived: '已归档',
                     },
                     complete: () => {

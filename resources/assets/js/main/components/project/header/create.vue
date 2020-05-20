@@ -17,15 +17,13 @@
     }
 </style>
 <script>
-    import DrawerTabsContainer from "../DrawerTabsContainer";
-    import Task from "../../mixins/task";
+    import DrawerTabsContainer from "../../DrawerTabsContainer";
+    import Task from "../../../mixins/task";
+
     export default {
-        name: 'ProjectArchived',
+        name: 'HeaderCreate',
         components: {DrawerTabsContainer},
         props: {
-            projectid: {
-                default: 0
-            },
             canload: {
                 type: Boolean,
                 default: true
@@ -57,10 +55,6 @@
                     return this.renderTaskTitle(h, params);
                 }
             }, {
-                "title": "创建人",
-                "key": 'createuser',
-                "minWidth": 80,
-            }, {
                 "title": "负责人",
                 "key": 'username',
                 "minWidth": 80,
@@ -72,57 +66,17 @@
                     return h('span', params.row.complete ? '√' : '-');
                 }
             }, {
-                "title": "归档时间",
-                "width": 160,
+                "title": "归档",
+                "minWidth": 70,
+                "align": "center",
                 render: (h, params) => {
-                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.archiveddate));
+                    return h('span', params.row.archived ? '√' : '-');
                 }
             }, {
-                "title": "操作",
-                "key": 'action',
-                "width": 100,
-                "align": 'center',
+                "title": "创建时间",
+                "width": 160,
                 render: (h, params) => {
-                    return h('Button', {
-                        props: {
-                            type: 'primary',
-                            size: 'small'
-                        },
-                        on: {
-                            click: () => {
-                                this.$Modal.confirm({
-                                    title: '取消归档',
-                                    content: '你确定要取消归档吗？',
-                                    loading: true,
-                                    onOk: () => {
-                                        $A.aAjax({
-                                            url: 'project/task/edit',
-                                            data: {
-                                                act: 'unarchived',
-                                                taskid: params.row.id,
-                                            },
-                                            error: () => {
-                                                this.$Modal.remove();
-                                                alert(this.$L('网络繁忙，请稍后再试！'));
-                                            },
-                                            success: (res) => {
-                                                this.$Modal.remove();
-                                                this.getLists();
-                                                setTimeout(() => {
-                                                    if (res.ret === 1) {
-                                                        this.$Message.success(res.msg);
-                                                        $A.triggerTaskInfoListener('unarchived', res.data);
-                                                    } else {
-                                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
-                                                    }
-                                                }, 350);
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        }
-                    }, '取消归档');
+                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
             }];
         },
@@ -131,10 +85,7 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
-            $A.setOnTaskInfoListener('components/project/archived', (act, detail) => {
-                if (this.projectid > 0 && detail.projectid != this.projectid) {
-                    return;
-                }
+            $A.setOnTaskInfoListener('components/project/header/create',(act, detail) => {
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);
@@ -144,7 +95,6 @@
                 //
                 switch (act) {
                     case "delete":      // 删除任务
-                    case "unarchived":  // 取消归档
                         this.lists.some((task, i) => {
                             if (task.id == detail.id) {
                                 this.lists.splice(i, 1);
@@ -152,28 +102,11 @@
                             }
                         });
                         break;
-
-                    case "archived":    // 归档
-                        let has = false;
-                        this.lists.some((task) => {
-                            if (task.id == detail.id) {
-                                return has = true;
-                            }
-                        });
-                        if (!has) {
-                            this.lists.unshift(detail);
-                        }
-                        break;
                 }
             });
         },
 
         watch: {
-            projectid() {
-                if (this.loadYet) {
-                    this.getLists(true);
-                }
-            },
             canload(val) {
                 if (val && !this.loadYet) {
                     this.loadYet = true;
@@ -199,20 +132,14 @@
                 if (resetLoad === true) {
                     this.listPage = 1;
                 }
-                if (this.projectid == 0) {
-                    this.lists = [];
-                    this.listTotal = 0;
-                    this.noDataText = "没有相关的数据";
-                    return;
-                }
                 this.loadIng++;
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
+                        createuser: 1,
+                        archived: '全部',
                         page: Math.max(this.listPage, 1),
                         pagesize: Math.max($A.runNum(this.listPageSize), 10),
-                        projectid: this.projectid,
-                        archived: '已归档',
                     },
                     complete: () => {
                         this.loadIng--;
@@ -221,7 +148,6 @@
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
                         } else {
                             this.lists = [];
                             this.listTotal = 0;

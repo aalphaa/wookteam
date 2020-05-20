@@ -75,7 +75,7 @@
 
         <Modal
             v-model="addShow"
-            :title="$L('添加团队成员')"
+            :title="$L('新建项目')"
             :closable="false"
             :mask-closable="false">
             <Form ref="add" :model="formAdd" :rules="ruleAdd" :label-width="80">

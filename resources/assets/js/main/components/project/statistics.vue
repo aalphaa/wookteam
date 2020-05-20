@@ -176,6 +176,13 @@
                 "key": 'username',
                 "minWidth": 80,
             }, {
+                "title": "完成",
+                "minWidth": 70,
+                "align": "center",
+                render: (h, params) => {
+                    return h('span', params.row.complete ? '√' : '-');
+                }
+            }, {
                 "title": "创建时间",
                 "width": 160,
                 render: (h, params) => {

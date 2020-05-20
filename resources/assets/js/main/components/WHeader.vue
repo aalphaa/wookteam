@@ -38,9 +38,9 @@
                 </Dropdown>
             </div>
         </div>
-        <Drawer v-model="userDrawer" width="70%">
-            <Tabs value="name1">
-                <TabPane :label="$L('个人资料')" name="name1">
+        <Drawer v-model="userDrawerShow" width="70%">
+            <Tabs v-model="userDrawerTab">
+                <TabPane :label="$L('个人资料')" name="personal">
                     <Form ref="formDatum" :model="formDatum" :rules="ruleDatum" :label-width="80">
                         <FormItem :label="$L('头像')" prop="userimg">
                             <ImgUpload v-model="formDatum.userimg"></ImgUpload>
@@ -57,9 +57,8 @@
                         </FormItem>
                     </Form>
                 </TabPane>
-                <!--<TabPane :label="$L('偏好设置')" name="name2"></TabPane>
-                <TabPane :label="$L('我创建的任务')" name="name3"></TabPane>-->
-                <TabPane :label="$L('账号密码')" name="name4">
+                <!--<TabPane :label="$L('偏好设置')" name="setting"></TabPane>-->
+                <TabPane :label="$L('账号密码')" name="account">
                     <Form ref="formPass" :model="formPass" :rules="rulePass" :label-width="100">
                         <FormItem :label="$L('旧密码')" prop="oldpass">
                             <Input v-model="formPass.oldpass"></Input>
@@ -75,6 +74,12 @@
                             <Button :loading="loadIng > 0" @click="handleReset('formPass')" style="margin-left: 8px">{{$L('重置')}}</Button>
                         </FormItem>
                     </Form>
+                </TabPane>
+                <TabPane :label="$L('我创建的任务')" name="createtask">
+                    <header-create :canload="userDrawerShow && userDrawerTab == 'createtask'"></header-create>
+                </TabPane>
+                <TabPane :label="$L('我归档的任务')" name="archivedtask">
+                    <header-archived :canload="userDrawerShow && userDrawerTab == 'archivedtask'"></header-archived>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -156,9 +161,11 @@
 </style>
 <script>
     import ImgUpload from "./ImgUpload";
+    import HeaderCreate from "./project/header/create";
+    import HeaderArchived from "./project/header/archived";
     export default {
         name: 'WHeader',
-        components: {ImgUpload},
+        components: {HeaderArchived, HeaderCreate, ImgUpload},
         props: {
             value: {
             },
@@ -167,7 +174,8 @@
             return {
                 loadIng: 0,
                 userInfo: {},
-                userDrawer: false,
+                userDrawerShow: false,
+                userDrawerTab: 'personal',
 
                 formDatum: {
                     userimg: '',
@@ -245,7 +253,7 @@
             setRightSelect(act) {
                 switch (act) {
                     case 'user':
-                        this.userDrawer = true;
+                        this.userDrawerShow = true;
                         break;
 
                     case 'out':
@@ -296,7 +304,7 @@
                                     success: (res) => {
                                         if (res.ret === 1) {
                                             this.$Message.success(this.$L('修改成功，请重新登录！'));
-                                            this.userDrawer = false;
+                                            this.userDrawerShow = false;
                                             this.$refs[name].resetFields();
                                             $A.userLogout();
                                         } else {

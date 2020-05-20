@@ -426,6 +426,9 @@
                 }
             }, true);
         },
+        deactivated() {
+            this.todoDrawerShow = false;
+        },
         computed: {
 
         },

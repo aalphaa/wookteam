@@ -402,6 +402,10 @@
                 this.$set(this.projectDetail, 'title', $A.getObject(this.$route.params.other, 'title'))
             }
         },
+        deactivated() {
+            this.projectDrawerShow = false;
+            this.projectSettingDrawerShow = false;
+        },
         watch: {
             projectid(val) {
                 if ($A.runNum(val) <= 0) {
