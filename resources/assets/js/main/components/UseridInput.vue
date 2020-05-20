@@ -125,6 +125,12 @@
             noidentity: {
                 default: ''
             },
+            nousername: {
+                default: ''
+            },
+            noprojectid: {
+                default: ''
+            },
             projectid: {
                 default: ''
             },
@@ -205,6 +211,12 @@
                         }
                         if (typeof this.noidentity === "string") {
                             where['noidentity'] = this.noidentity;
+                        }
+                        if (typeof this.nousername === "string") {
+                            where['nousername'] = this.nousername;
+                        }
+                        if (this.noprojectid) {
+                            where['noprojectid'] = this.noprojectid;
                         }
                         if (this.projectid) {
                             where['projectid'] = this.projectid;
@@ -330,6 +342,12 @@
                 }
                 if (typeof this.noidentity === "string") {
                     where['noidentity'] = this.noidentity;
+                }
+                if (typeof this.nousername === "string") {
+                    where['nousername'] = this.nousername;
+                }
+                if (this.noprojectid) {
+                    where['noprojectid'] = this.noprojectid;
                 }
                 if (this.projectid) {
                     where['projectid'] = this.projectid;

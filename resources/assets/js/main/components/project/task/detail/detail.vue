@@ -68,7 +68,7 @@
                     <div slot="content">
                         <div style="width:240px">
                             选择负责人
-                            <UseridInput :projectid="detail.projectid" @change="handleTask('username', $event)" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
+                            <UseridInput :projectid="detail.projectid" :nousername="detail.username" @change="handleTask('username', $event)" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
                         </div>
                     </div>
                 </Poptip>

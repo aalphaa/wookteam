@@ -100,6 +100,23 @@ class UsersController extends Controller
             $whereRaw.= $whereRaw ? ' AND ' : '';
             $whereRaw.= "`username` IN (SELECT username FROM `" . env('DB_PREFIX') . "project_users` WHERE `type`='成员' AND `projectid`=" . intval($keys['projectid']) .")";
         }
+        if ($keys['nousername']) {
+            $nousername = [];
+            foreach (explode(",", $keys['nousername']) AS $name) {
+                $name = trim($name);
+                if ($name && !in_array($name, $nousername)) {
+                    $nousername[] = $name;
+                }
+            }
+            if ($nousername) {
+                $whereRaw.= $whereRaw ? ' AND ' : '';
+                $whereRaw.= "(`username` NOT IN ('" . implode("','", $nousername) . "'))";
+            }
+        }
+        if (intval($keys['noprojectid']) > 0) {
+            $whereRaw.= $whereRaw ? ' AND ' : '';
+            $whereRaw.= "`username` NOT IN (SELECT username FROM `" . env('DB_PREFIX') . "project_users` WHERE `type`='成员' AND `projectid`=" . intval($keys['noprojectid']) .")";
+        }
         //
         $lists = DBCache::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession'])
             ->where($whereArr)

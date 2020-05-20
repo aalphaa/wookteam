@@ -602,6 +602,7 @@
                             h('UseridInput', {
                                 props: {
                                     value: this.transferValue,
+                                    nousername: item.username,
                                     placeholder: '请输入昵称/用户名搜索'
                                 },
                                 on: {

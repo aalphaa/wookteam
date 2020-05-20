@@ -230,6 +230,7 @@
                                 props: {
                                     value: this.userValue,
                                     multiple: true,
+                                    noprojectid: this.projectid,
                                     placeholder: '请输入昵称/用户名搜索'
                                 },
                                 on: {
