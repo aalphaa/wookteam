@@ -110,16 +110,17 @@
 
                     case "attention":       // 添加关注
                         let username = $A.getUserName();
-                        if (detail.follower.filter((uname) => { return uname == username }).length > 0) {
-                            let has = false;
-                            this.lists.some((task) => {
-                                if (task.id == detail.id) {
-                                    return has = true;
-                                }
-                            });
-                            if (!has) {
-                                this.lists.unshift(detail);
+                        if (detail.follower.filter((uname) => { return uname == username }).length == 0) {
+                            return;
+                        }
+                        let has = false;
+                        this.lists.some((task) => {
+                            if (task.id == detail.id) {
+                                return has = true;
                             }
+                        });
+                        if (!has) {
+                            this.lists.unshift(detail);
                         }
                         break;
                 }
