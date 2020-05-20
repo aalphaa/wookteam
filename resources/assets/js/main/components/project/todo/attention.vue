@@ -65,20 +65,22 @@
             }, {
                 "title": "完成",
                 "minWidth": 70,
+                "align": "center",
                 render: (h, params) => {
                     return h('span', params.row.complete ? '√' : '-');
                 }
             }, {
                 "title": "归档",
                 "minWidth": 70,
+                "align": "center",
                 render: (h, params) => {
                     return h('span', params.row.archived ? '√' : '-');
                 }
             }, {
-                "title": "添加时间",
+                "title": "关注时间",
                 "width": 160,
                 render: (h, params) => {
-                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.inorder));
+                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.attentiondate));
                 }
             }];
         },
@@ -96,13 +98,29 @@
                 });
                 //
                 switch (act) {
-                    case "delete":      // 删除任务
+                    case "unattention":     // 取消关注
+                    case "delete":          // 删除任务
                         this.lists.some((task, i) => {
                             if (task.id == detail.id) {
                                 this.lists.splice(i, 1);
                                 return true;
                             }
                         });
+                        break;
+
+                    case "attention":       // 添加关注
+                        let username = $A.getUserName();
+                        if (detail.follower.filter((uname) => { return uname == username }).length > 0) {
+                            let has = false;
+                            this.lists.some((task) => {
+                                if (task.id == detail.id) {
+                                    return has = true;
+                                }
+                            });
+                            if (!has) {
+                                this.lists.unshift(detail);
+                            }
+                        }
                         break;
                 }
             });

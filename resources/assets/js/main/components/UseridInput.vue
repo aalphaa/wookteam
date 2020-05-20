@@ -36,6 +36,7 @@
 <style lang="scss" scoped>
     .user-id-multiple {
         margin-bottom: 4px;
+        overflow: auto;
     }
     .user-id-input {
         display: inline-block;
@@ -153,7 +154,7 @@
             multiple: {
                 type: Boolean,
                 default: false
-            },
+            }
         },
         data () {
             return {
@@ -177,7 +178,17 @@
                         "ellipsis": true,
                         "tooltip": true,
                         render: (h, params) => {
-                            return h('span', params.row.nickname || '-');
+                            let arr = [];
+                            let username = params.row.username;
+                            let mLists = this.multipleLists.filter((item) => { return item.username == username; });
+                            if (mLists.length > 0) {
+                                arr.push(h('Icon', {
+                                    props: { type: 'md-checkmark' },
+                                    style: { marginRight: '6px', fontSize: '16px', color: '#FF5722' },
+                                }));
+                            }
+                            arr.push(h('span', params.row.nickname || '-'));
+                            return h('div', arr);
                         }
                     }, {
                         "title": "用户名",
@@ -194,6 +205,9 @@
         watch: {
             value (val) {
                 if (this.multiple) {
+                    if (!val) {
+                        this.multipleLists = [];
+                    }
                     return;
                 }
                 this.userName = $A.cloneData(val)

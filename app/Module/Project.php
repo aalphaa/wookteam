@@ -36,6 +36,30 @@ class Project
     }
 
     /**
+     * 是否在关注列表里
+     * @param int $taskid
+     * @param string $username
+     * @return array
+     */
+    public static function inAttention($taskid, $username)
+    {
+        $whereArray = [
+            'type' => '关注',
+            'projectid' => $projectid,
+            'username' => $username,
+        ];
+        if ($isowner) {
+            $whereArray['isowner'] = 1;
+        }
+        $row = Base::DBC2A(DB::table('project_users')->select(['isowner', 'indate'])->where($whereArray)->first());
+        if (empty($row)) {
+            return Base::retError('你不在项目成员内！');
+        } else {
+            return Base::retSuccess('你在项目内', $row);
+        }
+    }
+
+    /**
      * 更新项目（complete、unfinished）
      * @param int $projectid
      */

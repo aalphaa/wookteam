@@ -109,6 +109,8 @@ class ProjectController extends Controller
             foreach ($task AS $info) {
                 if ($temp['id'] == $info['labelid']) {
                     $info['overdue'] = Project::taskIsOverdue($info);
+                    $info['subtask'] = Base::string2array($info['subtask']);
+                    $info['follower'] = Base::string2array($info['follower']);
                     $taskLists[] = array_merge($info, Users::username2basic($info['username']));
                 }
             }
@@ -1062,6 +1064,7 @@ class ProjectController extends Controller
             }
         }
         //
+        $selectArray = ['project_task.*'];
         $whereRaw = null;
         $whereFunc = null;
         $whereArray = [];
@@ -1094,10 +1097,6 @@ class ProjectController extends Controller
         }
         if (intval(Request::input('level')) > 0) {
             $whereArray[] = ['project_task.level', '=', intval(Request::input('level'))];
-        }
-        if (intval(Request::input('attention')) === 1) {
-            $whereRaw.= $whereRaw ? ' AND ' : '';
-            $whereRaw.= "`username` in (select username from `" . env('DB_PREFIX') . "project_users` where `type`='关注' AND `username`='" . $user['username'] . "')";
         }
         $archived = trim(Request::input('archived'));
         if (empty($archived)) $archived = "未归档";
@@ -1138,10 +1137,18 @@ class ProjectController extends Controller
         if ($projectid > 0) {
             $builder->join('project_lists', 'project_lists.id', '=', 'project_task.projectid');
         }
+        if (intval(Request::input('attention')) === 1) {
+            $builder->join('project_users', 'project_users.taskid', '=', 'project_task.id');
+            $builder->where([
+                ['project_users.type', '=', '关注'],
+                ['project_users.username', '=', $user['username']],
+            ]);
+            $selectArray[] = 'project_users.indate AS attentiondate';
+        }
         if ($whereRaw) {
             $builder->whereRaw($whereRaw);
         }
-        $lists = $builder->select(['project_task.*'])
+        $lists = $builder->select($selectArray)
             ->where($whereArray)
             ->orderByRaw($orderBy)
             ->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
@@ -1156,6 +1163,8 @@ class ProjectController extends Controller
         }
         foreach ($lists['lists'] AS $key => $info) {
             $info['overdue'] = Project::taskIsOverdue($info);
+            $info['subtask'] = Base::string2array($info['subtask']);
+            $info['follower'] = Base::string2array($info['follower']);
             $lists['lists'][$key] = array_merge($info, Users::username2basic($info['username']));
         }
         if ($taskid > 0) {
@@ -1264,6 +1273,8 @@ class ProjectController extends Controller
             //
             $task = Base::DBC2A(DB::table('project_task')->where('id', $taskid)->first());
             $task['overdue'] = Project::taskIsOverdue($task);
+            $task['subtask'] = Base::string2array($task['subtask']);
+            $task['follower'] = Base::string2array($task['follower']);
             $task = array_merge($task, Users::username2basic($task['username']));
             return Base::retSuccess('添加成功！', $task);
         });
@@ -1286,7 +1297,10 @@ class ProjectController extends Controller
      * - unarchived: 取消归档
      * - delete: 删除任务
      * - comment: 评论
+     * - attention: 添加关注
      * @apiParam {String} [content]         内容数据
+     *
+     * @throws \Throwable
      */
     public function task__edit()
     {
@@ -1647,6 +1661,89 @@ class ProjectController extends Controller
                 break;
             }
 
+            /**
+             * 添加关注
+             */
+            case 'attention': {
+                $userArray  = explode(",", $content);
+                DB::transaction(function () use ($user, $task, $userArray) {
+                    foreach ($userArray AS $uname) {
+                        $uid = Users::username2id($uname);
+                        if (empty($uid)) {
+                            continue;
+                        }
+                        $row = Base::DBC2A(DB::table('project_users')->where([
+                            'type' => '关注',
+                            'taskid' => $task['id'],
+                            'username' => $uname,
+                        ])->lockForUpdate()->first());
+                        if (empty($row)) {
+                            DB::table('project_users')->insert([
+                                'type' => '关注',
+                                'projectid' => $task['projectid'],
+                                'taskid' => $task['id'],
+                                'isowner' => $task['username'] == $uname ? 1 : 0,
+                                'username' => $uname,
+                                'indate' => Base::time()
+                            ]);
+                            DB::table('project_log')->insert([
+                                'type' => '日志',
+                                'projectid' => $task['projectid'],
+                                'taskid' => $task['id'],
+                                'username' => $uname,
+                                'detail' => $uname == $user['username'] ? '关注任务' : '加入关注',
+                                'indate' => Base::time(),
+                                'other' => Base::array2string([
+                                    'type' => 'task',
+                                    'id' => $task['id'],
+                                    'title' => $task['title'],
+                                    'operator' => $user['username'],
+                                ])
+                            ]);
+                        }
+                    }
+                });
+                $tempRow = Base::DBC2A(DB::table('project_users')->select(['username'])->where([ 'type' => '关注', 'taskid' => $task['id'] ])->get()->pluck('username'));
+                $upArray['follower'] = Base::array2string($tempRow);
+                $message = "保存成功！";
+                break;
+            }
+
+            /**
+             * 取消关注
+             */
+            case 'unattention': {
+                $userArray  = explode(",", $content);
+                DB::transaction(function () use ($user, $task, $userArray) {
+                    foreach ($userArray AS $uname) {
+                        if (DB::table('project_users')->where([
+                            'type' => '关注',
+                            'taskid' => $task['id'],
+                            'username' => $uname,
+                        ])->delete()) {
+                            DB::table('project_log')->insert([
+                                'type' => '日志',
+                                'projectid' => $task['projectid'],
+                                'taskid' => $task['id'],
+                                'username' => $uname,
+                                'detail' => $uname == $user['username'] ? '取消关注' : '移出关注',
+                                'indate' => Base::time(),
+                                'other' => Base::array2string([
+                                    'type' => 'task',
+                                    'id' => $task['id'],
+                                    'title' => $task['title'],
+                                    'operator' => $user['username'],
+                                ])
+                            ]);
+                        }
+                    }
+                });
+                $tempRow = Base::DBC2A(DB::table('project_users')->select(['username'])->where([ 'type' => '关注', 'taskid' => $task['id'] ])->get()->pluck('username'));
+                $upArray['follower'] = Base::array2string($tempRow);
+                $message = "保存成功！";
+                break;
+            }
+
             default: {
                 return Base::retError('参数错误！');
                 break;
@@ -1666,6 +1763,8 @@ class ProjectController extends Controller
         //
         $task = array_merge($task, $upArray);
         $task['overdue'] = Project::taskIsOverdue($task);
+        $task['subtask'] = Base::string2array($task['subtask']);
+        $task['follower'] = Base::string2array($task['follower']);
         $task = array_merge($task, Users::username2basic($task['username']));
         return Base::retSuccess($message ?: '修改成功！', $task);
     }
