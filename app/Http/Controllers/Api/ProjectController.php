@@ -557,7 +557,7 @@ class ProjectController extends Controller
         //
         $levels = [];
         $logArray = [];
-        $upLevel = [];
+        $taskLevel = [];
         foreach ($newSort AS $sort => $item) {
             list($newLevel, $newTask) = explode(':', $item);
             list($oldLevel, $oldTask) = explode(':', $oldSort[$sort]);
@@ -597,7 +597,7 @@ class ProjectController extends Controller
                                     'title' => $task['title'],
                                 ])
                             ];
-                            $upLevel[] = [
+                            $taskLevel[] = [
                                 'id' => $task['id'],
                                 'level' => $newLevel,
                             ];
@@ -620,7 +620,7 @@ class ProjectController extends Controller
         //
         return Base::retSuccess('保存成功！', [
             'levels' => $levels,
-            'levelTask' => $upLevel,
+            'taskLevel' => $taskLevel,
         ]);
     }
 

@@ -364,26 +364,30 @@
             this.getLists(true);
             $A.setOnTaskInfoListener((act, detail) => {
                 switch (act) {
-                    case "complete":    // 标记完成
+                    case 'deleteproject':   // 删除项目
+                    case 'deletelabel':     // 删除分类
+                        this.getLists(true);
+                        break;
+                    case "complete":        // 标记完成
                         this.lists.some((item) => {
                             if (item.id == detail.projectid) {
                                 item.complete++;
                                 item.unfinished--;
                                 return true;
                             }
-                        })
+                        });
                         break;
-                    case "unfinished":  // 标记未完成
+                    case "unfinished":      // 标记未完成
                         this.lists.some((item) => {
                             if (item.id == detail.projectid) {
                                 item.complete--;
                                 item.unfinished++;
                                 return true;
                             }
-                        })
+                        });
                         break;
                 }
-            });
+            }, true);
         },
         deactivated() {
             this.addShow = false;

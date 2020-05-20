@@ -373,6 +373,15 @@
                 this.refreshTask();
             });
             $A.setOnTaskInfoListener((act, detail) => {
+                switch (act) {
+                    case 'deleteproject':   // 删除项目
+                    case 'deletelabel':     // 删除分类
+                        this.refreshTask();
+                        return;
+                    case 'tasklevel':
+                        return;
+                }
+                //
                 for (let level in this.taskDatas) {
                     this.taskDatas[level].lists.some((task, i) => {
                         if (task.id == detail.id) {
@@ -441,7 +450,7 @@
                         this.taskSortData = this.getTaskSort();
                         break;
                 }
-            });
+            }, true);
         },
         computed: {
 
@@ -649,7 +658,7 @@
                     success: (res) => {
                         if (res.ret === 1) {
                             this.$Message.success(res.msg);
-                            $A.triggerTaskInfoListener('leveltask', res.data.levelTask);
+                            $A.triggerTaskInfoListener('tasklevel', res.data.taskLevel);
                         } else {
                             this.refreshTask();
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
