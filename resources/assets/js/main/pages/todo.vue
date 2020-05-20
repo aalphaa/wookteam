@@ -371,8 +371,8 @@
             this.userInfo = $A.getUserInfo((res) => {
                 this.userInfo = res;
                 this.refreshTask();
-            });
-            $A.setOnTaskInfoListener((act, detail) => {
+            }, true);
+            $A.setOnTaskInfoListener('pages/todo',(act, detail) => {
                 switch (act) {
                     case 'deleteproject':   // 删除项目
                     case 'deletelabel':     // 删除分类

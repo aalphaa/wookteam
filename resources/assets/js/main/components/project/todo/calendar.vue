@@ -33,7 +33,7 @@
 
         },
         mounted() {
-            $A.setOnTaskInfoListener((act, detail) => {
+            $A.setOnTaskInfoListener('components/project/todo/calendar',(act, detail) => {
                 detail = this.formatTaskData(detail);
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {

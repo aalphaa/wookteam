@@ -236,7 +236,7 @@
                 this.$set(this.formDatum, 'userimg', res.userimg)
                 this.$set(this.formDatum, 'nickname', res.nickname)
                 this.$set(this.formDatum, 'profession', res.profession)
-            }, true);
+            }, false);
         },
         methods: {
             tabPage(path) {

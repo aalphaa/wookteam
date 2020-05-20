@@ -87,7 +87,7 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
-            $A.setOnTaskInfoListener((act, detail) => {
+            $A.setOnTaskInfoListener('components/project/todo/attention',(act, detail) => {
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);

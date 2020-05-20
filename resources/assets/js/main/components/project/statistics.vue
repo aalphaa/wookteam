@@ -188,7 +188,7 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
-            $A.setOnTaskInfoListener((act, detail) => {
+            $A.setOnTaskInfoListener('components/project/statistics', (act, detail) => {
                 if (this.projectid > 0 && detail.projectid != this.projectid) {
                     return;
                 }

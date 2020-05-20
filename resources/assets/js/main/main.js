@@ -142,33 +142,39 @@ import '../../sass/main.scss';
 
         /**
          * 获取用户信息（并保存）
-         * @param callback          网络请求获取到用户信息回调（监听用户信息发生变化）
-         * @param onlyListener      只监听不重新网络请求获取
+         * @param callback                  网络请求获取到用户信息回调（监听用户信息发生变化）
+         * @param continueListenerName      持续监听标识（字符串或boolean，true:自动生成监听标识，false:自动生成监听标识但首次不请求网络）
          * @returns Object
          */
-        getUserInfo(callback, onlyListener) {
+        getUserInfo(callback, continueListenerName) {
             if (typeof callback === 'function' || (typeof callback === "boolean" && callback === true)) {
-                if (onlyListener === true) {
-                    typeof callback === "function" && callback($A.jsonParse($A.storage("userInfo")));
-                    $A.setOnUserInfoListener(callback);
-                } else {
-                    $A.aAjax({
-                        url: 'users/info',
-                        error: () => {
-                            this.userLogout();
-                        },
-                        success: (res) => {
-                            if (res.ret === 1) {
-                                $A.storage("userInfo", res.data);
-                                $A.setToken(res.data.token);
-                                $A.triggerUserInfoListener(res.data);
-                                //
-                                typeof callback === "function" && callback(res.data);
-                            }
-                            $A.setOnUserInfoListener(callback);
-                        }
-                    });
+                if (typeof continueListenerName === "boolean") {
+                    if (continueListenerName === true) {
+                        continueListenerName = "auto-" + $A.randomString(6);
+                    } else {
+                        $A.setOnUserInfoListener("auto-" + $A.randomString(6), callback);
+                        return $A.jsonParse($A.storage("userInfo"));
+                    }
                 }
+                //
+                $A.aAjax({
+                    url: 'users/info',
+                    error: () => {
+                        this.userLogout();
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            $A.storage("userInfo", res.data);
+                            $A.setToken(res.data.token);
+                            $A.triggerUserInfoListener(res.data);
+                            typeof callback === "function" && callback(res.data);
+                        }
+                        //
+                        if (typeof continueListenerName == "string" && continueListenerName) {
+                            $A.setOnUserInfoListener(continueListenerName, callback);
+                        }
+                    }
+                });
             }
             return $A.jsonParse($A.storage("userInfo"));
         },
@@ -206,43 +212,61 @@ import '../../sass/main.scss';
 
         /**
          * 监听用户信息发生变化
-         * @param callback
+         * @param listenerName      监听标识
+         * @param callback          监听回调
          */
-        setOnUserInfoListener(callback) {
+        setOnUserInfoListener(listenerName, callback) {
+            if (typeof listenerName != "string") {
+                return;
+            }
             if (typeof callback === "function") {
-                $A.__userInfoListener.push(callback);
+                $A.__userInfoListenerObject[listenerName] = {
+                    callback: callback,
+                }
             }
         },
         triggerUserInfoListener(userInfo) {
-            $A.__userInfoListener.forEach((callback) => {
-                typeof callback === "function" && callback(userInfo);
-            });
+            let key, item;
+            for (key in $A.__userInfoListenerObject) {
+                if (!$A.__userInfoListenerObject.hasOwnProperty(key)) continue;
+                item = $A.__userInfoListenerObject[key];
+                if (typeof item.callback === "function") {
+                    item.callback(userInfo);
+                }
+            }
         },
-        __userInfoListener: [],
+        __userInfoListenerObject: {},
 
         /**
          * 监听任务发生变化
-         * @param callback
-         * @param callSpecial 是否监听几种特殊情况
+         * @param listenerName      监听标识
+         * @param callback          监听回调
+         * @param callSpecial       是否监听几种特殊情况
          */
-        setOnTaskInfoListener(callback, callSpecial) {
+        setOnTaskInfoListener(listenerName, callback, callSpecial) {
+            if (typeof listenerName != "string") {
+                return;
+            }
             if (typeof callback === "function") {
-                $A.__taskInfoListener.push({
+                $A.__taskInfoListenerObject[listenerName] = {
                     special: callSpecial === true,
                     callback: callback,
-                });
+                }
             }
         },
         triggerTaskInfoListener(act, taskDetail) {
-            $A.__taskInfoListener.forEach((item) => {
+            let key, item;
+            for (key in $A.__taskInfoListenerObject) {
+                if (!$A.__taskInfoListenerObject.hasOwnProperty(key)) continue;
+                item = $A.__taskInfoListenerObject[key];
                 if (typeof item.callback === "function") {
                     if (act.indexOf(['deleteproject', 'deletelabel', 'leveltask']) === -1 || item.special === true) {
                         item.callback(act, taskDetail);
                     }
                 }
-            });
+            }
         },
-        __taskInfoListener: [],
+        __taskInfoListenerObject: {},
 
     });
 

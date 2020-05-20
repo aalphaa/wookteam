@@ -362,7 +362,7 @@
         },
         mounted() {
             this.getLists(true);
-            $A.setOnTaskInfoListener((act, detail) => {
+            $A.setOnTaskInfoListener('pages/project',(act, detail) => {
                 switch (act) {
                     case 'deleteproject':   // 删除项目
                     case 'deletelabel':     // 删除分类
