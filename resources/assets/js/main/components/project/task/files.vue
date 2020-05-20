@@ -351,6 +351,9 @@
                     complete: () => {
                         this.loadIng--;
                     },
+                    error: () => {
+                        this.noDataText = "数据加载失败！";
+                    },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;

@@ -249,6 +249,9 @@
                                 this.spinShow = false;
                                 this.noDataText = "没有相关的数据";
                             },
+                            error: () => {
+                                this.noDataText = "数据加载失败！";
+                            },
                             success: (res) => {
                                 if (res.ret === 1 && res.data.total > 0) {
                                     let tmpData = res.data[0];
@@ -381,6 +384,9 @@
                     complete: () => {
                         this.spinShow = false;
                         this.noDataText = "没有相关的数据";
+                    },
+                    error: () => {
+                        this.noDataText = "数据加载失败！";
                     },
                     success: (res) => {
                         if (res.ret === 1) {

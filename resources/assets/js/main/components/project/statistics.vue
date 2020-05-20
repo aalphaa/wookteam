@@ -309,6 +309,9 @@
                     complete: () => {
                         this.loadIng--;
                     },
+                    error: () => {
+                        this.noDataText = "数据加载失败！";
+                    },
                     success: (res) => {
                         if (tempType != this.taskType) {
                             return;
