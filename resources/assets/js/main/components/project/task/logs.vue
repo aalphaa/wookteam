@@ -42,9 +42,9 @@
             > li {
                 padding-top: 22px;
                 &.logs-loading {
-                    margin: 8px 0;
-                    width: 22px;
-                    height: 22px;
+                    margin: 4px 0;
+                    width: 18px;
+                    height: 18px;
                     display: flex;
                 }
                 &.logs-more {

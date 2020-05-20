@@ -24,7 +24,7 @@
                         <span>负责人：</span>
                         <em>{{detail.username}}</em>
                     </li>
-                    <li v-if="detail.follower.length > 0" class="text-follower detail-icon">
+                    <li v-if="followerLength(detail.follower) > 0" class="text-follower detail-icon">
                         <span>关注者：</span>
                         <em>
                             <Tag v-for="(fname, findex) in detail.follower" :key="findex" closable @on-close="handleTask('unattention', {username:fname,uisynch:true})">{{fname}}</Tag>
@@ -260,8 +260,20 @@
                 }
             },
 
+            followerLength(follower) {
+                if (follower instanceof Array) {
+                    return follower.length;
+                } else {
+                    return 0;
+                }
+            },
+
             haveAttention(follower) {
-                return follower.filter((uname) => { return uname == this.myUsername }).length > 0
+                if (follower instanceof Array) {
+                    return follower.filter((uname) => { return uname == this.myUsername }).length > 0
+                } else {
+                    return 0;
+                }
             },
 
             getTaskDetail() {

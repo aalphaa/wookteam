@@ -152,7 +152,7 @@
             padding: 15px;
             transform: translateZ(0);
             .label-item {
-                flex-grow: 1;
+                flex-grow: 0;
                 flex-shrink: 0;
                 flex-basis: auto;
                 height: 100%;
