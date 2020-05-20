@@ -8,10 +8,10 @@
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
-                    <div class="project-title">
-                        <div v-if="loadIng > 0" class="project-title-loading"><w-loading></w-loading></div>
-                        <h1>{{projectDetail.title}}</h1>
-                        <div class="project-title-refresh" @click="getDetail(true)">刷新</div>
+                    <div class="page-nav-left">
+                        <span class="bold">{{projectDetail.title}}</span>
+                        <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
+                        <div v-else class="page-nav-refresh"><em @click="getDetail(true)">刷新</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -64,7 +64,7 @@
                                         task.complete ? 'complete' : '',
                                         task.overdue ? 'overdue' : '',
                                         task.isNewtask === true ? 'newtask' : ''
-                                    ]">
+                                    ]" @click="openTaskModal(task)">
                                     <div class="task-title">{{task.title}}</div>
                                     <div class="task-more">
                                         <div v-if="task.overdue" class="task-status">已超期</div>
@@ -107,11 +107,11 @@
                 <TabPane :label="$L('已归档任务')" name="archived">
                     <project-archived :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'archived'" :projectid="projectid"></project-archived>
                 </TabPane>
-                <TabPane :label="$L('成员管理')" name="member">
-                    <project-users :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'member'" :projectid="projectid"></project-users>
-                </TabPane>
                 <TabPane :label="$L('项目统计')" name="statistics">
                     <project-statistics :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'statistics'" :projectid="projectid"></project-statistics>
+                </TabPane>
+                <TabPane :label="$L('成员管理')" name="member">
+                    <project-users :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'member'" :projectid="projectid"></project-users>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -138,36 +138,6 @@
 </style>
 <style lang="scss" scoped>
     .project-panel {
-        .project-title {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            &:hover {
-                .project-title-refresh {
-                    display: block;
-                }
-            }
-            .project-title-loading {
-                width: 18px;
-                height: 18px;
-                margin-right: 6px;
-                display: flex;
-            }
-            h1 {
-                font-size: 14px;
-                font-weight: 500;
-            }
-            .project-title-refresh {
-                display: none;
-                padding-left: 12px;
-                padding-right: 12px;
-                color: #048be0;
-                cursor: pointer;
-                &:hover {
-                    text-decoration: underline;
-                }
-            }
-        }
         .label-box {
             display: flex;
             flex-direction: row;
@@ -377,7 +347,54 @@
             }
         },
         mounted() {
+            $A.setOnTaskInfoListener('pages/project-panel',(act, detail) => {
+                switch (act) {
+                    case 'deleteproject':   // 删除项目
+                    case 'deletelabel':     // 删除分类
+                        return;
+                    case 'tasklevel':       // 调整级别
+                        this.getDetail(true);
+                        return;
+                }
+                //
+                this.projectLabel.forEach((label) => {
+                    label.taskLists.some((task, i) => {
+                        if (task.id == detail.id) {
+                            label.taskLists.splice(i, 1, detail);
+                            return true;
+                        }
+                    });
+                });
+                //
+                switch (act) {
+                    case "delete":          // 删除任务
+                    case "archived":        // 归档
+                        this.projectLabel.forEach((label) => {
+                            label.taskLists.some((task, i) => {
+                                if (task.id == detail.id) {
+                                    label.taskLists.splice(i, 1,);
+                                    return true;
+                                }
+                            });
+                        });
+                        this.projectSortData = this.getProjectSort();
+                        break;
 
+                    case "unarchived":      // 取消归档
+                        this.projectLabel.forEach((label) => {
+                            if (label.id == detail.labelid) {
+                                label.taskLists.some((task, i) => {
+                                    if (detail.inorder > task.inorder || (detail.inorder == task.inorder && detail.id > task.id)) {
+                                        label.taskLists.splice(i, 0, detail);
+                                        return true;
+                                    }
+                                });
+                            }
+                        });
+                        this.projectSortData = this.getProjectSort();
+                        break;
+                }
+            }, true);
         },
         activated() {
             this.projectid = this.$route.params.projectid;
@@ -703,6 +720,10 @@
                         }
                     }
                 });
+            },
+
+            openTaskModal(taskDetail) {
+                this.taskDetail(taskDetail);
             },
         },
     }

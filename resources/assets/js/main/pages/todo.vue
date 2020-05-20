@@ -9,9 +9,9 @@
             <div class="nav-row">
                 <div class="w-nav-left">
                     <div class="page-nav-left">
-                        <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
                         <span><i class="ft icon">&#xE787;</i> {{$L('我的待办')}}</span>
-                        <div class="page-nav-refresh" @click="refreshTask">刷新</div>
+                        <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
+                        <div v-else class="page-nav-refresh"><em @click="refreshTask">刷新</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -98,32 +98,6 @@
 </style>
 <style lang="scss" scoped>
     .todo {
-        .page-nav-left {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            min-width: 138px;
-            &:hover {
-                .page-nav-refresh {
-                    display: block;
-                }
-            }
-            .page-nav-loading {
-                width: 18px;
-                height: 18px;
-                margin-right: 6px;
-                display: flex;
-            }
-            .page-nav-refresh {
-                display: none;
-                padding-right: 12px;
-                color: #048be0;
-                cursor: pointer;
-                &:hover {
-                    text-decoration: underline;
-                }
-            }
-        }
         .todo-main {
             display: flex;
             flex-direction: column;
@@ -378,7 +352,7 @@
                     case 'deletelabel':     // 删除分类
                         this.refreshTask();
                         return;
-                    case 'tasklevel':
+                    case 'tasklevel':       // 调整级别
                         return;
                 }
                 //
@@ -392,17 +366,17 @@
                 }
                 //
                 switch (act) {
-                    case "title": // 标题
-                    case "desc": // 描述
-                    case "plannedtime": // 设置计划时间
-                    case "unplannedtime": // 取消计划时间
-                    case "complete": // 标记完成
-                    case "unfinished": // 标记未完成
-                    case "comment": // 评论
+                    case "title":           // 标题
+                    case "desc":            // 描述
+                    case "plannedtime":     // 设置计划时间
+                    case "unplannedtime":   // 取消计划时间
+                    case "complete":        // 标记完成
+                    case "unfinished":      // 标记未完成
+                    case "comment":         // 评论
                         // 这些都不用处理
                         break;
 
-                    case "level":       // 优先级
+                    case "level":           // 优先级
                         for (let level in this.taskDatas) {
                             this.taskDatas[level].lists.some((task, i) => {
                                 if (task.id == detail.id) {
@@ -422,9 +396,9 @@
                         this.taskSortData = this.getTaskSort();
                         break;
 
-                    case "username":    // 负责人
-                    case "delete":      // 删除任务
-                    case "archived":    // 归档
+                    case "username":        // 负责人
+                    case "delete":          // 删除任务
+                    case "archived":        // 归档
                         for (let level in this.taskDatas) {
                             this.taskDatas[level].lists.some((task, i) => {
                                 if (task.id == detail.id) {
@@ -436,7 +410,7 @@
                         this.taskSortData = this.getTaskSort();
                         break;
 
-                    case "unarchived":  // 取消归档
+                    case "unarchived":      // 取消归档
                         for (let level in this.taskDatas) {
                             if (level == detail.level) {
                                 this.taskDatas[level].lists.some((task, i) => {

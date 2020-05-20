@@ -136,6 +136,47 @@
                 -webkit-backface-visibility: hidden;
                 -webkit-overflow-scrolling: touch;
             }
+            .page-nav-left {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                min-width: 138px;
+                &:hover {
+                    .page-nav-refresh {
+                        em {
+                            display: block;
+                        }
+                    }
+                }
+                > span {
+                    margin-right: 8px;
+                    &.bold {
+                        font-weight: bold;
+                    }
+                }
+                .page-nav-loading {
+                    width: 18px;
+                    height: 18px;
+                    display: flex;
+                }
+                .page-nav-refresh {
+                    min-width: 36px;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    em {
+                        display: none;
+                        padding-left: 4px;
+                        padding-right: 4px;
+                        color: #048be0;
+                        cursor: pointer;
+                        &:hover {
+                            text-decoration: underline;
+                        }
+                    }
+                }
+            }
         }
     }
 }

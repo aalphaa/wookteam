@@ -8,7 +8,11 @@
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
-                    <i class="ft icon">&#xE90D;</i> {{$L('团队成员')}}
+                    <div class="page-nav-left">
+                        <span><i class="ft icon">&#xE90D;</i> {{$L('团队成员')}}</span>
+                        <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
+                        <div v-else class="page-nav-refresh"><em @click="getLists(true)">刷新</em></div>
+                    </div>
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">

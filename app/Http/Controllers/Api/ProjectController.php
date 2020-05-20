@@ -971,9 +971,9 @@ class ProjectController extends Controller
      * 项目任务-列表
      *
      * @apiParam {Number} [projectid]           项目ID
-     * @apiParam {String} [username]            负责人用户名（如果项目ID为空时此参数无效只获取自己的任务）
+     * @apiParam {Number} [taskid]              任务ID (1、填写此参数时projectid强制为此任务的projectid；2、赋值返回详细数据，不返回列表数据)
      * @apiParam {Number} [labelid]             项目子分类ID
-     * @apiParam {Number} [taskid]              任务ID (赋值返回详细数据，不返回列表数据)
+     * @apiParam {String} [username]            负责人用户名（如果项目ID为空时此参数无效只获取自己的任务）
      * @apiParam {Number} [level]               任务等级（1~4）
      * @apiParam {String} [archived]            任务是否归档
      * - 未归档 （默认）
@@ -1006,7 +1006,13 @@ class ProjectController extends Controller
             $user = $user['data'];
         }
         //
-        $projectid = intval(Request::input('projectid'));
+        $taskid = intval(Request::input('taskid'));
+        if ($taskid > 0) {
+            $projectid = intval(DB::table('project_task')->where('id', $taskid)->value('projectid'));
+        } else {
+            $projectid = intval(Request::input('projectid'));
+        }
+        //
         if ($projectid > 0) {
             $inRes = Project::inThe($projectid, $user['username']);
             if (Base::isError($inRes)) {
@@ -1034,7 +1040,6 @@ class ProjectController extends Controller
             }
         }
         //
-        $taskid = intval(Request::input('taskid'));
         $whereRaw = null;
         $whereFunc = null;
         $whereArray = [];
@@ -1134,10 +1139,10 @@ class ProjectController extends Controller
      * 项目任务-添加任务
      *
      * @apiParam {String} title                 任务标题
-     * @apiParam {Number} [level]               任务紧急级别（1~4，默认:2）
-     * @apiParam {String} [username]            任务负责人用户名（如果项目ID为空时此参数无效复制人为自己）
      * @apiParam {Number} [projectid]           项目ID
      * @apiParam {Number} [labelid]             项目子分类ID
+     * @apiParam {Number} [level]               任务紧急级别（1~4，默认:2）
+     * @apiParam {String} [username]            任务负责人用户名（如果项目ID为空时此参数无效，负责人为自己）
      *
      * @throws \Throwable
      */

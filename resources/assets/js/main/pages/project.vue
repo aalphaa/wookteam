@@ -9,9 +9,9 @@
             <div class="nav-row">
                 <div class="w-nav-left">
                     <div class="page-nav-left">
+                        <span class="hover" @click="addShow=true"><i class="ft icon">&#xE740;</i> {{$L('新建项目')}}</span>
                         <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
-                        <span class="ft hover" @click="addShow=true"><i class="ft icon">&#xE740;</i> {{$L('新建项目')}}</span>
-                        <div class="page-nav-refresh" @click="getLists(true)">刷新</div>
+                        <div v-else class="page-nav-refresh"><em @click="getLists(true)">刷新</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -57,13 +57,13 @@
                                 <Icon class="project-iconbtn-icon1" type="md-filing" size="24" />
                                 <div class="project-iconbtn-text">已归档任务</div>
                             </div>
-                            <div class="project-iconbtn" @click.stop="handleProject('member', item)">
-                                <Icon class="project-iconbtn-icon2" type="md-people" size="24" />
-                                <div class="project-iconbtn-text">成员管理</div>
-                            </div>
                             <div class="project-iconbtn" @click.stop="handleProject('statistics', item)">
                                 <Icon class="project-iconbtn-icon3" type="md-stats" size="24" />
                                 <div class="project-iconbtn-text">项目统计</div>
+                            </div>
+                            <div class="project-iconbtn" @click.stop="handleProject('member', item)">
+                                <Icon class="project-iconbtn-icon2" type="md-people" size="24" />
+                                <div class="project-iconbtn-text">成员管理</div>
                             </div>
                         </div>
                     </div>
@@ -111,11 +111,11 @@
                 <TabPane :label="$L('已归档任务')" name="archived">
                     <project-archived :canload="projectDrawerShow && projectDrawerTab == 'archived'" :projectid="handleProjectId"></project-archived>
                 </TabPane>
-                <TabPane :label="$L('成员管理')" name="member">
-                    <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
-                </TabPane>
                 <TabPane :label="$L('项目统计')" name="statistics">
                     <project-statistics :canload="projectDrawerShow && projectDrawerTab == 'statistics'" :projectid="handleProjectId"></project-statistics>
+                </TabPane>
+                <TabPane :label="$L('成员管理')" name="member">
+                    <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
                 </TabPane>
             </Tabs>
         </Drawer>
@@ -138,32 +138,6 @@
 
 <style lang="scss" scoped>
     .project {
-        .page-nav-left {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            min-width: 138px;
-            &:hover {
-                .page-nav-refresh {
-                    display: block;
-                }
-            }
-            .page-nav-loading {
-                width: 18px;
-                height: 18px;
-                margin-right: 6px;
-                display: flex;
-            }
-            .page-nav-refresh {
-                display: none;
-                padding-right: 12px;
-                color: #048be0;
-                cursor: pointer;
-                &:hover {
-                    text-decoration: underline;
-                }
-            }
-        }
         ul.project-list {
             padding: 5px;
             max-width: 2000px;
