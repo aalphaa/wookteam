@@ -311,6 +311,7 @@
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.projectid = this.projectid;
                 whereData.sorts = $A.cloneData(this.sorts);
+                this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: whereData,
@@ -321,6 +322,7 @@
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
+                            this.noDataText = "没有相关的数据";
                         } else {
                             this.lists = [];
                             this.listTotal = 0;

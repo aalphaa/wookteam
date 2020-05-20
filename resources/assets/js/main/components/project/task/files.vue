@@ -344,6 +344,7 @@
                 whereData.projectid = this.projectid;
                 whereData.taskid = this.taskid;
                 whereData.sorts = this.sorts;
+                this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: 'project/files/lists',
                     data: whereData,

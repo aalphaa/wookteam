@@ -296,6 +296,7 @@
                 }
                 this.loadIng++;
                 let tempType = this.taskType;
+                this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {

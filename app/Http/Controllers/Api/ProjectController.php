@@ -124,6 +124,30 @@ class ProjectController extends Controller
     }
 
     /**
+     * 获取项目负责人
+     *
+     * @apiParam {Number} projectid     项目ID
+     */
+    public function leader()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $projectid = trim(Request::input('projectid'));
+        $projectDetail = Base::DBC2A(DB::table('project_lists')->select(['username'])->where('id', $projectid)->where('delete', 0)->first());
+        if (empty($projectDetail)) {
+            return Base::retError('项目不存在或已被删除！');
+        }
+        return Base::retSuccess('success', [
+            'username' => $projectDetail['username'],
+        ]);
+    }
+
+    /**
      * 添加项目
      *
      * @apiParam {String} title         项目名称
@@ -697,7 +721,7 @@ class ProjectController extends Controller
                 ['project_lists.delete', 0],
                 ['project_users.type', '成员'],
             ])
-            ->orderByDesc('project_lists.id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
+            ->orderByDesc('project_users.isowner')->orderByDesc('project_users.id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的成员');
@@ -733,9 +757,6 @@ class ProjectController extends Controller
         $projectDetail = Base::DBC2A(DB::table('project_lists')->where('id', $projectid)->where('delete', 0)->first());
         if (empty($projectDetail)) {
             return Base::retError('项目不存在或已被删除！');
-        }
-        if ($projectDetail['username'] != $user['username']) {
-            return Base::retError('你是不是项目负责人！');
         }
         $usernames = Request::input('username');
         if (empty($usernames)) {

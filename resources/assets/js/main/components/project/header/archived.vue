@@ -190,6 +190,7 @@
                     this.listPage = 1;
                 }
                 this.loadIng++;
+                this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {

@@ -260,6 +260,7 @@
                     this.listPage = 1;
                 }
                 this.loadIng++;
+                this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: 'users/team/lists',
                     data: {
@@ -273,6 +274,7 @@
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
+                            this.noDataText = "没有相关的数据";
                         }else{
                             this.lists = [];
                             this.listTotal = 0;

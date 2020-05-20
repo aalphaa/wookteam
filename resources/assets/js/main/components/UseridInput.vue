@@ -28,7 +28,7 @@
                        :columns="columns"
                        :data="userLists"
                        @on-current-change="userChange"
-                       :no-data-text="nodatatext"></Table>
+                       :no-data-text="noDataText"></Table>
             </div>
         </transition>
     </div>
@@ -188,7 +188,7 @@
                     },
                 ],
                 userLists: [],
-                nodatatext: "数据加载中.....",
+                noDataText: "数据加载中.....",
             }
         },
         watch: {
@@ -221,6 +221,7 @@
                         if (this.projectid) {
                             where['projectid'] = this.projectid;
                         }
+                        this.noDataText = "数据加载中.....";
                         $A.aAjax({
                             url: window.location.origin + '/api/users/searchinfo',
                             data: {
@@ -232,6 +233,7 @@
                             },
                             complete: () => {
                                 this.spinShow = false;
+                                this.noDataText = "没有相关的数据";
                             },
                             success: (res) => {
                                 if (res.ret === 1 && res.data.total > 0) {
@@ -352,6 +354,7 @@
                 if (this.projectid) {
                     where['projectid'] = this.projectid;
                 }
+                this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: window.location.origin + '/api/users/searchinfo',
                     data: {
@@ -363,6 +366,7 @@
                     },
                     complete: () => {
                         this.spinShow = false;
+                        this.noDataText = "没有相关的数据";
                     },
                     success: (res) => {
                         if (res.ret === 1) {
