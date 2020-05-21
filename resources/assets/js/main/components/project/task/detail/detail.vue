@@ -217,6 +217,15 @@
             $A.setOnUserInfoListener("components/project/task/detail", () => {
                 this.myUsername = $A.getUserName();
             });
+            $A.setOnTaskInfoListener('components/project/task/detail',(act, detail) => {
+                if (detail.id != this.taskid) {
+                    return;
+                }
+                if (detail.__modifyUsername == this.myUsername) {
+                    return;
+                }
+                this.getTaskDetail();
+            }, true);
         },
         watch: {
             taskid() {

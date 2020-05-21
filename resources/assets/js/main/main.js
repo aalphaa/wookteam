@@ -255,18 +255,21 @@ import '../../sass/main.scss';
                 }
             }
         },
-        triggerTaskInfoListener(act, taskDetail, sendTo = true) {
+        triggerTaskInfoListener(act, taskDetail, sendToWS = true) {
             let key, item;
             for (key in $A.__taskInfoListenerObject) {
                 if (!$A.__taskInfoListenerObject.hasOwnProperty(key)) continue;
                 item = $A.__taskInfoListenerObject[key];
                 if (typeof item.callback === "function") {
                     if (['deleteproject', 'deletelabel', 'leveltask'].indexOf(act) === -1 || item.special === true) {
+                        if (typeof taskDetail.__modifyUsername === "undefined") {
+                            taskDetail.__modifyUsername = $A.getUserName();
+                        }
                         item.callback(act, taskDetail);
                     }
                 }
             }
-            if (sendTo === true) {
+            if (sendToWS === true) {
                 $A.WS.sendTo('all', null, {
                     type: "task",
                     act: act,
