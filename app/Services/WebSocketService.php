@@ -106,7 +106,7 @@ class WebSocketService implements WebSocketHandlerInterface
                 break;
 
             case 'all':
-                foreach (self::getUsers() as $user) {
+                foreach (self::getUsersAll() as $user) {
                     $data['target'] = $user['username'];
                     $server->push($user['wsid'], Base::array2json($data));
                 }
@@ -153,7 +153,7 @@ class WebSocketService implements WebSocketHandlerInterface
      * 获取当前用户
      * @return array|string
      */
-    public static function getUsers()
+    public static function getUsersAll()
     {
         return Base::DBC2A(DB::table('users')->select(['wsid', 'username'])->where('wsid', '>', 0)->get());
     }

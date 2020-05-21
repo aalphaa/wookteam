@@ -290,6 +290,17 @@ import '../../sass/main.scss';
         WS: {
             __instance: null,
             __connected: false,
+            __autoLine() {
+                let tempId = $A.randomString(16);
+                this.__autoId = tempId;
+                // console.log("[WS] Connection auto 30s ...");
+                setTimeout(() => {
+                    if (this.__autoId === tempId) {
+                        // console.log("[WS] Connection auto ...");
+                        this.connection();
+                    }
+                }, 30 * 1000);
+            },
 
             /**
              * 连接
@@ -310,11 +321,12 @@ import '../../sass/main.scss';
 
                 // 连接建立时触发
                 this.__instance.onopen = (event) => {
-                    // console.log("Connection open ...");
+                    // console.log("[WS] Connection open ...");
                 }
 
                 // 接收到服务端推送时执行
                 this.__instance.onmessage = (event) => {
+                    // console.log("[WS] Connection message ...");
                     let msgDetail = $A.jsonParse(event.data);
                     if (msgDetail.messageType === 'open') {
                         this.__connected = true;
@@ -324,16 +336,18 @@ import '../../sass/main.scss';
 
                 // 连接关闭时触发
                 this.__instance.onclose = (event) => {
-                    // console.log("Connection closed ...");
+                    // console.log("[WS] Connection closed ...");
                     this.__connected = false;
                     this.__instance = null;
+                    this.__autoLine();
                 }
 
                 // 连接出错
                 this.__instance.onerror = (event) => {
-                    // console.log("Connection error ...");
+                    // console.log("[WS] Connection error ...");
                     this.__connected = false;
                     this.__instance = null;
+                    this.__autoLine();
                 }
 
                 return this;
@@ -375,15 +389,15 @@ import '../../sass/main.scss';
              */
             sendTo(type, target, content) {
                 if (this.__instance === null) {
-                    console.log("ws:未初始化连接");
+                    console.log("[WS] 未初始化连接");
                     return;
                 }
                 if (this.__connected === false) {
-                    console.log("ws:未连接成功");
+                    console.log("[WS] 未连接成功");
                     return;
                 }
                 if (['user', 'all'].indexOf(type) === -1) {
-                    console.log("ws:错误的消息类型-" + type);
+                    console.log("[WS] 错误的消息类型-" + type);
                     return;
                 }
                 this.__instance.send(JSON.stringify({
@@ -402,11 +416,11 @@ import '../../sass/main.scss';
              */
             close() {
                 if (this.__instance === null) {
-                    console.log("ws:未初始化连接");
+                    console.log("[WS] 未初始化连接");
                     return;
                 }
                 if (this.__connected === false) {
-                    console.log("ws:未连接成功");
+                    console.log("[WS] 未连接成功");
                     return;
                 }
                 this.__instance.close();
