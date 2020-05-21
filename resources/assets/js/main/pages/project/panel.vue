@@ -348,6 +348,10 @@
         },
         mounted() {
             $A.setOnTaskInfoListener('pages/project-panel',(act, detail) => {
+                if (detail.projectid != this.projectid) {
+                    return;
+                }
+                //
                 switch (act) {
                     case 'deleteproject':   // 删除项目
                     case 'deletelabel':     // 删除分类
@@ -603,7 +607,7 @@
                                 setTimeout(() => {
                                     if (res.ret === 1) {
                                         this.$Message.success(res.msg);
-                                        $A.triggerTaskInfoListener('deletelabel', {labelid: item.id});
+                                        $A.triggerTaskInfoListener('deletelabel', {labelid: item.id, projectid: item.projectid});
                                     } else {
                                         this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                     }

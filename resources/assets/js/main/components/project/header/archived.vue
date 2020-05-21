@@ -20,6 +20,9 @@
     import DrawerTabsContainer from "../../DrawerTabsContainer";
     import Task from "../../../mixins/task";
 
+    /**
+     * 我归档的任务
+     */
     export default {
         name: 'HeaderArchived',
         components: {DrawerTabsContainer},
@@ -130,6 +133,16 @@
                 this.getLists(true);
             }
             $A.setOnTaskInfoListener('components/project/header/archived', (act, detail) => {
+                if (detail.username != $A.getUserName()) {
+                    this.lists.some((task, i) => {
+                        if (task.id == detail.id) {
+                            this.lists.splice(i, 1);
+                            return true;
+                        }
+                    });
+                    return;
+                }
+                //
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);

@@ -13,6 +13,10 @@
 <script>
     import DrawerTabsContainer from "../../DrawerTabsContainer";
     import FullCalendar from "../../FullCalendar/FullCalendar";
+
+    /**
+     * 待办日程
+     */
     export default {
         name: 'TodoCalendar',
         components: {FullCalendar, DrawerTabsContainer},
@@ -34,6 +38,16 @@
         },
         mounted() {
             $A.setOnTaskInfoListener('components/project/todo/calendar',(act, detail) => {
+                if (detail.username != $A.getUserName()) {
+                    this.lists.some((task, i) => {
+                        if (task.id == detail.id) {
+                            this.lists.splice(i, 1);
+                            return true;
+                        }
+                    });
+                    return;
+                }
+                //
                 detail = this.formatTaskData(detail);
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {

@@ -20,6 +20,9 @@
     import DrawerTabsContainer from "../../DrawerTabsContainer";
     import Task from "../../../mixins/task";
 
+    /**
+     * 我关注的任务
+     */
     export default {
         name: 'TodoAttention',
         components: {DrawerTabsContainer},
@@ -89,7 +92,17 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
-            $A.setOnTaskInfoListener('components/project/todo/attention',(act, detail) => {
+            $A.setOnTaskInfoListener('components/project/todo/attention', (act, detail) => {
+                if (detail.follower.indexOf($A.getUserName()) === -1) {
+                    this.lists.some((task, i) => {
+                        if (task.id == detail.id) {
+                            this.lists.splice(i, 1);
+                            return true;
+                        }
+                    });
+                    return;
+                }
+                //
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);

@@ -20,6 +20,9 @@
     import DrawerTabsContainer from "../../DrawerTabsContainer";
     import Task from "../../../mixins/task";
 
+    /**
+     * 已完成的任务
+     */
     export default {
         name: 'TodoComplete',
         components: {DrawerTabsContainer},
@@ -76,6 +79,16 @@
                 this.getLists(true);
             }
             $A.setOnTaskInfoListener('components/project/todo/complete',(act, detail) => {
+                if (detail.username != $A.getUserName()) {
+                    this.lists.some((task, i) => {
+                        if (task.id == detail.id) {
+                            this.lists.splice(i, 1);
+                            return true;
+                        }
+                    });
+                    return;
+                }
+                //
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);

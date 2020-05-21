@@ -20,6 +20,9 @@
     import DrawerTabsContainer from "../../DrawerTabsContainer";
     import Task from "../../../mixins/task";
 
+    /**
+     * 我创建的任务
+     */
     export default {
         name: 'HeaderCreate',
         components: {DrawerTabsContainer},
@@ -86,6 +89,10 @@
                 this.getLists(true);
             }
             $A.setOnTaskInfoListener('components/project/header/create',(act, detail) => {
+                if (detail.createuser != $A.getUserName()) {
+                    return;
+                }
+                //
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);

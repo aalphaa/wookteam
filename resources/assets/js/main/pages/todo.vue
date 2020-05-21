@@ -346,6 +346,19 @@
             }, false);
             //
             $A.setOnTaskInfoListener('pages/todo',(act, detail) => {
+                if (detail.username != $A.getUserName()) {
+                    for (let level in this.taskDatas) {
+                        this.taskDatas[level].lists.some((task, i) => {
+                            if (task.id == detail.id) {
+                                this.taskDatas[level].lists.splice(i, 1);
+                                this.taskSortData = this.getTaskSort();
+                                return true;
+                            }
+                        });
+                    }
+                    return;
+                }
+                //
                 switch (act) {
                     case 'deleteproject':   // 删除项目
                     case 'deletelabel':     // 删除分类

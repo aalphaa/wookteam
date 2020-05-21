@@ -344,7 +344,12 @@
                 switch (act) {
                     case 'deleteproject':   // 删除项目
                     case 'deletelabel':     // 删除分类
-                        this.getLists(true);
+                        this.lists.some((item) => {
+                            if (item.id == detail.projectid) {
+                                this.getLists(true);
+                                return true;
+                            }
+                        });
                         break;
                     case "complete":        // 标记完成
                         this.lists.some((item) => {

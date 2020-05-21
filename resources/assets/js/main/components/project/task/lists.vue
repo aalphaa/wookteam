@@ -67,6 +67,9 @@
     import DrawerTabsContainer from "../../DrawerTabsContainer";
     import Task from "../../../mixins/task";
 
+    /**
+     * 项目任务列表
+     */
     export default {
         name: 'ProjectTaskLists',
         components: {DrawerTabsContainer},
@@ -218,10 +221,11 @@
                 this.loadYet = true;
                 this.getLists(true);
             }
-            $A.setOnTaskInfoListener('components/project/task/lists',(act, detail) => {
-                if (this.projectid > 0 && detail.projectid != this.projectid) {
+            $A.setOnTaskInfoListener('components/project/task/lists', (act, detail) => {
+                if (detail.projectid != this.projectid) {
                     return;
                 }
+                //
                 this.lists.some((task, i) => {
                     if (task.id == detail.id) {
                         this.lists.splice(i, 1, detail);
