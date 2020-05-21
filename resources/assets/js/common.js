@@ -1308,6 +1308,7 @@
             if (typeof params.dataType === 'undefined') params.dataType = 'json';
             if (typeof params.beforeSend === 'undefined') params.beforeSend = () => { };
             if (typeof params.complete === 'undefined') params.complete = () => { };
+            if (typeof params.afterComplete === 'undefined') params.afterComplete = () => { };
             if (typeof params.success === 'undefined') params.success = () => { };
             if (typeof params.error === 'undefined') params.error = () => { };
             //
@@ -1385,10 +1386,12 @@
                 success: function(data, status, xhr) {
                     params.complete();
                     params.success(data, status, xhr);
+                    params.afterComplete(true);
                 },
                 error: function(xhr, status) {
                     params.complete();
                     params.error(xhr, status);
+                    params.afterComplete(false);
                 }
             });
         }

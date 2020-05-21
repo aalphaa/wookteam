@@ -325,8 +325,6 @@
             return {
                 loadIng: 0,
 
-                userInfo: {},
-
                 taskDatas: {
                     "1": {lists: [], hasMorePages: false},
                     "2": {lists: [], hasMorePages: false},
@@ -342,10 +340,11 @@
             }
         },
         mounted() {
-            this.userInfo = $A.getUserInfo((res) => {
-                this.userInfo = res;
-                this.refreshTask();
-            }, true);
+            this.refreshTask();
+            $A.getUserInfo((res, isLogin) => {
+                isLogin && this.refreshTask();
+            }, false);
+            //
             $A.setOnTaskInfoListener('pages/todo',(act, detail) => {
                 switch (act) {
                     case 'deleteproject':   // 删除项目
@@ -385,12 +384,14 @@
                                 }
                             });
                             if (level == detail.level) {
+                                let index = this.taskDatas[level].lists.length;
                                 this.taskDatas[level].lists.some((task, i) => {
                                     if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
-                                        this.taskDatas[level].lists.splice(i, 0, detail);
+                                        index = i;
                                         return true;
                                     }
                                 });
+                                this.taskDatas[level].lists.splice(index, 0, detail);
                             }
                         }
                         this.taskSortData = this.getTaskSort();
@@ -413,12 +414,14 @@
                     case "unarchived":      // 取消归档
                         for (let level in this.taskDatas) {
                             if (level == detail.level) {
+                                let index = this.taskDatas[level].lists.length;
                                 this.taskDatas[level].lists.some((task, i) => {
                                     if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
-                                        this.taskDatas[level].lists.splice(i, 0, detail);
+                                        index = i;
                                         return true;
                                     }
                                 });
+                                this.taskDatas[level].lists.splice(index, 0, detail);
                             }
                         }
                         this.taskSortData = this.getTaskSort();

@@ -30,7 +30,7 @@
         components: {WContent, WHeader},
         data () {
             return {
-
+                loadIng: 0,
             }
         },
         mounted() {

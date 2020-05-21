@@ -309,16 +309,16 @@
 <script>
     import draggable from 'vuedraggable'
 
-    import WHeader from "../components/WHeader";
-    import WContent from "../components/WContent";
-    import WLoading from "../components/WLoading";
-    import ProjectAddTask from "../components/project/task/add";
-    import ProjectTaskLists from "../components/project/task/lists";
-    import ProjectTaskFiles from "../components/project/task/files";
-    import ProjectTaskLogs from "../components/project/task/logs";
-    import ProjectArchived from "../components/project/archived";
-    import ProjectUsers from "../components/project/users";
-    import ProjectStatistics from "../components/project/statistics";
+    import WHeader from "../../components/WHeader";
+    import WContent from "../../components/WContent";
+    import WLoading from "../../components/WLoading";
+    import ProjectAddTask from "../../components/project/task/add";
+    import ProjectTaskLists from "../../components/project/task/lists";
+    import ProjectTaskFiles from "../../components/project/task/files";
+    import ProjectTaskLogs from "../../components/project/task/logs";
+    import ProjectArchived from "../../components/project/archived";
+    import ProjectUsers from "../../components/project/users";
+    import ProjectStatistics from "../../components/project/statistics";
 
     export default {
         components: {
@@ -383,12 +383,14 @@
                     case "unarchived":      // 取消归档
                         this.projectLabel.forEach((label) => {
                             if (label.id == detail.labelid) {
+                                let index = label.taskLists.length;
                                 label.taskLists.some((task, i) => {
                                     if (detail.inorder > task.inorder || (detail.inorder == task.inorder && detail.id > task.id)) {
-                                        label.taskLists.splice(i, 0, detail);
+                                        index = i;
                                         return true;
                                     }
                                 });
+                                label.taskLists.splice(index, 0, detail);
                             }
                         });
                         this.projectSortData = this.getProjectSort();
@@ -403,6 +405,9 @@
             }
         },
         deactivated() {
+            if ($A.getToken() === false) {
+                this.projectid = 0;
+            }
             this.projectDrawerShow = false;
             this.projectSettingDrawerShow = false;
         },

@@ -22,7 +22,7 @@
                 </li>
                 <li v-if="loadIng > 0" class="logs-loading"><w-loading></w-loading></li>
                 <li v-else-if="hasMorePages" class="logs-more" @click="getMore">加载更多</li>
-                <li v-else-if="totalNum == 0" class="logs-none" @click="getLists(true)">没有相关{{logtype.indexOf(['日志', '评论'])===-1?logtype:'数据'}}</li>
+                <li v-else-if="totalNum == 0" class="logs-none" @click="getLists(true)">没有相关{{['日志', '评论'].indexOf(logtype)===-1?'数据':logtype}}</li>
             </ul>
         </div>
     </drawer-tabs-container>

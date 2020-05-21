@@ -167,13 +167,14 @@ import '../../sass/main.scss';
                             $A.storage("userInfo", res.data);
                             $A.setToken(res.data.token);
                             $A.triggerUserInfoListener(res.data);
-                            typeof callback === "function" && callback(res.data);
+                            typeof callback === "function" && callback(res.data, $A.getToken() !== false);
                         }
-                        //
+                    },
+                    afterComplete: () => {
                         if (typeof continueListenerName == "string" && continueListenerName) {
                             $A.setOnUserInfoListener(continueListenerName, callback);
                         }
-                    }
+                    },
                 });
             }
             return $A.jsonParse($A.storage("userInfo"));
@@ -231,7 +232,7 @@ import '../../sass/main.scss';
                 if (!$A.__userInfoListenerObject.hasOwnProperty(key)) continue;
                 item = $A.__userInfoListenerObject[key];
                 if (typeof item.callback === "function") {
-                    item.callback(userInfo);
+                    item.callback(userInfo, $A.getToken() !== false);
                 }
             }
         },
@@ -254,20 +255,160 @@ import '../../sass/main.scss';
                 }
             }
         },
-        triggerTaskInfoListener(act, taskDetail) {
+        triggerTaskInfoListener(act, taskDetail, sendTo = true) {
             let key, item;
             for (key in $A.__taskInfoListenerObject) {
                 if (!$A.__taskInfoListenerObject.hasOwnProperty(key)) continue;
                 item = $A.__taskInfoListenerObject[key];
                 if (typeof item.callback === "function") {
-                    if (act.indexOf(['deleteproject', 'deletelabel', 'leveltask']) === -1 || item.special === true) {
+                    if (['deleteproject', 'deletelabel', 'leveltask'].indexOf(act) === -1 || item.special === true) {
                         item.callback(act, taskDetail);
                     }
                 }
             }
+            if (sendTo === true) {
+                $A.WS.sendTo('all', null, {
+                    type: "task",
+                    act: act,
+                    taskDetail: taskDetail
+                });
+            }
         },
         __taskInfoListenerObject: {},
 
+    });
+
+    /**
+     * =============================================================================
+     * *****************************   websocket assist   ****************************
+     * =============================================================================
+     */
+    $.extend({
+        WS: {
+            __instance: null,
+            __connected: false,
+
+            /**
+             * 连接
+             */
+            connection(force = false) {
+                let url = $A.getObject(window.webSocketConfig, 'URL');
+                url += ($A.strExists(url, "?") ? "&" : "?") + "token=" + $A.getToken();
+                if (!$A.leftExists(url, "ws://") && !$A.leftExists(url, "wss://")) {
+                    return;
+                }
+
+                if (this.__instance !== null && force !== true) {
+                    return;
+                }
+
+                // 初始化客户端套接字并建立连接
+                this.__instance = new WebSocket(url);
+
+                // 连接建立时触发
+                this.__instance.onopen = (event) => {
+                    // console.log("Connection open ...");
+                }
+
+                // 接收到服务端推送时执行
+                this.__instance.onmessage = (event) => {
+                    let msgDetail = $A.jsonParse(event.data);
+                    if (msgDetail.messageType === 'open') {
+                        this.__connected = true;
+                    }
+                    this.triggerMsgListener(msgDetail);
+                };
+
+                // 连接关闭时触发
+                this.__instance.onclose = (event) => {
+                    // console.log("Connection closed ...");
+                    this.__connected = false;
+                    this.__instance = null;
+                }
+
+                // 连接出错
+                this.__instance.onerror = (event) => {
+                    // console.log("Connection error ...");
+                    this.__connected = false;
+                    this.__instance = null;
+                }
+
+                return this;
+            },
+
+            /**
+             * 添加消息监听
+             * @param listenerName
+             * @param callback
+             */
+            setOnMsgListener(listenerName, callback) {
+                if (typeof listenerName != "string") {
+                    return;
+                }
+                if (typeof callback === "function") {
+                    this.__msgListenerObject[listenerName] = {
+                        callback: callback,
+                    }
+                }
+                return this;
+            },
+            triggerMsgListener(msgDetail) {
+                let key, item;
+                for (key in this.__msgListenerObject) {
+                    if (!this.__msgListenerObject.hasOwnProperty(key)) continue;
+                    item = this.__msgListenerObject[key];
+                    if (typeof item.callback === "function") {
+                        item.callback(msgDetail);
+                    }
+                }
+            },
+            __msgListenerObject: {},
+
+            /**
+             * 发送消息
+             * @param type      会话类型：user:指定target、all:所有会员
+             * @param target    接收方的标识，type=all时此项无效
+             * @param content   发送内容
+             */
+            sendTo(type, target, content) {
+                if (this.__instance === null) {
+                    console.log("ws:未初始化连接");
+                    return;
+                }
+                if (this.__connected === false) {
+                    console.log("ws:未连接成功");
+                    return;
+                }
+                if (['user', 'all'].indexOf(type) === -1) {
+                    console.log("ws:错误的消息类型-" + type);
+                    return;
+                }
+                this.__instance.send(JSON.stringify({
+                    messageType: 'send',
+                    type: type,
+                    sender: $A.getUserName(),
+                    target: target,
+                    content: content,
+                    time: Math.round(new Date().getTime() / 1000),
+                }));
+                return this;
+            },
+
+            /**
+             * 关闭连接
+             */
+            close() {
+                if (this.__instance === null) {
+                    console.log("ws:未初始化连接");
+                    return;
+                }
+                if (this.__connected === false) {
+                    console.log("ws:未连接成功");
+                    return;
+                }
+                this.__instance.close();
+            }
+        }
     });
 
     window.$A = $;

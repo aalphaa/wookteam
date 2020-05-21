@@ -16,6 +16,7 @@
     <script src="//cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js"></script>
     <script>
         window.csrfToken = { csrfToken : "{{ csrf_token() }}" };
+        window.webSocketConfig = { URL: "{{ env('LARAVELS_PROXY_URL') }}" };
     </script>
 </head>
 <body>

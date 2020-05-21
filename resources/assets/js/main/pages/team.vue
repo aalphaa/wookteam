@@ -238,6 +238,9 @@
         },
         mounted() {
             this.getLists(true);
+            $A.getUserInfo((res, isLogin) => {
+                isLogin && this.getLists(true);
+            }, false);
         },
         deactivated() {
             this.addShow = false;

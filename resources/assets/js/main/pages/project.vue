@@ -336,6 +336,10 @@
         },
         mounted() {
             this.getLists(true);
+            $A.getUserInfo((res, isLogin) => {
+                isLogin && this.getLists(true);
+            }, false);
+            //
             $A.setOnTaskInfoListener('pages/project',(act, detail) => {
                 switch (act) {
                     case 'deleteproject':   // 删除项目

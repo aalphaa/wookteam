@@ -32,6 +32,9 @@
             setInterval(() => {
                 this.searchEnter();
             }, 1000);
+            //
+            this.handleWebSocket();
+            $A.setOnUserInfoListener("app", () => { this.handleWebSocket() });
         },
         watch: {
             '$route' (To, From) {
@@ -142,6 +145,22 @@
                         }
                     }
                 });
+            },
+
+            handleWebSocket(force) {
+                if ($A.getToken() === false) {
+                    $A.WS.close();
+                } else {
+                    $A.WS.setOnMsgListener("app", (msgDetail) => {
+                        if (msgDetail.sender == $A.getUserName()) {
+                            return;
+                        }
+                        let content = $A.jsonParse(msgDetail.content)
+                        if (content.type == 'task') {
+                            $A.triggerTaskInfoListener(content.act, content.taskDetail, false);
+                        }
+                    }).connection(force);
+                }
             }
         }
     }
