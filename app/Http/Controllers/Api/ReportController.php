@@ -27,7 +27,21 @@ class ReportController extends Controller
     }
 
     /**
-     * 获取
+     * 获取内容
+     *
+     * @apiParam {Number} id           数据ID
+     */
+    public function content()
+    {
+        $row = Base::DBC2A(DB::table('report_content')->select(['rid', 'content'])->where('rid', intval(Request::input('id')))->first());
+        if (empty($row)) {
+            return Base::retError('内容不存在或已被删除！');
+        }
+        return Base::retSuccess('success', $row);
+    }
+
+    /**
+     * 获取模板、保存、发送、删除
      *
      * @apiParam {String} type           类型
      * - 日报

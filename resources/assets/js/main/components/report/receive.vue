@@ -1,7 +1,6 @@
 <template>
     <drawer-tabs-container>
         <div class="report-receive">
-
             <!-- 搜索 -->
             <Row class="sreachBox">
                 <div class="item">
@@ -33,8 +32,15 @@
 
             <!-- 分页 -->
             <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
-
         </div>
+        <Modal
+            v-model="contentShow"
+            :title="contentTitle"
+            width="80%"
+            :styles="{top: '35px', paddingBottom: '35px'}"
+            footerHide>
+            <report-content :content="contentText"></report-content>
+        </Modal>
     </drawer-tabs-container>
 </template>
 <style lang="scss" scoped>
@@ -48,13 +54,14 @@
 
 <script>
     import DrawerTabsContainer from "../DrawerTabsContainer";
+    import ReportContent from "./content";
 
     /**
      * 收到的汇报
      */
     export default {
         name: 'ReportReceive',
-        components: {DrawerTabsContainer},
+        components: {ReportContent, DrawerTabsContainer},
         props: {
             canload: {
                 type: Boolean,
@@ -79,6 +86,10 @@
                 listPage: 1,
                 listTotal: 0,
                 noDataText: "数据加载中.....",
+
+                contentShow: false,
+                contentTitle: '',
+                contentText: '内容加载中.....',
             }
         },
 
@@ -111,7 +122,14 @@
                 "width": 80,
                 "align": 'center',
                 render: (h, params) => {
-                    return h('a', '查看');
+                    return h('a', {
+                        style: {padding: '0 2px', fontSize: '12px'},
+                        on: {
+                            click: () => {
+                                this.contentReport(params.row);
+                            }
+                        }
+                    }, '查看');
                 }
             }];
         },
@@ -185,6 +203,27 @@
                             this.lists = [];
                             this.listTotal = 0;
                             this.noDataText = res.msg;
+                        }
+                    }
+                });
+            },
+
+            contentReport(row) {
+                this.contentShow = true;
+                this.contentTitle = row.title;
+                this.contentText = '详细内容加载中.....';
+                $A.aAjax({
+                    url: 'report/content?id=' + row.id,
+                    error: () => {
+                        alert(this.$L('网络繁忙，请稍后再试！'));
+                        this.contentShow = false;
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.contentText = res.data.content;
+                        } else {
+                            this.contentShow = false;
+                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                         }
                     }
                 });

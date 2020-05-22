@@ -16,7 +16,7 @@
             </div>
             <div class="add-footer">
                 <Button :loading="loadIng > 0" type="primary" @click="handleSubmit" style="margin-right:6px">保 存</Button>
-                <Button v-if="dataDetail.status=='已发送'" :loading="loadIng > 0" type="success" icon="md-checkmark-circle-outline" ghost @click="handleSubmit(true)">已保存发送</Button>
+                <Button v-if="dataDetail.status=='已发送'" :loading="loadIng > 0" type="success" icon="md-checkmark-circle-outline" ghost @click="handleSubmit(true)">已发送</Button>
                 <Button v-else :loading="loadIng > 0" @click="handleSubmit(true)">保存并发送</Button>
             </div>
         </div>

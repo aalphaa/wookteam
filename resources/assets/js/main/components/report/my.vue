@@ -11,6 +11,14 @@
         <Drawer v-model="addDrawerShow" width="70%">
             <report-add :canload="addDrawerShow" :id="addDrawerId" @on-success="addDrawerSuccess"></report-add>
         </Drawer>
+        <Modal
+            v-model="contentShow"
+            :title="contentTitle"
+            width="80%"
+            :styles="{top: '35px', paddingBottom: '35px'}"
+            footerHide>
+            <report-content :content="contentText"></report-content>
+        </Modal>
     </drawer-tabs-container>
 </template>
 
@@ -25,13 +33,14 @@
 <script>
     import DrawerTabsContainer from "../DrawerTabsContainer";
     import ReportAdd from "./add";
+    import ReportContent from "./content";
 
     /**
      * 我的汇报
      */
     export default {
         name: 'ReportMy',
-        components: {ReportAdd, DrawerTabsContainer},
+        components: {ReportContent, ReportAdd, DrawerTabsContainer},
         props: {
             canload: {
                 type: Boolean,
@@ -53,6 +62,10 @@
 
                 addDrawerId: 0,
                 addDrawerShow: false,
+
+                contentShow: false,
+                contentTitle: '',
+                contentText: '内容加载中.....',
             }
         },
         created() {
@@ -88,6 +101,7 @@
                         style: {padding: '0 2px', fontSize: '12px'},
                         on: {
                             click: () => {
+                                this.contentReport(params.row);
                             }
                         }
                     }, '查看'));
@@ -186,6 +200,27 @@
             addDrawerSuccess() {
                 this.addDrawerShow = false;
                 this.getLists(true);
+            },
+
+            contentReport(row) {
+                this.contentShow = true;
+                this.contentTitle = row.title;
+                this.contentText = '详细内容加载中.....';
+                $A.aAjax({
+                    url: 'report/content?id=' + row.id,
+                    error: () => {
+                        alert(this.$L('网络繁忙，请稍后再试！'));
+                        this.contentShow = false;
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.contentText = res.data.content;
+                        } else {
+                            this.contentShow = false;
+                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                        }
+                    }
+                });
             },
 
             sendReport(row) {
