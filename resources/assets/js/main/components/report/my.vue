@@ -1,8 +1,31 @@
 <template>
     <drawer-tabs-container>
         <div class="report-my">
+            <!-- 搜索 -->
+            <Row class="sreachBox">
+                <div class="item">
+                    <div class="item-2">
+                        <sreachTitle :val="keys.type">类型</sreachTitle>
+                        <Select v-model="keys.type" placeholder="全部">
+                            <Option value="">全部</Option>
+                            <Option value="日报">日报</Option>
+                            <Option value="周报">周报</Option>
+                        </Select>
+                    </div>
+                    <div class="item-2">
+                        <sreachTitle :val="keys.indate">日期</sreachTitle>
+                        <Date-picker v-model="keys.indate" type="daterange" placement="bottom" placeholder="日期范围"></Date-picker>
+                    </div>
+                </div>
+                <div class="item item-button">
+                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
+                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button>
+                </div>
+            </Row>
             <!-- 按钮 -->
-            <Button :loading="loadIng > 0" type="primary" icon="md-add" @click="[addDrawerId=0,addDrawerShow=true]">新建汇报</Button>
+            <Row class="butBox" style="float:left;margin-top:-32px;">
+                <Button :loading="loadIng > 0" type="primary" icon="md-add" @click="[addDrawerId=0,addDrawerShow=true]">新建汇报</Button>
+            </Row>
             <!-- 列表 -->
             <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
             <!-- 分页 -->
@@ -49,6 +72,9 @@
         },
         data () {
             return {
+                keys: {},
+                sorts: {key:'', order:''},
+
                 loadYet: false,
 
                 loadIng: 0,
@@ -77,6 +103,7 @@
                 "title": "创建日期",
                 "width": 160,
                 "align": 'center',
+                "sortable": true,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
@@ -153,6 +180,18 @@
         },
 
         methods: {
+            sreachTab(clear) {
+                if (clear === true) {
+                    this.keys = {};
+                }
+                this.getLists(true);
+            },
+
+            sortChange(info) {
+                this.sorts = {key:info.key, order:info.order};
+                this.getLists(true);
+            },
+
             setPage(page) {
                 this.listPage = page;
                 this.getLists();
@@ -169,14 +208,15 @@
                 if (resetLoad === true) {
                     this.listPage = 1;
                 }
+                let whereData = $A.date2string($A.cloneData(this.keys));
+                whereData.page = Math.max(this.listPage, 1);
+                whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
+                whereData.sorts = $A.cloneData(this.sorts);
                 this.loadIng++;
                 this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: 'report/my',
-                    data: {
-                        page: Math.max(this.listPage, 1),
-                        pagesize: Math.max($A.runNum(this.listPageSize), 10),
-                    },
+                    data: whereData,
                     complete: () => {
                         this.loadIng--;
                     },

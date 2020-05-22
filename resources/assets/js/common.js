@@ -648,12 +648,12 @@
                 return "";
             }
             let str = "";
-            $A.each(obj, (key, val)=>{
+            $A.each(obj, (key, val) => {
                 if (val !== null) {
                     if (typeof val === "object" && this.count(val) > 0) {
-                        str+= this.objImplode(val);
-                    }else{
-                        str+= String(val);
+                        str += this.objImplode(val);
+                    } else {
+                        str += String(val);
                     }
                 }
             });

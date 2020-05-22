@@ -108,6 +108,7 @@
                 "title": "创建日期",
                 "width": 160,
                 "align": 'center',
+                "sortable": true,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
@@ -179,11 +180,11 @@
                 if (resetLoad === true) {
                     this.listPage = 1;
                 }
-                this.loadIng++;
-                let whereData = $A.cloneData(this.keys);
+                let whereData = $A.date2string($A.cloneData(this.keys));
                 whereData.page = Math.max(this.listPage, 1);
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.sorts = $A.cloneData(this.sorts);
+                this.loadIng++;
                 this.noDataText = "数据加载中.....";
                 $A.aAjax({
                     url: 'report/receive',

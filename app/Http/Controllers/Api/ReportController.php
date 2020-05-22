@@ -239,9 +239,33 @@ class ReportController extends Controller
             $user = $user['data'];
         }
         //
+        $whereArray = [];
+        $whereArray[] = ['username', '=', $user['username']];
+        if (trim(Request::input('username'))) {
+            $whereArray[] = ['username', '=', trim(Request::input('username'))];
+        }
+        if (in_array(trim(Request::input('type')), ['日报', '周报'])) {
+            $whereArray[] = ['type', '=', trim(Request::input('type'))];
+        }
+        $indate = Request::input('indate');
+        if (is_array($indate)) {
+            if ($indate[0] > 0) $whereArray[] = ['indate', '>=', Base::dayTimeF($indate[0])];
+            if ($indate[1] > 0) $whereArray[] = ['indate', '<=', Base::dayTimeE($indate[1])];
+        }
+        //
+        $orderBy = '`id` DESC';
+        $sorts = Base::json2array(Request::input('sorts'));
+        if (in_array($sorts['order'], ['asc', 'desc'])) {
+            switch ($sorts['key']) {
+                case 'indate':
+                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['order'] . ',`id` DESC';
+                    break;
+            }
+        }
+        //
         $lists = DB::table('report_lists')
-            ->where('username', $user['username'])
-            ->orderByDesc('id')
+            ->where($whereArray)
+            ->orderByRaw($orderBy)
             ->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
@@ -287,8 +311,8 @@ class ReportController extends Controller
         }
         $indate = Request::input('indate');
         if (is_array($indate)) {
-            if ($indate[0] > 0) $whereArr[] = ['report_lists.indate', '>=', Base::dayTimeF($indate[0])];
-            if ($indate[1] > 0) $whereArr[] = ['report_lists.indate', '<=', Base::dayTimeE($indate[1])];
+            if ($indate[0] > 0) $whereArray[] = ['report_lists.indate', '>=', Base::dayTimeF($indate[0])];
+            if ($indate[1] > 0) $whereArray[] = ['report_lists.indate', '<=', Base::dayTimeE($indate[1])];
         }
         //
         $orderBy = '`id` DESC';
