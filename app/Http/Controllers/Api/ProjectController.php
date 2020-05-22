@@ -1773,7 +1773,7 @@ class ProjectController extends Controller
      * 项目文件-列表
      *
      * @apiParam {Number} [projectid]           项目ID
-     * @apiParam {Number} [taskid]              任务ID（如果项目ID为空时此参必须赋值且任务必须是自己负责人）
+     * @apiParam {Number} [taskid]              任务ID（如果项目ID为空时此参必须赋值且任务必须是自己负责人或在任务所在的项目里）
      * @apiParam {String} [name]                文件名称
      * @apiParam {String} [username]            上传者用户名
      * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
@@ -1791,7 +1791,12 @@ class ProjectController extends Controller
             $user = $user['data'];
         }
         //
-        $projectid = intval(Request::input('projectid'));
+        $taskid = intval(Request::input('taskid'));
+        if ($taskid > 0) {
+            $projectid = intval(DB::table('project_task')->select(['projectid'])->where([ 'id' => $taskid])->value('projectid'));
+        } else {
+            $projectid = intval(Request::input('projectid'));
+        }
         if ($projectid > 0) {
             $inRes = Project::inThe($projectid, $user['username']);
             if (Base::isError($inRes)) {
@@ -1813,7 +1818,6 @@ class ProjectController extends Controller
             }
         }
         //
-        $taskid = intval(Request::input('taskid'));
         $whereArray = [];
         if ($projectid > 0) {
             $whereArray[] = ['projectid', '=', $projectid];
@@ -1821,7 +1825,7 @@ class ProjectController extends Controller
                 $whereArray[] = ['taskid', '=', $taskid];
             }
         } else {
-            if ($taskid < 0) {
+            if ($taskid <= 0) {
                 return Base::retError('参数错误！');
             }
             $count = DB::table('project_task')->where([ 'id' => $taskid, 'username' => $user['username']])->count();

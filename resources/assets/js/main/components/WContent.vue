@@ -14,6 +14,7 @@
         overflow: auto;
         background-repeat: no-repeat;
         background-position: center;
+        background-color: #EEEEEE;
         background-image: url("../../../statics/images/bg1.jpg");
         background-size: cover;
 
