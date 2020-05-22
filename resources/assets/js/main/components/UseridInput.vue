@@ -205,9 +205,7 @@
         watch: {
             value (val) {
                 if (this.multiple) {
-                    if (!val) {
-                        this.multipleLists = [];
-                    }
+                    this.multipleLists = this.formatMultipleLists(val);
                     return;
                 }
                 this.userName = $A.cloneData(val)
@@ -451,6 +449,27 @@
                     val+= tmp.username;
                 });
                 this.$emit('input', val);
+            },
+
+            formatMultipleLists(val) {
+                let arr = (val + ",").split(",");
+                let narr = [];
+                arr.forEach((uname) => {
+                    if (uname) {
+                        let inn = false;
+                        this.multipleLists.some((tmp) => {
+                            if (tmp.username == uname) {
+                                return inn = true;
+                            }
+                        })
+                        if (!inn) {
+                            narr.push({
+                                username: uname,
+                            });
+                        }
+                    }
+                });
+                return narr;
             }
         },
         mounted() {
@@ -458,6 +477,9 @@
             //
             if ($A.runNum(this.value) > 0) {
                 this.userName = this.value;
+            }
+            if (this.multiple) {
+                this.multipleLists = this.formatMultipleLists(this.value);
             }
         }
     };

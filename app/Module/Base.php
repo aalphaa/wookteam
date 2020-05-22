@@ -2207,6 +2207,18 @@ class Base
     }
 
     /**
+     * 获取当前是本月第几个星期
+     * @return false|float
+     */
+    public static function getMonthWeek()
+    {
+        $time = strtotime(date("Y-m-01"));
+        $w = date('w', $time);
+        $j = date("j");
+        return ceil(($j + $w) / 7);
+    }
+
+    /**
      * 缓存数据
      * @param $title
      * @param null $value

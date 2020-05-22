@@ -252,7 +252,7 @@
                         {text:"C#",value:"csharp"},
                         {text:"C++",value:"cpp"}
                     ],
-                    height: isFull ? '100%' : ($A.runNum(this.height) || 360),
+                    height: isFull ? '100%' : ($A.rightExists(this.height, '%') ? this.height : ($A.runNum(this.height) || 360)),
                     resize: !isFull,
                     convert_urls:false,
                     toolbar_drawer: 'floating',

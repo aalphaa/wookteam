@@ -85,6 +85,17 @@
                 </TabPane>
             </Tabs>
         </Drawer>
+
+        <Drawer v-model="todoReportDrawerShow" width="75%">
+            <Tabs v-if="todoReportDrawerShow" v-model="todoReportDrawerTab">
+                <TabPane :label="$L('我的汇报')" name="my">
+                    <report-my :canload="todoReportDrawerShow && todoReportDrawerTab == 'my'"></report-my>
+                </TabPane>
+                <TabPane :label="$L('收到的汇报')" name="receive">
+                    <report-receive :canload="todoReportDrawerShow && todoReportDrawerTab == 'receive'"></report-receive>
+                </TabPane>
+            </Tabs>
+        </Drawer>
     </div>
 </template>
 
@@ -315,9 +326,13 @@
     import TodoAttention from "../components/project/todo/attention";
 
     import Task from "../mixins/task";
+    import ReportMy from "../components/report/my";
+    import ReportReceive from "../components/report/receive";
 
     export default {
-        components: {draggable, TodoAttention, TodoComplete, TodoCalendar, WContent, WHeader, WLoading},
+        components: {
+            ReportReceive,
+            ReportMy, draggable, TodoAttention, TodoComplete, TodoCalendar, WContent, WHeader, WLoading},
         mixins: [
             Task
         ],
@@ -337,6 +352,9 @@
 
                 todoDrawerShow: false,
                 todoDrawerTab: 'calendar',
+
+                todoReportDrawerShow: false,
+                todoReportDrawerTab: 'my',
             }
         },
         mounted() {
@@ -444,6 +462,7 @@
         },
         deactivated() {
             this.todoDrawerShow = false;
+            this.todoReportDrawerShow = false;
         },
         computed: {
 
@@ -621,7 +640,7 @@
                         break;
                     }
                     case 'report': {
-                        this.$Message.info("敬请期待！");
+                        this.todoReportDrawerShow = true;
                         break;
                     }
                 }

@@ -133,7 +133,7 @@ class IndexController extends Controller
                     'title' => '...',
                     'path' => substr(substr($path, 0, -1), 0, strripos(substr($path, 0, -1), '/')),
                     'url' => '',
-                    'thumb' => Base::fillUrl('images/dir.png'),
+                    'thumb' => Base::fillUrl('images/other/dir.png'),
                     'inode' => 0,
                 ];
             }
@@ -150,7 +150,7 @@ class IndexController extends Controller
                     'title' => $filename,
                     'path' => $pathTemp,
                     'url' => Base::fillUrl($pathTemp),
-                    'thumb' => Base::fillUrl('images/dir.png'),
+                    'thumb' => Base::fillUrl('images/other/dir.png'),
                     'inode' => fileatime($v),
                 ];
             } elseif (substr($filename, -10) != "_thumb.jpg") {
