@@ -89,6 +89,9 @@
                             type: 'primary',
                             size: 'small'
                         },
+                        style: {
+                            fontSize: '12px'
+                        },
                         on: {
                             click: () => {
                                 this.$Modal.confirm({

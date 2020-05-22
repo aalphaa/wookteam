@@ -286,7 +286,7 @@ class ReportController extends Controller
      * - 日报
      * - 周报
      * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
-     * - key: username|indate
+     * - key: title|username|indate
      * - order: asc|desc
      * @apiParam {Number} [page]                当前页，默认:1
      * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
@@ -319,6 +319,7 @@ class ReportController extends Controller
         $sorts = Base::json2array(Request::input('sorts'));
         if (in_array($sorts['order'], ['asc', 'desc'])) {
             switch ($sorts['key']) {
+                case 'title':
                 case 'username':
                 case 'indate':
                     $orderBy = '`' . $sorts['key'] . '` ' . $sorts['order'] . ',`id` DESC';

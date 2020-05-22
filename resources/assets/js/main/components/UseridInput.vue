@@ -37,6 +37,7 @@
     .user-id-multiple {
         margin-bottom: 4px;
         overflow: auto;
+        white-space: normal;
     }
     .user-id-input {
         display: inline-block;
@@ -457,7 +458,7 @@
                 arr.forEach((uname) => {
                     if (uname) {
                         let inn = false;
-                        this.multipleLists.some((tmp) => {
+                        narr.some((tmp) => {
                             if (tmp.username == uname) {
                                 return inn = true;
                             }

@@ -207,7 +207,7 @@
                             props: { content: '下载', transfer: true, delay: 600 },
                             style: { position: 'relative' },
                         }, [h('Icon', {
-                            props: { type: 'md-arrow-down' },
+                            props: { type: 'md-arrow-down', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
                         }), h('a', {
                             style: { position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', 'zIndex': 1 },
@@ -225,7 +225,7 @@
                         h('Tooltip', {
                             props: { content: '重命名', transfer: true, delay: 600 }
                         }, [h('Icon', {
-                            props: { type: 'md-create' },
+                            props: { type: 'md-create', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
                             on: {
                                 click: () => {
@@ -236,7 +236,7 @@
                         h('Tooltip', {
                             props: { content: '复制链接', transfer: true, delay: 600 }
                         }, [h('Icon', {
-                            props: { type: 'md-link' },
+                            props: { type: 'md-link', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer', transform: 'rotate(-45deg)' },
                             on: {
                                 click: () => {
@@ -251,7 +251,7 @@
                         h('Tooltip', {
                             props: { content: '删除', transfer: true, delay: 600 }
                         }, [h('Icon', {
-                            props: { type: 'md-trash' },
+                            props: { type: 'md-trash', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
                             on: {
                                 click: () => {

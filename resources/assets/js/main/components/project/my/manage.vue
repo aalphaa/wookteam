@@ -80,6 +80,9 @@
                             type: 'primary',
                             size: 'small'
                         },
+                        style: {
+                            fontSize: '12px'
+                        },
                         on: {
                             click: () => {
                                 this.deleteProject(params.row.id, () => {

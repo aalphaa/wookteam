@@ -97,40 +97,49 @@
             this.columns = [{
                 "title": "标题",
                 "key": 'title',
+                "sortable": true,
                 "minWidth": 120,
             }, {
                 "title": "发送人",
                 "key": 'username',
                 "sortable": true,
                 "minWidth": 80,
-                "maxWidth": 150,
+                "maxWidth": 130,
+            }, {
+                "title": "类型",
+                "key": 'type',
+                "minWidth": 80,
+                "maxWidth": 120,
+                "align": 'center',
             }, {
                 "title": "创建日期",
-                "width": 160,
+                "minWidth": 160,
+                "maxWidth": 200,
                 "align": 'center',
                 "sortable": true,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
             }, {
-                "title": "类型",
-                "key": 'type',
-                "width": 80,
-                "align": 'center',
-            }, {
-                "title": "操作",
+                "title": " ",
                 "key": 'action',
-                "width": 80,
+                "width": 70,
                 "align": 'center',
                 render: (h, params) => {
-                    return h('a', {
-                        style: {padding: '0 2px', fontSize: '12px'},
-                        on: {
-                            click: () => {
-                                this.contentReport(params.row);
+                    return h('div', [
+                        h('Tooltip', {
+                            props: { content: '查看', transfer: true, delay: 600 },
+                            style: { position: 'relative' },
+                        }, [h('Icon', {
+                            props: { type: 'md-eye', size: 16 },
+                            style: { margin: '0 3px', cursor: 'pointer' },
+                            on: {
+                                click: () => {
+                                    this.contentReport(params.row);
+                                }
                             }
-                        }
-                    }, '查看');
+                        })]),
+                    ]);
                 }
             }];
         },

@@ -172,6 +172,9 @@
                             type: 'primary',
                             size: 'small'
                         },
+                        style: {
+                            fontSize: '12px'
+                        },
                         on: {
                             click: () => {
                                 this.$Modal.info({
@@ -188,6 +191,7 @@
                                 size: 'small'
                             },
                             style: {
+                                fontSize: '12px',
                                 marginLeft: '5px'
                             },
                             on: {

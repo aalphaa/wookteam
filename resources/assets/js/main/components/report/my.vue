@@ -100,67 +100,84 @@
                 "key": 'title',
                 "minWidth": 120,
             }, {
+                "title": "类型",
+                "key": 'type',
+                "minWidth": 80,
+                "maxWidth": 120,
+                "align": 'center',
+            }, {
+                "title": "状态",
+                "key": 'status',
+                "minWidth": 80,
+                "maxWidth": 120,
+                "align": 'center',
+            }, {
                 "title": "创建日期",
-                "width": 160,
+                "minWidth": 160,
+                "maxWidth": 200,
                 "align": 'center',
                 "sortable": true,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
             }, {
-                "title": "类型",
-                "key": 'type',
-                "width": 80,
-                "align": 'center',
-            }, {
-                "title": "状态",
-                "key": 'status',
-                "width": 80,
-                "align": 'center',
-            }, {
-                "title": "操作",
+                "title": " ",
                 "key": 'action',
-                "width": 140,
-                "align": 'center',
+                "align": 'right',
+                "width": 120,
                 render: (h, params) => {
-                    let arr = [];
-                    arr.push(h('a', {
-                        style: {padding: '0 2px', fontSize: '12px'},
-                        on: {
-                            click: () => {
-                                this.contentReport(params.row);
-                            }
-                        }
-                    }, '查看'));
-                    arr.push(h('a', {
-                        style: {padding: '0 2px', fontSize: '12px'},
-                        on: {
-                            click: () => {
-                                this.addDrawerId = params.row.id;
-                                this.addDrawerShow = true
-                            }
-                        }
-                    }, '编辑'));
-                    if (params.row.status == '未发送') {
-                        arr.push(h('a', {
-                            style: {padding: '0 2px', fontSize: '12px'},
+                    if (!params.row.id) {
+                        return null;
+                    }
+                    return h('div', [
+                        h('Tooltip', {
+                            props: { content: '查看', transfer: true, delay: 600 },
+                            style: { position: 'relative' },
+                        }, [h('Icon', {
+                            props: { type: 'md-eye', size: 16 },
+                            style: { margin: '0 3px', cursor: 'pointer' },
                             on: {
                                 click: () => {
-                                    this.deleteReport(params.row);
+                                    this.contentReport(params.row);
                                 }
                             }
-                        }, '删除'));
-                        arr.push(h('a', {
-                            style: {padding: '0 2px', fontSize: '12px'},
+                        })]),
+                        h('Tooltip', {
+                            props: { content: '编辑', transfer: true, delay: 600 }
+                        }, [h('Icon', {
+                            props: { type: 'md-create', size: 16 },
+                            style: { margin: '0 3px', cursor: 'pointer' },
+                            on: {
+                                click: () => {
+                                    this.addDrawerId = params.row.id;
+                                    this.addDrawerShow = true
+                                }
+                            }
+                        })]),
+                        h('Tooltip', {
+                            props: { content: '发送', transfer: true, delay: 600 }
+                        }, [h('Icon', {
+                            props: { type: 'md-send', size: 16 },
+                            style: { margin: '0 3px', cursor: 'pointer' },
                             on: {
                                 click: () => {
                                     this.sendReport(params.row);
                                 }
                             }
-                        }, '发送'));
-                    }
-                    return h('div', arr);
-                }
+                        })]),
+                        h('Tooltip', {
+                            props: { content: '删除', transfer: true, delay: 600 }
+                        }, [h('Icon', {
+                            props: { type: 'md-trash', size: 16 },
+                            style: { margin: '0 3px', cursor: 'pointer' },
+                            on: {
+                                click: () => {
+                                    this.deleteReport(params.row);
+                                }
+                            }
+                        })]),
+                    ]);
+                },
             }];
         },
         mounted() {

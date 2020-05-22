@@ -72,7 +72,7 @@
                 <Poptip placement="bottom" class="block">
                     <Button :loading="!!loadData.username" icon="md-person" class="btn">负责人</Button>
                     <div slot="content">
-                        <div style="width:240px">
+                        <div style="width:280px">
                             选择负责人
                             <UseridInput :projectid="detail.projectid" :nousername="detail.username" :transfer="false" @change="handleTask('usernameb', $event)" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
                         </div>
@@ -97,13 +97,13 @@
                     </div>
                 </Poptip>
                 <Button icon="md-attach" class="btn" @click="handleTask('fileupload')">添加附件</Button>
-                <Poptip ref="attentionRef" v-if="detail.username == myUsername" placement="bottom" class="block" @on-popper-show="() => {$set(detail, 'attentionLists', '')}">
+                <Poptip ref="attentionRef" v-if="detail.username == myUsername" placement="bottom" class="block" @on-popper-show="() => {$set(detail, 'attentionLists', followerToStr(detail.follower))}">
                     <Button :loading="!!loadData.attention" icon="md-at" class="btn">关注人</Button>
                     <div slot="content">
-                        <div style="width:240px">
+                        <div style="width:280px">
                             选择关注人
                             <UseridInput :multiple="true" :transfer="false" v-model="detail.attentionLists" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
-                            <Button :loading="!!loadData.attention" :disabled="!detail.attentionLists" class="btn" type="primary" style="text-align:center;width:72px;height:28px" @click="handleTask('attention')">确 定</Button>
+                            <Button :loading="!!loadData.attention" :disabled="!detail.attentionLists" class="btn" type="primary" style="text-align:center;width:72px;height:28px;font-size:13px" @click="handleTask('attention')">确 定</Button>
                         </div>
                     </div>
                 </Poptip>
@@ -274,6 +274,14 @@
                     return follower.length;
                 } else {
                     return 0;
+                }
+            },
+
+            followerToStr(follower) {
+                if (follower instanceof Array) {
+                    return follower.join(",");
+                } else {
+                    return '';
                 }
             },
 
