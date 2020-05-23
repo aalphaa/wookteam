@@ -7,8 +7,8 @@
                         <a href="javascript:void(0)" @click="tabPage('todo')"><i class="ft icon">&#xe89e;</i>{{$L('待办')}}</a>
                     </li><li :class="value==='project'?'active':''">
                         <a href="javascript:void(0)" @click="tabPage('project')"><i class="ft icon">&#xe6b8;</i>{{$L('项目')}}</a>
-                    </li><li :class="value==='doc'?'active':''">
-                        <a href="javascript:void(0)" @click="tabPage('doc')"><i class="ft icon">&#xe915;</i>{{$L('知识库')}}</a>
+                    </li><li :class="value==='docs'?'active':''">
+                        <a href="javascript:void(0)" @click="tabPage('docs')"><i class="ft icon">&#xe915;</i>{{$L('知识库')}}</a>
                     </li><li :class="value==='team'?'active':''">
                         <a href="javascript:void(0)" @click="tabPage('team')"><i class="ft icon">&#xe90d;</i>{{$L('团队')}}</a>
                     </li>

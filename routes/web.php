@@ -16,6 +16,9 @@ Route::prefix('api')->middleware(ApiMiddleware::class)->group(function () {
     //汇报
     Route::any('report/{method}',                   'Api\ReportController');
     Route::any('report/{method}/{action}',          'Api\ReportController');
+    //知识库
+    Route::any('docs/{method}',                     'Api\DocsController');
+    Route::any('docs/{method}/{action}',            'Api\DocsController');
 });
 
 

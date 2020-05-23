@@ -2219,6 +2219,45 @@ class Base
     }
 
     /**
+     * 把返回的数据集转换成Tree
+     * @param array $list           要转换的数据集
+     * @param string $pk            id标记字段
+     * @param string $pid           parent标记字段
+     * @param string $child         生成子类字段
+     * @param int $root
+     * @return array
+     */
+    public static function list2Tree($list, $pk='id', $pid = 'pid', $child = 'children', $root = 0) {
+        if (!is_array($list)) {
+            return [];
+        }
+
+        // 创建基于主键的数组引用
+        $aRefer = [];
+        foreach ($list as $key => $data) {
+            $list[$key][$child] = [];
+            $aRefer[$data[$pk]] = & $list[$key];
+        }
+
+        $tree = [];
+
+        foreach ($list as $key => $data) {
+            // 判断是否存在parent
+            $parentId = $data[$pid];
+            if ($root === $parentId) {
+                $tree[] = & $list[$key];
+            } else {
+                if (isset($aRefer[$parentId])) {
+                    $parent = & $aRefer[$parentId];
+                    $parent[$child][] = & $list[$key];
+                }
+            }
+        }
+
+        return $tree;
+    }
+
+    /**
      * 缓存数据
      * @param $title
      * @param null $value

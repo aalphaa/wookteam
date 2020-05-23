@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Model\DBCache;
 use App\Module\Base;
 use App\Module\Users;
 use DB;
 use Request;
-use Session;
 
 /**
  * @apiDefine report
@@ -129,6 +127,9 @@ class ReportController extends Controller
             return Base::retSuccess('删除成功！');
         } elseif ($act == 'submit') {
             $D = Base::getContentsParse('D');
+            if (mb_strlen($D['title']) < 2 || mb_strlen($D['title']) > 100) {
+                return Base::retError('标题限制2-100个字！');
+            }
             if (empty($reportDetail)) {
                 DB::table('report_lists')->insert([
                     'username' => $user['username'],
