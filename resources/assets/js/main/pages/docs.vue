@@ -43,7 +43,7 @@
                                 </div>
                             </div>
                             <div class="docs-section">
-                                <nested-draggable :lists="sectionLists" @change="handleSection"></nested-draggable>
+                                <nested-draggable :lists="sectionLists" :disabled="sortDisabled" @change="handleSection"></nested-draggable>
                                 <div v-if="sectionLists.length == 0" class="none">{{sectionNoDataText}}</div>
                             </div>
                         </div>
@@ -215,15 +215,18 @@
                 addSectionShow: false,
                 formSectionAdd: {
                     title: '',
-                    type: 'text',
+                    type: 'document',
                 },
                 ruleSectionAdd: {},
                 sectionTypeLists: [
-                    {value: 'text', text: "文本"},
+                    {value: 'document', text: "文本"},
                     {value: 'mind', text: "脑图"},
-                    {value: 'excel', text: "表格"},
+                    {value: 'sheet', text: "表格"},
                     {value: 'chart', text: "流程图"},
+                    {value: 'folder', text: "目录"},
                 ],
+
+                sortDisabled: false,
             }
         },
 
@@ -481,14 +484,46 @@
             },
 
             handleSection(act, detail) {
-                if (act == 'edit') {
-                    this.addSectionId = detail.id;
-                    this.addSectionShow = true
-                } else if (act == 'add') {
-                    this.addSectionId = detail.id * -1;
-                    this.addSectionShow = true
-                } else if (act == 'delete') {
-                    this.onSectionDelete(detail.id);
+                switch (act) {
+                    case 'edit':
+                        this.addSectionId = detail.id;
+                        this.addSectionShow = true
+                        break;
+
+                    case 'add':
+                        this.addSectionId = detail.id * -1;
+                        this.addSectionShow = true
+                        break;
+
+                    case 'delete':
+                        this.onSectionDelete(detail.id);
+                        break;
+
+                    case 'sort':
+                        this.sortDisabled = true;
+                        $A.aAjax({
+                            url: 'docs/section/sort',
+                            data: {
+                                bookid: this.selectBookData.id,
+                                newsort: detail,
+                            },
+                            complete: () => {
+                                this.sortDisabled = false;
+                            },
+                            error: () => {
+                                this.getSectionLists();
+                                alert(this.$L('网络繁忙，请稍后再试！'));
+                            },
+                            success: (res) => {
+                                if (res.ret === 1) {
+                                    this.$Message.success(res.msg);
+                                } else {
+                                    this.getSectionLists();
+                                    this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                }
+                            }
+                        });
+                        break;
                 }
             }
         },

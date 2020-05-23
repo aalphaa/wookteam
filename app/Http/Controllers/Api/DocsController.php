@@ -142,11 +142,15 @@ class DocsController extends Controller
         //
         $lists = Base::DBC2A(DB::table('docs_section')
             ->where('bookid', intval(Request::input('bookid')))
+            ->orderByDesc('inorder')
             ->orderByDesc('id')
-            ->take(200)
+            ->take(300)
             ->get());
         if (empty($lists)) {
             return Base::retError('暂无章节');
+        }
+        foreach ($lists AS $key => $item) {
+            $lists[$key]['icon'] = Base::fillUrl('images/files/' . $item['type'] . '.png');
         }
         return Base::retSuccess('success', Base::list2Tree($lists, 'id', 'parentid'));
     }
@@ -172,6 +176,10 @@ class DocsController extends Controller
         if (empty($bookRow)) {
             return Base::retError('知识库不存在或已被删除！');
         }
+        $count = DB::table('docs_section')->where('bookid', $bookid)->count();
+        if ($count >= 300) {
+            return Base::retError('知识库章节已经超过最大限制（300）！');
+        }
         //
         $id = intval(Request::input('id'));
         $title = trim(Request::input('title'));
@@ -192,7 +200,7 @@ class DocsController extends Controller
             return Base::retSuccess('修改成功！', $data);
         } else {
             // 添加
-            if (!in_array($type, ['text', 'mind', 'excel', 'chart'])) {
+            if (!in_array($type, ['document', 'mind', 'sheet', 'chart', 'folder'])) {
                 return Base::retError('参数错误！');
             }
             $parentid = 0;
@@ -208,6 +216,7 @@ class DocsController extends Controller
                 'username' => $user['username'],
                 'title' => $title,
                 'type' => $type,
+                'inorder' => intval(DB::table('docs_section')->select(['inorder'])->where('bookid', $bookid)->orderByDesc('inorder')->value('inorder')) + 1,
                 'indate' => Base::time(),
             ];
             $id = DB::table('docs_section')->insertGetId($data);
@@ -217,6 +226,47 @@ class DocsController extends Controller
             $data['id'] = $id;
             return Base::retSuccess('添加成功！', $data);
         }
+    }
+
+    /**
+     * 排序任务
+     *
+     * @apiParam {Number} bookid                知识库数据ID
+     * @apiParam {String} oldsort               旧排序数据
+     * @apiParam {String} newsort               新排序数据
+     */
+    public function section__sort()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $bookid = intval(Request::input('bookid'));
+        $bookRow = Base::DBC2A(DB::table('docs_book')->where('id', $bookid)->first());
+        if (empty($bookRow)) {
+            return Base::retError('知识库不存在或已被删除！');
+        }
+        //
+        $newSort = explode(";", Request::input('newsort'));
+        if (count($newSort) == 0) {
+            return Base::retError('参数错误！');
+        }
+        //
+        $count = count($newSort);
+        foreach ($newSort AS $sort => $item) {
+            list($newId, $newParentid) = explode(':', $item);
+            DB::table('docs_section')->where([
+                'id' => $newId,
+                'bookid' => $bookid
+            ])->update([
+                'inorder' => $count - intval($sort),
+                'parentid' => $newParentid
+            ]);
+        }
+        return Base::retSuccess('保存成功！');
     }
 
     /**
@@ -238,6 +288,7 @@ class DocsController extends Controller
         if (empty($row)) {
             return Base::retError('文档不存在或已被删除！');
         }
+        DB::table('docs_section')->where('parentid', $id)->update([ 'parentid' => $row['parentid'] ]);
         DB::table('docs_section')->where('id', $id)->delete();
         //未完成，应该还要删除章节
         return Base::retSuccess('删除成功！');

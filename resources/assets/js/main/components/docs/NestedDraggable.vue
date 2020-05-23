@@ -9,7 +9,7 @@
             <div class="item">
                 <div class="dashed"></div>
                 <div class="header">
-                    <div class="tip"><Icon type="ios-folder-outline" /></div>
+                    <div class="tip"><img :src="detail.icon"/></div>
                     <div class="title">{{ detail.title }}</div>
                 </div>
                 <div class="info">
@@ -62,15 +62,19 @@
                 .tip {
                     display: inline-block;
                     position: relative;
-                    > i {
+                    > img {
                         display: inline-block;
+                        width: 14px;
+                        height: 14px;
+                        margin-top: 5px;
+                        vertical-align: top;
                     }
                 }
                 .title {
                     display: inline-block;
                     border-bottom: 1px solid transparent;
                     cursor: pointer;
-                    padding: 0 4px;
+                    padding: 0 3px;
                     color: #555555;
                 }
             }
@@ -134,11 +138,13 @@
 
             handleClick(act, detail) {
                 if (act == 'sort') {
-                    if (!this.isChildren) {
+                    if (this.isChildren) {
+                        this.$emit("change", act, detail);
+                    } else {
                         let tempSortData = this.getSort(this.lists);
                         if (tempSortData != this.listSortData) {
                             this.listSortData = tempSortData;
-                            this.$emit("change", act, tempSortData)
+                            this.$emit("change", act, tempSortData);
                         }
                     }
                     return;
