@@ -24,6 +24,11 @@ export default [
         meta: { slide: false },
         component: resolve => require(['./pages/docs.vue'], resolve)
     }, {
+        path: '/docs/edit/:sid',
+        name: 'docs-edit',
+        meta: { slide: false },
+        component: resolve => require(['./pages/docs/edit.vue'], resolve)
+    }, {
         path: '/team',
         name: 'team',
         meta: { slide: false },

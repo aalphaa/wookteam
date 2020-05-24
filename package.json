@@ -34,6 +34,8 @@
         "tinymce": "^5.2.2",
         "view-design": "^4.2.0",
         "vuedraggable": "^2.23.2",
-        "vue-clipboard2": "^0.3.1"
+        "vue-clipboard2": "^0.3.1",
+        "vue-kityminder-gg": "^1.2.3",
+        "x-data-spreadsheet": "^1.1.2"
     }
 }

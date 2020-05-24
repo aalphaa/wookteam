@@ -293,4 +293,42 @@ class DocsController extends Controller
         //未完成，应该还要删除章节
         return Base::retSuccess('删除成功！');
     }
+
+    /**
+     * 获取章节内容
+     *
+     * @apiParam {Number} id                章节数据ID
+     */
+    public function section__content()
+    {
+        $id = intval(Request::input('id'));
+        $row = Base::DBC2A(DB::table('docs_section')->where('id', $id)->first());
+        if (empty($row)) {
+            return Base::retError('文档不存在或已被删除！');
+        }
+        $cRow = Base::DBC2A(DB::table('docs_content')->select(['content'])->where('sid', $id)->first());
+        if (empty($cRow)) {
+            $cRow = [ 'content' => '' ];
+        }
+        return Base::retSuccess('success', array_merge($row, $cRow));
+    }
+
+    /**
+     * 获取章节内容
+     *
+     * @apiParam {Number} id                章节数据ID
+     * @apiParam {Object} [D]               Request Payload 提交
+     * - content: 内容
+     */
+    public function section__save()
+    {
+        $id = intval(Request::input('id'));
+        $row = Base::DBC2A(DB::table('docs_section')->where('id', $id)->first());
+        if (empty($row)) {
+            return Base::retError('文档不存在或已被删除！');
+        }
+        $D = Base::getContentsParse('D');
+        DB::table('docs_content')->updateOrInsert(['sid' => $id], ['content' => $D['content']]);
+        return Base::retSuccess('保存成功！');
+    }
 }

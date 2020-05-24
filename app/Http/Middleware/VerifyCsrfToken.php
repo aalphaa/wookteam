@@ -20,5 +20,8 @@ class VerifyCsrfToken extends Middleware
 
         //汇报提交
         'api/report/template/',
+
+        //保存文档
+        'api/docs/section/save/',
     ];
 }

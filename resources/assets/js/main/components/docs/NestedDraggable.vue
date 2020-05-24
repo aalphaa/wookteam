@@ -10,7 +10,7 @@
                 <div class="dashed"></div>
                 <div class="header">
                     <div class="tip"><img :src="detail.icon"/></div>
-                    <div class="title">{{ detail.title }}</div>
+                    <div class="title" @click="handleClick('open', detail)">{{ detail.title }}</div>
                 </div>
                 <div class="info">
                     <Icon type="md-create" @click="handleClick('edit', detail)"/>

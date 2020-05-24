@@ -536,6 +536,9 @@
          * @returns {string}
          */
         jsonStringify(json, defaultVal) {
+            if (typeof json !== 'object') {
+                return json;
+            }
             try{
                 return JSON.stringify(json);
             }catch (e) {

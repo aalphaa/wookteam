@@ -159,6 +159,7 @@
                         .docs-h1 {
                             flex: 1;
                             font-size: 16px;
+                            white-space: nowrap;
                         }
                         .docs-setting {
                             display: flex;
@@ -485,6 +486,10 @@
 
             handleSection(act, detail) {
                 switch (act) {
+                    case 'open':
+                        this.goForward({name: 'docs-edit', params: {sid:detail.id, other:detail||{}}});
+                        break;
+
                     case 'edit':
                         this.addSectionId = detail.id;
                         this.addSectionShow = true
