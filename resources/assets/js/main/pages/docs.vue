@@ -223,7 +223,7 @@
                     {value: 'document', text: "文本"},
                     {value: 'mind', text: "脑图"},
                     {value: 'sheet', text: "表格"},
-                    {value: 'chart', text: "流程图"},
+                    {value: 'flow', text: "流程图"},
                     {value: 'folder', text: "目录"},
                 ],
 

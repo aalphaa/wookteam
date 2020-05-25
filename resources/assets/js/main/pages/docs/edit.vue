@@ -18,6 +18,7 @@
                 <t-editor v-if="docDetail.type=='document'" class="body-text" v-model="docContent.content" height="100%"></t-editor>
                 <minder v-else-if="docDetail.type=='mind'" class="body-mind" @exportData="exportMindData" :template="docContent.template" :theme="docContent.theme" :importData="docContent.root"></minder>
                 <sheet v-else-if="docDetail.type=='sheet'" class="body-sheet" v-model="docContent.content"></sheet>
+                <flow v-else-if="docDetail.type=='flow'" class="body-flow" v-model="docContent.content"></flow>
             </div>
         </div>
 
@@ -156,11 +157,12 @@
     import minder from '../../components/docs/minder'
     import TEditor from "../../components/TEditor";
     import Sheet from "../../components/docs/sheet/index";
+    import Flow from "../../components/docs/flow/index";
 
     Vue.use(minder)
 
     export default {
-        components: {Sheet, TEditor},
+        components: {Flow, Sheet, TEditor},
         data () {
             return {
                 loadIng: 0,

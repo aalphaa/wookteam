@@ -200,7 +200,7 @@ class DocsController extends Controller
             return Base::retSuccess('修改成功！', $data);
         } else {
             // 添加
-            if (!in_array($type, ['document', 'mind', 'sheet', 'chart', 'folder'])) {
+            if (!in_array($type, ['document', 'mind', 'sheet', 'flow', 'folder'])) {
                 return Base::retError('参数错误！');
             }
             $parentid = 0;

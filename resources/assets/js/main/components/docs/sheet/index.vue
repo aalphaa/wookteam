@@ -29,6 +29,8 @@
         data() {
             return {
                 sheet: null,
+                clientHeight: 0,
+                clientWidth: 0,
             }
         },
         mounted() {
@@ -36,8 +38,20 @@
             //
             this.sheet = new Spreadsheet(this.$refs.xspreadsheet, {
                 view: {
-                    height: () => this.$refs.xspreadsheet.clientHeight,
-                    width: () => this.$refs.xspreadsheet.clientWidth,
+                    height: () => {
+                        try {
+                            return this.clientHeight = this.$refs.xspreadsheet.clientHeight;
+                        }catch (e) {
+                            return this.clientHeight;
+                        }
+                    },
+                    width: () => {
+                        try {
+                            return this.clientWidth = this.$refs.xspreadsheet.clientWidth;
+                        }catch (e) {
+                            return this.clientWidth;
+                        }
+                    },
                 },
             }).loadData(this.value).change(data => {
                 this.$emit('input', data);
