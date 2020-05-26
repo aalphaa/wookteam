@@ -17,12 +17,12 @@
                 <i class="ft icon" title="图形">&#xE621;</i>
                 <div slot="content">
                     <ul class="quickul mold">
-                        <li @click="setTemplate('default')"><span class="default"></span></li>
-                        <li @click="setTemplate('structure')"><span class="structure"></span></li>
-                        <li @click="setTemplate('filetree')"><span class="filetree"></span></li>
-                        <li @click="setTemplate('right')"><span class="right"></span></li>
-                        <li @click="setTemplate('fish-bone')"><span class="fish-bone"></span></li>
-                        <li @click="setTemplate('tianpan')"><span class="tianpan"></span></li>
+                        <li @click="minder.execCommand('template', 'default')"><span class="default"></span></li>
+                        <li @click="minder.execCommand('template', 'structure')"><span class="structure"></span></li>
+                        <li @click="minder.execCommand('template', 'filetree')"><span class="filetree"></span></li>
+                        <li @click="minder.execCommand('template', 'right')"><span class="right"></span></li>
+                        <li @click="minder.execCommand('template', 'fish-bone')"><span class="fish-bone"></span></li>
+                        <li @click="minder.execCommand('template', 'tianpan')"><span class="tianpan"></span></li>
                     </ul>
                 </div>
             </Tooltip>
@@ -30,15 +30,15 @@
                 <i class="ft icon" title="样式">&#xE678;</i>
                 <div slot="content">
                     <ul class="quickul">
-                        <li @click="setTheme('fresh-blue')">天空蓝</li>
-                        <li @click="setTheme('wire')">线框</li>
-                        <li @click="setTheme('fish')">鱼骨图</li>
-                        <li @click="setTheme('classic')">脑图经典</li>
-                        <li @click="setTheme('classic-compact')">紧凑经典</li>
-                        <li @click="setTheme('snow')">温柔冷光</li>
-                        <li @click="setTheme('snow-compact')">紧凑冷光</li>
-                        <li @click="setTheme('tianpan')">经典天盘</li>
-                        <li @click="setTheme('tianpan-compact')">紧凑天盘</li>
+                        <li @click="minder.execCommand('theme', 'fresh-blue')">天空蓝</li>
+                        <li @click="minder.execCommand('theme', 'wire')">线框</li>
+                        <li @click="minder.execCommand('theme', 'fish')">鱼骨图</li>
+                        <li @click="minder.execCommand('theme', 'classic')">脑图经典</li>
+                        <li @click="minder.execCommand('theme', 'classic-compact')">紧凑经典</li>
+                        <li @click="minder.execCommand('theme', 'snow')">温柔冷光</li>
+                        <li @click="minder.execCommand('theme', 'snow-compact')">紧凑冷光</li>
+                        <li @click="minder.execCommand('theme', 'tianpan')">经典天盘</li>
+                        <li @click="minder.execCommand('theme', 'tianpan-compact')">紧凑天盘</li>
                     </ul>
                 </div>
             </Tooltip>
@@ -177,7 +177,7 @@
     export default {
         name: 'mind-editor',
         props: {
-            importData: {
+            value: {
                 type: Object,
                 default: function () {
                     return {}
@@ -203,60 +203,28 @@
                 type: Boolean,
                 default: true
             },
-            template: {
-                type: String,
-                default: 'right'
-            },
-            theme: {
-                type: String,
-                default: 'fresh-blue'
-            },
             saveShow: {
                 type: Boolean,
                 default: true
             },
             id: {
                 type: String,
-                default: generateMixed(12)
+                default: 'minder-component-' + generateMixed(12)
             },
         },
         data() {
             return {
                 minder: null,
-                navIndex: 0,
                 isHand: false,
-                rootData: {
-                    root: {
-                        data: {
-                            text: "默认节点",
-                            id: generateMixed(12)
-                        },
-                        children: [],
-                    },
-                    theme: 'fresh-blue',
-                    template: 'default',
-                }
             };
         },
         methods: {
-            getJson() {
-                return this.minder.exportJson();
-            },
-            setTheme(val) {
-                this.$set(this.rootData, 'theme', val);
-                this.minder.execCommand('theme', val);
-            },
-            setTemplate(val) {
-                this.$set(this.rootData, 'template', val);
-                this.minder.execCommand('template', val);
-            },
             exportHandle(n) {
-                let that = this;
                 if (n === 0) {
-                    that.minder.exportData('png').then(content => {
+                    this.minder.exportData('png').then((content) => {
                         let element = document.createElement('a');
                         element.setAttribute('href', content);
-                        let filename = that.rootData.root.data.text || '无标题';
+                        let filename = this.value.root.data.text || '无标题';
                         element.setAttribute('download', filename);
                         element.style.display = 'none';
                         document.body.appendChild(element);
@@ -264,75 +232,53 @@
                         document.body.removeChild(element);
                     });
                 } else if (n === 1) {
-                    this.minder.exportData('png').then(content => {
+                    this.minder.exportData('png').then((content) => {
                         var doc = new JSPDF();
                         doc.addImage(content, 'PNG', 0, 0, 0, 0);
-                        doc.save(`${this.rootData.root.data.text || '无标题'}.pdf`);
+                        doc.save(`${this.value.root.data.text || '无标题'}.pdf`);
                     });
                 }
             },
             rendData() {
-                let that = this;
-                that.$nextTick(() => {
-                    const getId = document.getElementById(that.id);
-                    setTimeout(function () {
-                        that.minder = window.editor = new Editor(getId).minder;
-                        that.$set(that.rootData, 'root', that.rootData.root);
-                        that.minder.importJson(that.rootData);
-                        that.$emit('minderHandle', that.minder);
-                        that.minder.on('contentchange', val => {
-                            /* 内容改变时 */
-                            var json = that.minder.exportJson();
-                            that.$emit('exportData', json);
+                this.$nextTick(() => {
+                    setTimeout(() => {
+                        if (this.minder !== null) {
+                            return;
+                        }
+                        this.minder = window.editor = new Editor(document.getElementById(this.id)).minder;
+                        this.minder.importJson(this.value);
+                        this.$emit('minderHandle', this.minder);
+                        this.minder.on('contentchange', val => {
+                            this.$emit('input', this.minder.exportJson());
                         });
-                        that.minder.on('selectionchange', function (e) {
-                            that.minder = e.minder;
-                            var node = e.minder.getSelectedNode();
-                            that.currentNode = node;
-                            if (node && node.parent) {
-                                setTimeout(function () {
-                                    node.parent.layout();
-                                }, 0);
-                            }
-                            if (that.lock && node) {
-                            }
-                            that.lock = true;
-                        });
-                        that.minder.on('beforeExecCommand', function (e) {
-                            /* 按钮触发 */
-                            if (/arrange/i.test(e.commandName)) {
-                            } else if (/append/i.test(e.commandName)) {
-                            } else if (
-                                /remove/i.test(e.commandName)) {
-                            }
-                        });
-                        that.minder.on('AfterExecCommand', function (e) {
-                            if (/append/i.test(e.commandName)) {
-                            } else if (/remove/i.test(e.commandName)) {
-                            }
-                        })
                     }, 300)
                 });
             }
         },
         watch: {
-            importData: {
-                handler: function () {
-                    if (this.importData != '' && this.importData != null) {
-                        this.rootData.root = this.importData
+            value: {
+                handler: function (newObj) {
+                    if (typeof newObj !== "object" || newObj === null) {
+                        newObj = {
+                            root: newObj,
+                            theme: "fresh-blue",
+                            template: "default",
+                        };
                     }
-                    if (this.theme != null && this.theme != '') {
-                        this.rootData.theme = this.theme
-                    }
-                    let arr = Object.keys(this.rootData.root);
-                    if (arr.length == 0) {
-                        this.rootData.root = {
+                    if (typeof newObj.root !== "object" || newObj.root === null || newObj.root.length == 0) {
+                        newObj.root = {
                             data: {
+                                id: generateMixed(12),
                                 text: '默认节点',
-                                id: generateMixed(12)
                             },
                             children: []
                         }
+                    }
+                    if (typeof newObj.theme !== "string") {
+                        newObj.theme = "fresh-blue";
+                    }
+                    if (typeof newObj.template !== "string") {
+                        newObj.template = "default";
                     }
                     this.rendData();
                 },

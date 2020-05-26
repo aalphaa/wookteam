@@ -16,7 +16,7 @@
             </div>
             <div class="docs-body">
                 <t-editor v-if="docDetail.type=='document'" class="body-text" v-model="docContent.content" height="100%"></t-editor>
-                <minder v-else-if="docDetail.type=='mind'" class="body-mind" @exportData="exportMindData" :template="docContent.template" :theme="docContent.theme" :importData="docContent.root"></minder>
+                <minder v-else-if="docDetail.type=='mind'" class="body-mind" v-model="docContent"></minder>
                 <sheet v-else-if="docDetail.type=='sheet'" class="body-sheet" v-model="docContent.content"></sheet>
                 <flow v-else-if="docDetail.type=='flow'" class="body-flow" v-model="docContent.content"></flow>
             </div>
@@ -42,15 +42,16 @@
                     padding: 0 12%;
                     background: #f9f9f9;
                 }
+                .tox-toolbar__overflow,
                 .tox-toolbar__primary {
-                    background: none;
-                    border-top: 1px solid #eaeaea;
+                    background: none !important;
+                    border-top: 1px solid #eaeaea !important;
                 }
                 .tox-toolbar-overlord {
-                    border-bottom: 1px solid #E9E9E9;
+                    border-bottom: 1px solid #E9E9E9 !important;
                 }
                 .tox-toolbar__group:not(:last-of-type) {
-                    border-right: 1px solid #eaeaea;
+                    border-right: 1px solid #eaeaea !important;
                 }
                 .tox-sidebar-wrap {
                     margin: 22px 12%;

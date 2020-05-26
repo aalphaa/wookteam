@@ -266,10 +266,40 @@
         },
 
         watch: {
-
+            addBookShow(val) {
+                if (val && this.addBookId > 0) {
+                    let tempLists = this.bookLists.filter((res) => { return res.id == this.addBookId });
+                    if (tempLists.length === 1) {
+                        this.$set(this.formBookAdd, 'title', tempLists[0].title);
+                    } else {
+                        this.$set(this.formBookAdd, 'title', '');
+                    }
+                }
+            },
+            addSectionShow(val) {
+                if (val && this.addSectionId > 0) {
+                    let tempLists = this.children2lists(this.sectionLists).filter((res) => { return res.id == this.addSectionId });
+                    if (tempLists.length === 1) {
+                        this.$set(this.formSectionAdd, 'title', tempLists[0].title);
+                    } else {
+                        this.$set(this.formSectionAdd, 'title', '');
+                    }
+                }
+            }
         },
 
         methods: {
+            children2lists(lists) {
+                let array = [];
+                lists.forEach((item) => {
+                    array.push({
+                        id: item.id,
+                        title: item.title
+                    });
+                    array = array.concat(this.children2lists(item.children))
+                });
+                return array;
+            },
 
             getBookLists(resetLoad) {
                 if (resetLoad === true) {
