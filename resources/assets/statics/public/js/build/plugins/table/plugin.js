@@ -4,10 +4,9 @@
  * For LGPL see License.txt in the project root for license information.
  * For commercial licenses see https://www.tiny.cloud/
  *
- * Version: 5.0.7 (2019-06-05)
+ * Version: 5.3.0 (2020-05-21)
  */
-(function () {
-var table = (function (domGlobals) {
+(function (domGlobals) {
     'use strict';
 
     var Cell = function (initial) {
@@ -18,22 +17,13 @@ var table = (function (domGlobals) {
       var set = function (v) {
         value = v;
       };
-      var clone = function () {
-        return Cell(get());
-      };
       return {
         get: get,
-        set: set,
-        clone: clone
+        set: set
       };
     };
 
     var noop = function () {
-    };
-    var noarg = function (f) {
-      return function () {
-        return f();
-      };
     };
     var compose = function (fa, fb) {
       return function () {
@@ -52,9 +42,6 @@ var table = (function (domGlobals) {
     var identity = function (x) {
       return x;
     };
-    var tripleEquals = function (a, b) {
-      return a === b;
-    };
     function curry(fn) {
       var initialArgs = [];
       for (var _i = 1; _i < arguments.length; _i++) {
@@ -70,12 +57,8 @@ var table = (function (domGlobals) {
       };
     }
     var not = function (f) {
-      return function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-          args[_i] = arguments[_i];
-        }
-        return !f.apply(null, args);
+      return function (t) {
+        return !f(t);
       };
     };
     var die = function (msg) {
@@ -83,33 +66,9 @@ var table = (function (domGlobals) {
         throw new Error(msg);
       };
     };
-    var apply = function (f) {
-      return f();
-    };
-    var call = function (f) {
-      f();
-    };
     var never = constant(false);
     var always = constant(true);
 
-    var Fun = /*#__PURE__*/Object.freeze({
-        noop: noop,
-        noarg: noarg,
-        compose: compose,
-        constant: constant,
-        identity: identity,
-        tripleEquals: tripleEquals,
-        curry: curry,
-        not: not,
-        die: die,
-        apply: apply,
-        call: call,
-        never: never,
-        always: always
-    });
-
-    var never$1 = never;
-    var always$1 = always;
     var none = function () {
       return NONE;
     };
@@ -123,37 +82,27 @@ var table = (function (domGlobals) {
       var id = function (n) {
         return n;
       };
-      var noop = function () {
-      };
-      var nul = function () {
-        return null;
-      };
-      var undef = function () {
-        return undefined;
-      };
       var me = {
-        fold: function (n, s) {
+        fold: function (n, _s) {
           return n();
         },
-        is: never$1,
-        isSome: never$1,
-        isNone: always$1,
+        is: never,
+        isSome: never,
+        isNone: always,
         getOr: id,
         getOrThunk: call,
         getOrDie: function (msg) {
           throw new Error(msg || 'error: getOrDie called on none.');
         },
-        getOrNull: nul,
-        getOrUndefined: undef,
+        getOrNull: constant(null),
+        getOrUndefined: constant(undefined),
         or: id,
         orThunk: call,
         map: none,
-        ap: none,
         each: noop,
         bind: none,
-        flatten: none,
-        exists: never$1,
-        forall: always$1,
+        exists: never,
+        forall: always,
         filter: none,
         equals: eq,
         equals_: eq,
@@ -162,19 +111,12 @@ var table = (function (domGlobals) {
         },
         toString: constant('none()')
       };
-      if (Object.freeze)
-        Object.freeze(me);
       return me;
     }();
     var some = function (a) {
-      var constant_a = function () {
-        return a;
-      };
+      var constant_a = constant(a);
       var self = function () {
         return me;
-      };
-      var map = function (f) {
-        return some(f(a));
       };
       var bind = function (f) {
         return f(a);
@@ -186,8 +128,8 @@ var table = (function (domGlobals) {
         is: function (v) {
           return a === v;
         },
-        isSome: always$1,
-        isNone: never$1,
+        isSome: always,
+        isNone: never,
         getOr: constant_a,
         getOrThunk: constant_a,
         getOrDie: constant_a,
@@ -195,35 +137,31 @@ var table = (function (domGlobals) {
         getOrUndefined: constant_a,
         or: self,
         orThunk: self,
-        map: map,
-        ap: function (optfab) {
-          return optfab.fold(none, function (fab) {
-            return some(fab(a));
-          });
+        map: function (f) {
+          return some(f(a));
         },
         each: function (f) {
           f(a);
         },
         bind: bind,
-        flatten: constant_a,
         exists: bind,
         forall: bind,
         filter: function (f) {
           return f(a) ? me : NONE;
-        },
-        equals: function (o) {
-          return o.is(a);
-        },
-        equals_: function (o, elementEq) {
-          return o.fold(never$1, function (b) {
-            return elementEq(a, b);
-          });
         },
         toArray: function () {
           return [a];
         },
         toString: function () {
           return 'some(' + a + ')';
+        },
+        equals: function (o) {
+          return o.is(a);
+        },
+        equals_: function (o, elementEq) {
+          return o.fold(never, function (b) {
+            return elementEq(a, b);
+          });
         }
       };
       return me;
@@ -240,128 +178,81 @@ var table = (function (domGlobals) {
     var global = tinymce.util.Tools.resolve('tinymce.PluginManager');
 
     var typeOf = function (x) {
-      if (x === null)
-        return 'null';
       var t = typeof x;
-      if (t === 'object' && Array.prototype.isPrototypeOf(x))
+      if (x === null) {
+        return 'null';
+      } else if (t === 'object' && (Array.prototype.isPrototypeOf(x) || x.constructor && x.constructor.name === 'Array')) {
         return 'array';
-      if (t === 'object' && String.prototype.isPrototypeOf(x))
+      } else if (t === 'object' && (String.prototype.isPrototypeOf(x) || x.constructor && x.constructor.name === 'String')) {
         return 'string';
-      return t;
+      } else {
+        return t;
+      }
     };
     var isType = function (type) {
       return function (value) {
         return typeOf(value) === type;
       };
     };
+    var isSimpleType = function (type) {
+      return function (value) {
+        return typeof value === type;
+      };
+    };
     var isString = isType('string');
     var isArray = isType('array');
-    var isBoolean = isType('boolean');
-    var isFunction = isType('function');
-    var isNumber = isType('number');
+    var isBoolean = isSimpleType('boolean');
+    var isFunction = isSimpleType('function');
+    var isNumber = isSimpleType('number');
 
-    var slice = Array.prototype.slice;
-    var rawIndexOf = function () {
-      var pIndexOf = Array.prototype.indexOf;
-      var fastIndex = function (xs, x) {
-        return pIndexOf.call(xs, x);
-      };
-      var slowIndex = function (xs, x) {
-        return slowIndexOf(xs, x);
-      };
-      return pIndexOf === undefined ? slowIndex : fastIndex;
-    }();
-    var indexOf = function (xs, x) {
-      var r = rawIndexOf(xs, x);
-      return r === -1 ? Option.none() : Option.some(r);
+    var nativeSlice = Array.prototype.slice;
+    var nativeIndexOf = Array.prototype.indexOf;
+    var nativePush = Array.prototype.push;
+    var rawIndexOf = function (ts, t) {
+      return nativeIndexOf.call(ts, t);
     };
     var contains = function (xs, x) {
       return rawIndexOf(xs, x) > -1;
     };
     var exists = function (xs, pred) {
-      return findIndex(xs, pred).isSome();
-    };
-    var range = function (num, f) {
-      var r = [];
-      for (var i = 0; i < num; i++) {
-        r.push(f(i));
+      for (var i = 0, len = xs.length; i < len; i++) {
+        var x = xs[i];
+        if (pred(x, i)) {
+          return true;
+        }
       }
-      return r;
-    };
-    var chunk = function (array, size) {
-      var r = [];
-      for (var i = 0; i < array.length; i += size) {
-        var s = slice.call(array, i, i + size);
-        r.push(s);
-      }
-      return r;
+      return false;
     };
     var map = function (xs, f) {
       var len = xs.length;
       var r = new Array(len);
       for (var i = 0; i < len; i++) {
         var x = xs[i];
-        r[i] = f(x, i, xs);
+        r[i] = f(x, i);
       }
       return r;
     };
     var each = function (xs, f) {
       for (var i = 0, len = xs.length; i < len; i++) {
         var x = xs[i];
-        f(x, i, xs);
+        f(x, i);
       }
     };
     var eachr = function (xs, f) {
       for (var i = xs.length - 1; i >= 0; i--) {
         var x = xs[i];
-        f(x, i, xs);
+        f(x, i);
       }
-    };
-    var partition = function (xs, pred) {
-      var pass = [];
-      var fail = [];
-      for (var i = 0, len = xs.length; i < len; i++) {
-        var x = xs[i];
-        var arr = pred(x, i, xs) ? pass : fail;
-        arr.push(x);
-      }
-      return {
-        pass: pass,
-        fail: fail
-      };
     };
     var filter = function (xs, pred) {
       var r = [];
       for (var i = 0, len = xs.length; i < len; i++) {
         var x = xs[i];
-        if (pred(x, i, xs)) {
+        if (pred(x, i)) {
           r.push(x);
         }
       }
       return r;
-    };
-    var groupBy = function (xs, f) {
-      if (xs.length === 0) {
-        return [];
-      } else {
-        var wasType = f(xs[0]);
-        var r = [];
-        var group = [];
-        for (var i = 0, len = xs.length; i < len; i++) {
-          var x = xs[i];
-          var type = f(x);
-          if (type !== wasType) {
-            r.push(group);
-            group = [];
-          }
-          wasType = type;
-          group.push(x);
-        }
-        if (group.length !== 0) {
-          r.push(group);
-        }
-        return r;
-      }
     };
     var foldr = function (xs, f, acc) {
       eachr(xs, function (x) {
@@ -375,125 +266,68 @@ var table = (function (domGlobals) {
       });
       return acc;
     };
-    var find = function (xs, pred) {
+    var findUntil = function (xs, pred, until) {
       for (var i = 0, len = xs.length; i < len; i++) {
         var x = xs[i];
-        if (pred(x, i, xs)) {
+        if (pred(x, i)) {
           return Option.some(x);
+        } else if (until(x, i)) {
+          break;
         }
       }
       return Option.none();
     };
+    var find = function (xs, pred) {
+      return findUntil(xs, pred, never);
+    };
     var findIndex = function (xs, pred) {
       for (var i = 0, len = xs.length; i < len; i++) {
         var x = xs[i];
-        if (pred(x, i, xs)) {
+        if (pred(x, i)) {
           return Option.some(i);
         }
       }
       return Option.none();
     };
-    var slowIndexOf = function (xs, x) {
-      for (var i = 0, len = xs.length; i < len; ++i) {
-        if (xs[i] === x) {
-          return i;
-        }
-      }
-      return -1;
-    };
-    var push = Array.prototype.push;
     var flatten = function (xs) {
       var r = [];
       for (var i = 0, len = xs.length; i < len; ++i) {
-        if (!Array.prototype.isPrototypeOf(xs[i]))
+        if (!isArray(xs[i])) {
           throw new Error('Arr.flatten item ' + i + ' was not an array, input: ' + xs);
-        push.apply(r, xs[i]);
+        }
+        nativePush.apply(r, xs[i]);
       }
       return r;
     };
     var bind = function (xs, f) {
-      var output = map(xs, f);
-      return flatten(output);
+      return flatten(map(xs, f));
     };
     var forall = function (xs, pred) {
       for (var i = 0, len = xs.length; i < len; ++i) {
         var x = xs[i];
-        if (pred(x, i, xs) !== true) {
+        if (pred(x, i) !== true) {
           return false;
         }
       }
       return true;
     };
-    var equal = function (a1, a2) {
-      return a1.length === a2.length && forall(a1, function (x, i) {
-        return x === a2[i];
-      });
-    };
     var reverse = function (xs) {
-      var r = slice.call(xs, 0);
+      var r = nativeSlice.call(xs, 0);
       r.reverse();
       return r;
-    };
-    var difference = function (a1, a2) {
-      return filter(a1, function (x) {
-        return !contains(a2, x);
-      });
-    };
-    var mapToObject = function (xs, f) {
-      var r = {};
-      for (var i = 0, len = xs.length; i < len; i++) {
-        var x = xs[i];
-        r[String(x)] = f(x, i);
-      }
-      return r;
-    };
-    var pure = function (x) {
-      return [x];
-    };
-    var sort = function (xs, comparator) {
-      var copy = slice.call(xs, 0);
-      copy.sort(comparator);
-      return copy;
-    };
-    var head = function (xs) {
-      return xs.length === 0 ? Option.none() : Option.some(xs[0]);
     };
     var last = function (xs) {
       return xs.length === 0 ? Option.none() : Option.some(xs[xs.length - 1]);
     };
-    var from$1 = isFunction(Array.from) ? Array.from : function (x) {
-      return slice.call(x);
+    var findMap = function (arr, f) {
+      for (var i = 0; i < arr.length; i++) {
+        var r = f(arr[i], i);
+        if (r.isSome()) {
+          return r;
+        }
+      }
+      return Option.none();
     };
-
-    var Arr = /*#__PURE__*/Object.freeze({
-        indexOf: indexOf,
-        contains: contains,
-        exists: exists,
-        range: range,
-        chunk: chunk,
-        map: map,
-        each: each,
-        eachr: eachr,
-        partition: partition,
-        filter: filter,
-        groupBy: groupBy,
-        foldr: foldr,
-        foldl: foldl,
-        find: find,
-        findIndex: findIndex,
-        flatten: flatten,
-        bind: bind,
-        forall: forall,
-        equal: equal,
-        reverse: reverse,
-        difference: difference,
-        mapToObject: mapToObject,
-        pure: pure,
-        sort: sort,
-        head: head,
-        last: last,
-        from: from$1
-    });
 
     var keys = Object.keys;
     var hasOwnProperty = Object.hasOwnProperty;
@@ -502,21 +336,21 @@ var table = (function (domGlobals) {
       for (var k = 0, len = props.length; k < len; k++) {
         var i = props[k];
         var x = obj[i];
-        f(x, i, obj);
+        f(x, i);
       }
     };
     var map$1 = function (obj, f) {
-      return tupleMap(obj, function (x, i, obj) {
+      return tupleMap(obj, function (x, i) {
         return {
           k: i,
-          v: f(x, i, obj)
+          v: f(x, i)
         };
       });
     };
     var tupleMap = function (obj, f) {
       var r = {};
       each$1(obj, function (x, i) {
-        var tuple = f(x, i, obj);
+        var tuple = f(x, i);
         r[tuple.k] = tuple.v;
       });
       return r;
@@ -528,99 +362,12 @@ var table = (function (domGlobals) {
       return hasOwnProperty.call(obj, key);
     };
 
-    var Immutable = function () {
-      var fields = [];
-      for (var _i = 0; _i < arguments.length; _i++) {
-        fields[_i] = arguments[_i];
-      }
-      return function () {
-        var values = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-          values[_i] = arguments[_i];
-        }
-        if (fields.length !== values.length) {
-          throw new Error('Wrong number of arguments to struct. Expected "[' + fields.length + ']", got ' + values.length + ' arguments');
-        }
-        var struct = {};
-        each(fields, function (name, i) {
-          struct[name] = constant(values[i]);
-        });
-        return struct;
-      };
-    };
+    var Global = typeof domGlobals.window !== 'undefined' ? domGlobals.window : Function('return this;')();
 
-    var sort$1 = function (arr) {
-      return arr.slice(0).sort();
-    };
-    var reqMessage = function (required, keys) {
-      throw new Error('All required keys (' + sort$1(required).join(', ') + ') were not specified. Specified keys were: ' + sort$1(keys).join(', ') + '.');
-    };
-    var unsuppMessage = function (unsupported) {
-      throw new Error('Unsupported keys for object: ' + sort$1(unsupported).join(', '));
-    };
-    var validateStrArr = function (label, array) {
-      if (!isArray(array))
-        throw new Error('The ' + label + ' fields must be an array. Was: ' + array + '.');
-      each(array, function (a) {
-        if (!isString(a))
-          throw new Error('The value ' + a + ' in the ' + label + ' fields was not a string.');
-      });
-    };
-    var invalidTypeMessage = function (incorrect, type) {
-      throw new Error('All values need to be of type: ' + type + '. Keys (' + sort$1(incorrect).join(', ') + ') were not.');
-    };
-    var checkDupes = function (everything) {
-      var sorted = sort$1(everything);
-      var dupe = find(sorted, function (s, i) {
-        return i < sorted.length - 1 && s === sorted[i + 1];
-      });
-      dupe.each(function (d) {
-        throw new Error('The field: ' + d + ' occurs more than once in the combined fields: [' + sorted.join(', ') + '].');
-      });
-    };
-
-    var MixedBag = function (required, optional) {
-      var everything = required.concat(optional);
-      if (everything.length === 0)
-        throw new Error('You must specify at least one required or optional field.');
-      validateStrArr('required', required);
-      validateStrArr('optional', optional);
-      checkDupes(everything);
-      return function (obj) {
-        var keys$1 = keys(obj);
-        var allReqd = forall(required, function (req) {
-          return contains(keys$1, req);
-        });
-        if (!allReqd)
-          reqMessage(required, keys$1);
-        var unsupported = filter(keys$1, function (key) {
-          return !contains(everything, key);
-        });
-        if (unsupported.length > 0)
-          unsuppMessage(unsupported);
-        var r = {};
-        each(required, function (req) {
-          r[req] = constant(obj[req]);
-        });
-        each(optional, function (opt) {
-          r[opt] = constant(Object.prototype.hasOwnProperty.call(obj, opt) ? Option.some(obj[opt]) : Option.none());
-        });
-        return r;
-      };
-    };
-
-    var ATTRIBUTE = domGlobals.Node.ATTRIBUTE_NODE;
-    var CDATA_SECTION = domGlobals.Node.CDATA_SECTION_NODE;
-    var COMMENT = domGlobals.Node.COMMENT_NODE;
-    var DOCUMENT = domGlobals.Node.DOCUMENT_NODE;
-    var DOCUMENT_TYPE = domGlobals.Node.DOCUMENT_TYPE_NODE;
-    var DOCUMENT_FRAGMENT = domGlobals.Node.DOCUMENT_FRAGMENT_NODE;
-    var ELEMENT = domGlobals.Node.ELEMENT_NODE;
-    var TEXT = domGlobals.Node.TEXT_NODE;
-    var PROCESSING_INSTRUCTION = domGlobals.Node.PROCESSING_INSTRUCTION_NODE;
-    var ENTITY_REFERENCE = domGlobals.Node.ENTITY_REFERENCE_NODE;
-    var ENTITY = domGlobals.Node.ENTITY_NODE;
-    var NOTATION = domGlobals.Node.NOTATION_NODE;
+    var COMMENT = 8;
+    var DOCUMENT = 9;
+    var ELEMENT = 1;
+    var TEXT = 3;
 
     var name = function (element) {
       var r = element.dom().nodeName;
@@ -628,9 +375,6 @@ var table = (function (domGlobals) {
     };
     var type = function (element) {
       return element.dom().nodeType;
-    };
-    var value = function (element) {
-      return element.dom().nodeValue;
     };
     var isType$1 = function (t) {
       return function (element) {
@@ -642,17 +386,6 @@ var table = (function (domGlobals) {
     };
     var isElement = isType$1(ELEMENT);
     var isText = isType$1(TEXT);
-    var isDocument = isType$1(DOCUMENT);
-
-    var Node = /*#__PURE__*/Object.freeze({
-        name: name,
-        type: type,
-        value: value,
-        isElement: isElement,
-        isText: isText,
-        isDocument: isDocument,
-        isComment: isComment
-    });
 
     var rawSet = function (dom, key, value) {
       if (isString(value) || isBoolean(value) || isNumber(value)) {
@@ -675,6 +408,9 @@ var table = (function (domGlobals) {
       var v = element.dom().getAttribute(key);
       return v === null ? undefined : v;
     };
+    var getOpt = function (element, key) {
+      return Option.from(get$1(element, key));
+    };
     var has$1 = function (element, key) {
       var dom = element.dom();
       return dom && dom.hasAttribute ? dom.hasAttribute(key) : false;
@@ -690,12 +426,7 @@ var table = (function (domGlobals) {
     };
 
     var checkRange = function (str, substr, start) {
-      if (substr === '')
-        return true;
-      if (str.length < substr.length)
-        return false;
-      var x = str.substr(start, start + substr.length);
-      return x === substr;
+      return substr === '' || str.length >= substr.length && str.substr(start, start + substr.length) === substr;
     };
     var contains$1 = function (str, substr) {
       return str.indexOf(substr) !== -1;
@@ -706,28 +437,15 @@ var table = (function (domGlobals) {
     var endsWith = function (str, suffix) {
       return checkRange(str, suffix, str.length - suffix.length);
     };
-    var trim = function (str) {
-      return str.replace(/^\s+|\s+$/g, '');
+    var blank = function (r) {
+      return function (s) {
+        return s.replace(r, '');
+      };
     };
+    var trim = blank(/^\s+|\s+$/g);
 
     var isSupported = function (dom) {
-      return dom.style !== undefined;
-    };
-
-    var cached = function (f) {
-      var called = false;
-      var r;
-      return function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-          args[_i] = arguments[_i];
-        }
-        if (!called) {
-          called = true;
-          r = f.apply(null, args);
-        }
-        return r;
-      };
+      return dom.style !== undefined && isFunction(dom.style.getPropertyValue);
     };
 
     var fromHtml = function (html, scope) {
@@ -772,9 +490,9 @@ var table = (function (domGlobals) {
       var dom = isText(element) ? element.dom().parentNode : element.dom();
       return dom !== undefined && dom !== null && dom.ownerDocument.body.contains(dom);
     };
-    var body = cached(function () {
+    var body = function () {
       return getBody(Element.fromDom(domGlobals.document));
-    });
+    };
     var getBody = function (doc) {
       var b = doc.dom().body;
       if (b === null || b === undefined) {
@@ -807,22 +525,11 @@ var table = (function (domGlobals) {
         internalSet(dom, k, v);
       });
     };
-    var setOptions = function (element, css) {
-      var dom = element.dom();
-      each$1(css, function (v, k) {
-        v.fold(function () {
-          internalRemove(dom, k);
-        }, function (value) {
-          internalSet(dom, k, value);
-        });
-      });
-    };
     var get$2 = function (element, property) {
       var dom = element.dom();
       var styles = domGlobals.window.getComputedStyle(dom);
       var r = styles.getPropertyValue(property);
-      var v = r === '' && !inBody(element) ? getUnsafeProperty(dom, property) : r;
-      return v === null ? undefined : v;
+      return r === '' && !inBody(element) ? getUnsafeProperty(dom, property) : r;
     };
     var getUnsafeProperty = function (dom, property) {
       return isSupported(dom) ? dom.style.getPropertyValue(property) : '';
@@ -834,36 +541,12 @@ var table = (function (domGlobals) {
         return r.length > 0;
       });
     };
-    var getAllRaw = function (element) {
-      var css = {};
-      var dom = element.dom();
-      if (isSupported(dom)) {
-        for (var i = 0; i < dom.style.length; i++) {
-          var ruleName = dom.style.item(i);
-          css[ruleName] = dom.style[ruleName];
-        }
-      }
-      return css;
-    };
-    var isValidValue = function (tag, property, value) {
-      var element = Element.fromTag(tag);
-      set$1(element, property, value);
-      var style = getRaw(element, property);
-      return style.isSome();
-    };
     var remove$1 = function (element, property) {
       var dom = element.dom();
       internalRemove(dom, property);
-      if (has$1(element, 'style') && trim(get$1(element, 'style')) === '') {
+      if (getOpt(element, 'style').map(trim).is('')) {
         remove(element, 'style');
       }
-    };
-    var preserve = function (element, f) {
-      var oldStyles = get$1(element, 'style');
-      var result = f(element);
-      var restore = oldStyles === undefined ? remove : set;
-      restore(element, 'style', oldStyles);
-      return result;
     };
     var copy = function (source, target) {
       var sourceDom = source.dom();
@@ -872,97 +555,60 @@ var table = (function (domGlobals) {
         targetDom.style.cssText = sourceDom.style.cssText;
       }
     };
-    var reflow = function (e) {
-      return e.dom().offsetWidth;
-    };
-    var transferOne = function (source, destination, style) {
-      getRaw(source, style).each(function (value) {
-        if (getRaw(destination, style).isNone()) {
-          set$1(destination, style, value);
-        }
-      });
-    };
-    var transfer = function (source, destination, styles) {
-      if (!isElement(source) || !isElement(destination)) {
-        return;
-      }
-      each(styles, function (style) {
-        transferOne(source, destination, style);
-      });
-    };
 
-    var Css = /*#__PURE__*/Object.freeze({
-        copy: copy,
-        set: set$1,
-        preserve: preserve,
-        setAll: setAll$1,
-        setOptions: setOptions,
-        remove: remove$1,
-        get: get$2,
-        getRaw: getRaw,
-        getAllRaw: getAllRaw,
-        isValidValue: isValidValue,
-        reflow: reflow,
-        transfer: transfer
-    });
-
-    var Global = typeof domGlobals.window !== 'undefined' ? domGlobals.window : Function('return this;')();
-
-    var path = function (parts, scope) {
-      var o = scope !== undefined && scope !== null ? scope : Global;
-      for (var i = 0; i < parts.length && o !== undefined && o !== null; ++i)
-        o = o[parts[i]];
-      return o;
-    };
-    var resolve = function (p, scope) {
-      var parts = p.split('.');
-      return path(parts, scope);
-    };
-
-    var unsafe = function (name, scope) {
-      return resolve(name, scope);
-    };
-    var getOrDie = function (name, scope) {
-      var actual = unsafe(name, scope);
-      if (actual === undefined || actual === null)
-        throw name + ' not available on this browser';
-      return actual;
-    };
-    var Global$1 = { getOrDie: getOrDie };
-
-    var node = function () {
-      var f = Global$1.getOrDie('Node');
-      return f;
-    };
     var compareDocumentPosition = function (a, b, match) {
       return (a.compareDocumentPosition(b) & match) !== 0;
     };
-    var documentPositionPreceding = function (a, b) {
-      return compareDocumentPosition(a, b, node().DOCUMENT_POSITION_PRECEDING);
-    };
     var documentPositionContainedBy = function (a, b) {
-      return compareDocumentPosition(a, b, node().DOCUMENT_POSITION_CONTAINED_BY);
+      return compareDocumentPosition(a, b, domGlobals.Node.DOCUMENT_POSITION_CONTAINED_BY);
     };
-    var Node$1 = {
-      documentPositionPreceding: documentPositionPreceding,
-      documentPositionContainedBy: documentPositionContainedBy
+
+    var __assign = function () {
+      __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+          s = arguments[i];
+          for (var p in s)
+            if (Object.prototype.hasOwnProperty.call(s, p))
+              t[p] = s[p];
+        }
+        return t;
+      };
+      return __assign.apply(this, arguments);
+    };
+
+    var cached = function (f) {
+      var called = false;
+      var r;
+      return function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+          args[_i] = arguments[_i];
+        }
+        if (!called) {
+          called = true;
+          r = f.apply(null, args);
+        }
+        return r;
+      };
     };
 
     var firstMatch = function (regexes, s) {
       for (var i = 0; i < regexes.length; i++) {
         var x = regexes[i];
-        if (x.test(s))
+        if (x.test(s)) {
           return x;
+        }
       }
       return undefined;
     };
     var find$1 = function (regexes, agent) {
       var r = firstMatch(regexes, agent);
-      if (!r)
+      if (!r) {
         return {
           major: 0,
           minor: 0
         };
+      }
       var group = function (i) {
         return Number(agent.replace(r, '$' + i));
       };
@@ -970,8 +616,9 @@ var table = (function (domGlobals) {
     };
     var detect = function (versionRegexes, agent) {
       var cleanedAgent = String(agent).toLowerCase();
-      if (versionRegexes.length === 0)
+      if (versionRegexes.length === 0) {
         return unknown();
+      }
       return find$1(versionRegexes, cleanedAgent);
     };
     var unknown = function () {
@@ -995,11 +642,6 @@ var table = (function (domGlobals) {
     var opera = 'Opera';
     var firefox = 'Firefox';
     var safari = 'Safari';
-    var isBrowser = function (name, current) {
-      return function () {
-        return current === name;
-      };
-    };
     var unknown$1 = function () {
       return nu$1({
         current: undefined,
@@ -1009,15 +651,20 @@ var table = (function (domGlobals) {
     var nu$1 = function (info) {
       var current = info.current;
       var version = info.version;
+      var isBrowser = function (name) {
+        return function () {
+          return current === name;
+        };
+      };
       return {
         current: current,
         version: version,
-        isEdge: isBrowser(edge, current),
-        isChrome: isBrowser(chrome, current),
-        isIE: isBrowser(ie, current),
-        isOpera: isBrowser(opera, current),
-        isFirefox: isBrowser(firefox, current),
-        isSafari: isBrowser(safari, current)
+        isEdge: isBrowser(edge),
+        isChrome: isBrowser(chrome),
+        isIE: isBrowser(ie),
+        isOpera: isBrowser(opera),
+        isFirefox: isBrowser(firefox),
+        isSafari: isBrowser(safari)
       };
     };
     var Browser = {
@@ -1038,11 +685,7 @@ var table = (function (domGlobals) {
     var osx = 'OSX';
     var solaris = 'Solaris';
     var freebsd = 'FreeBSD';
-    var isOS = function (name, current) {
-      return function () {
-        return current === name;
-      };
-    };
+    var chromeos = 'ChromeOS';
     var unknown$2 = function () {
       return nu$2({
         current: undefined,
@@ -1052,16 +695,22 @@ var table = (function (domGlobals) {
     var nu$2 = function (info) {
       var current = info.current;
       var version = info.version;
+      var isOS = function (name) {
+        return function () {
+          return current === name;
+        };
+      };
       return {
         current: current,
         version: version,
-        isWindows: isOS(windows, current),
-        isiOS: isOS(ios, current),
-        isAndroid: isOS(android, current),
-        isOSX: isOS(osx, current),
-        isLinux: isOS(linux, current),
-        isSolaris: isOS(solaris, current),
-        isFreeBSD: isOS(freebsd, current)
+        isWindows: isOS(windows),
+        isiOS: isOS(ios),
+        isAndroid: isOS(android),
+        isOSX: isOS(osx),
+        isLinux: isOS(linux),
+        isSolaris: isOS(solaris),
+        isFreeBSD: isOS(freebsd),
+        isChromeOS: isOS(chromeos)
       };
     };
     var OperatingSystem = {
@@ -1073,18 +722,19 @@ var table = (function (domGlobals) {
       linux: constant(linux),
       osx: constant(osx),
       solaris: constant(solaris),
-      freebsd: constant(freebsd)
+      freebsd: constant(freebsd),
+      chromeos: constant(chromeos)
     };
 
-    var DeviceType = function (os, browser, userAgent) {
+    var DeviceType = function (os, browser, userAgent, mediaMatch) {
       var isiPad = os.isiOS() && /ipad/i.test(userAgent) === true;
       var isiPhone = os.isiOS() && !isiPad;
-      var isAndroid3 = os.isAndroid() && os.version.major === 3;
-      var isAndroid4 = os.isAndroid() && os.version.major === 4;
-      var isTablet = isiPad || isAndroid3 || isAndroid4 && /mobile/i.test(userAgent) === true;
-      var isTouch = os.isiOS() || os.isAndroid();
-      var isPhone = isTouch && !isTablet;
+      var isMobile = os.isiOS() || os.isAndroid();
+      var isTouch = isMobile || mediaMatch('(pointer:coarse)');
+      var isTablet = isiPad || !isiPhone && isMobile && mediaMatch('(min-device-width:768px)');
+      var isPhone = isiPhone || isMobile && !isTablet;
       var iOSwebview = browser.isSafari() && os.isiOS() && /safari/i.test(userAgent) === false;
+      var isDesktop = !isPhone && !isTablet && !iOSwebview;
       return {
         isiPad: constant(isiPad),
         isiPhone: constant(isiPhone),
@@ -1093,7 +743,8 @@ var table = (function (domGlobals) {
         isTouch: constant(isTouch),
         isAndroid: os.isAndroid,
         isiOS: os.isiOS,
-        isWebView: constant(iOSwebview)
+        isWebView: constant(iOSwebview),
+        isDesktop: constant(isDesktop)
       };
     };
 
@@ -1137,8 +788,7 @@ var table = (function (domGlobals) {
         name: 'Edge',
         versionRegexes: [/.*?edge\/ ?([0-9]+)\.([0-9]+)$/],
         search: function (uastring) {
-          var monstrosity = contains$1(uastring, 'edge/') && contains$1(uastring, 'chrome') && contains$1(uastring, 'safari') && contains$1(uastring, 'applewebkit');
-          return monstrosity;
+          return contains$1(uastring, 'edge/') && contains$1(uastring, 'chrome') && contains$1(uastring, 'safari') && contains$1(uastring, 'applewebkit');
         }
       },
       {
@@ -1209,8 +859,8 @@ var table = (function (domGlobals) {
       },
       {
         name: 'OSX',
-        search: checkContains('os x'),
-        versionRegexes: [/.*?os\ x\ ?([0-9]+)_([0-9]+).*/]
+        search: checkContains('mac os x'),
+        versionRegexes: [/.*?mac\ os\ x\ ?([0-9]+)_([0-9]+).*/]
       },
       {
         name: 'Linux',
@@ -1226,6 +876,11 @@ var table = (function (domGlobals) {
         name: 'FreeBSD',
         search: checkContains('freebsd'),
         versionRegexes: []
+      },
+      {
+        name: 'ChromeOS',
+        search: checkContains('cros'),
+        versionRegexes: [/.*?chrome\/([0-9]+)\.([0-9]+).*/]
       }
     ];
     var PlatformInfo = {
@@ -1233,12 +888,12 @@ var table = (function (domGlobals) {
       oses: constant(oses)
     };
 
-    var detect$2 = function (userAgent) {
+    var detect$2 = function (userAgent, mediaMatch) {
       var browsers = PlatformInfo.browsers();
       var oses = PlatformInfo.oses();
       var browser = UaString.detectBrowser(browsers, userAgent).fold(Browser.unknown, Browser.nu);
       var os = UaString.detectOs(oses, userAgent).fold(OperatingSystem.unknown, OperatingSystem.nu);
-      var deviceType = DeviceType(os, browser, userAgent);
+      var deviceType = DeviceType(os, browser, userAgent, mediaMatch);
       return {
         browser: browser,
         os: os,
@@ -1247,28 +902,35 @@ var table = (function (domGlobals) {
     };
     var PlatformDetection = { detect: detect$2 };
 
-    var detect$3 = cached(function () {
-      var userAgent = domGlobals.navigator.userAgent;
-      return PlatformDetection.detect(userAgent);
+    var mediaMatch = function (query) {
+      return domGlobals.window.matchMedia(query).matches;
+    };
+    var platform = cached(function () {
+      return PlatformDetection.detect(domGlobals.navigator.userAgent, mediaMatch);
     });
-    var PlatformDetection$1 = { detect: detect$3 };
+    var detect$3 = function () {
+      return platform();
+    };
 
     var ELEMENT$1 = ELEMENT;
     var DOCUMENT$1 = DOCUMENT;
     var is = function (element, selector) {
-      var elem = element.dom();
-      if (elem.nodeType !== ELEMENT$1) {
+      var dom = element.dom();
+      if (dom.nodeType !== ELEMENT$1) {
         return false;
-      } else if (elem.matches !== undefined) {
-        return elem.matches(selector);
-      } else if (elem.msMatchesSelector !== undefined) {
-        return elem.msMatchesSelector(selector);
-      } else if (elem.webkitMatchesSelector !== undefined) {
-        return elem.webkitMatchesSelector(selector);
-      } else if (elem.mozMatchesSelector !== undefined) {
-        return elem.mozMatchesSelector(selector);
       } else {
-        throw new Error('Browser lacks native selectors');
+        var elem = dom;
+        if (elem.matches !== undefined) {
+          return elem.matches(selector);
+        } else if (elem.msMatchesSelector !== undefined) {
+          return elem.msMatchesSelector(selector);
+        } else if (elem.webkitMatchesSelector !== undefined) {
+          return elem.webkitMatchesSelector(selector);
+        } else if (elem.mozMatchesSelector !== undefined) {
+          return elem.mozMatchesSelector(selector);
+        } else {
+          throw new Error('Browser lacks native selectors');
+        }
       }
     };
     var bypassSelector = function (dom) {
@@ -1292,26 +954,24 @@ var table = (function (domGlobals) {
       return d1 === d2 ? false : d1.contains(d2);
     };
     var ieContains = function (e1, e2) {
-      return Node$1.documentPositionContainedBy(e1.dom(), e2.dom());
+      return documentPositionContainedBy(e1.dom(), e2.dom());
     };
-    var browser = PlatformDetection$1.detect().browser;
-    var contains$2 = browser.isIE() ? ieContains : regularContains;
+    var contains$2 = function (e1, e2) {
+      return detect$3().browser.isIE() ? ieContains(e1, e2) : regularContains(e1, e2);
+    };
     var is$1 = is;
 
     var owner = function (element) {
       return Element.fromDom(element.dom().ownerDocument);
     };
     var defaultView = function (element) {
-      var el = element.dom();
-      var defView = el.ownerDocument.defaultView;
-      return Element.fromDom(defView);
+      return Element.fromDom(element.dom().ownerDocument.defaultView);
     };
     var parent = function (element) {
-      var dom = element.dom();
-      return Option.from(dom.parentNode).map(Element.fromDom);
+      return Option.from(element.dom().parentNode).map(Element.fromDom);
     };
     var parents = function (element, isRoot) {
-      var stop = isFunction(isRoot) ? isRoot : constant(false);
+      var stop = isFunction(isRoot) ? isRoot : never;
       var dom = element.dom();
       var ret = [];
       while (dom.parentNode !== null && dom.parentNode !== undefined) {
@@ -1327,16 +987,13 @@ var table = (function (domGlobals) {
       return ret;
     };
     var prevSibling = function (element) {
-      var dom = element.dom();
-      return Option.from(dom.previousSibling).map(Element.fromDom);
+      return Option.from(element.dom().previousSibling).map(Element.fromDom);
     };
     var nextSibling = function (element) {
-      var dom = element.dom();
-      return Option.from(dom.nextSibling).map(Element.fromDom);
+      return Option.from(element.dom().nextSibling).map(Element.fromDom);
     };
     var children = function (element) {
-      var dom = element.dom();
-      return map(dom.childNodes, Element.fromDom);
+      return map(element.dom().childNodes, Element.fromDom);
     };
     var child = function (element, index) {
       var cs = element.dom().childNodes;
@@ -1345,7 +1002,6 @@ var table = (function (domGlobals) {
     var firstChild = function (element) {
       return child(element, 0);
     };
-    var spot = Immutable('element', 'offset');
 
     var before = function (marker, element) {
       var parent$1 = parent(marker);
@@ -1417,33 +1073,82 @@ var table = (function (domGlobals) {
       remove$2(wrapper);
     };
 
-    var dimensions = Immutable('width', 'height');
-    var grid = Immutable('rows', 'columns');
-    var address = Immutable('row', 'column');
-    var coords = Immutable('x', 'y');
-    var detail = Immutable('element', 'rowspan', 'colspan');
-    var detailnew = Immutable('element', 'rowspan', 'colspan', 'isNew');
-    var extended = Immutable('element', 'rowspan', 'colspan', 'row', 'column');
-    var rowdata = Immutable('element', 'cells', 'section');
-    var elementnew = Immutable('element', 'isNew');
-    var rowdatanew = Immutable('element', 'cells', 'section', 'isNew');
-    var rowcells = Immutable('cells', 'section');
-    var rowdetails = Immutable('details', 'section');
-    var bounds = Immutable('startRow', 'startCol', 'finishRow', 'finishCol');
-    var Structs = {
-      dimensions: dimensions,
-      grid: grid,
-      address: address,
-      coords: coords,
-      extended: extended,
-      detail: detail,
-      detailnew: detailnew,
-      rowdata: rowdata,
-      elementnew: elementnew,
-      rowdatanew: rowdatanew,
-      rowcells: rowcells,
-      rowdetails: rowdetails,
-      bounds: bounds
+    var grid = function (rows, columns) {
+      return {
+        rows: constant(rows),
+        columns: constant(columns)
+      };
+    };
+    var address = function (row, column) {
+      return {
+        row: constant(row),
+        column: constant(column)
+      };
+    };
+    var detail = function (element, rowspan, colspan) {
+      return {
+        element: constant(element),
+        rowspan: constant(rowspan),
+        colspan: constant(colspan)
+      };
+    };
+    var detailnew = function (element, rowspan, colspan, isNew) {
+      return {
+        element: constant(element),
+        rowspan: constant(rowspan),
+        colspan: constant(colspan),
+        isNew: constant(isNew)
+      };
+    };
+    var extended = function (element, rowspan, colspan, row, column) {
+      return {
+        element: constant(element),
+        rowspan: constant(rowspan),
+        colspan: constant(colspan),
+        row: constant(row),
+        column: constant(column)
+      };
+    };
+    var rowdata = function (element, cells, section) {
+      return {
+        element: constant(element),
+        cells: constant(cells),
+        section: constant(section)
+      };
+    };
+    var elementnew = function (element, isNew) {
+      return {
+        element: constant(element),
+        isNew: constant(isNew)
+      };
+    };
+    var rowdatanew = function (element, cells, section, isNew) {
+      return {
+        element: constant(element),
+        cells: constant(cells),
+        section: constant(section),
+        isNew: constant(isNew)
+      };
+    };
+    var rowcells = function (cells, section) {
+      return {
+        cells: constant(cells),
+        section: constant(section)
+      };
+    };
+    var rowdetails = function (details, section) {
+      return {
+        details: constant(details),
+        section: constant(section)
+      };
+    };
+    var bounds = function (startRow, startCol, finishRow, finishCol) {
+      return {
+        startRow: constant(startRow),
+        startCol: constant(startCol),
+        finishRow: constant(finishRow),
+        finishCol: constant(finishCol)
+      };
     };
 
     var ancestors = function (scope, predicate, isRoot) {
@@ -1496,29 +1201,24 @@ var table = (function (domGlobals) {
       return Option.none();
     };
     var closest = function (scope, predicate, isRoot) {
-      var is = function (s) {
-        return predicate(s);
+      var is = function (s, test) {
+        return test(s);
       };
       return ClosestOrAncestor(is, ancestor, scope, predicate, isRoot);
     };
-    var sibling = function (scope, predicate) {
-      var element = scope.dom();
-      if (!element.parentNode) {
-        return Option.none();
-      }
-      return child$1(Element.fromDom(element.parentNode), function (x) {
-        return !eq(scope, x) && predicate(x);
-      });
-    };
     var child$1 = function (scope, predicate) {
-      var result = find(scope.dom().childNodes, compose(predicate, Element.fromDom));
+      var pred = function (node) {
+        return predicate(Element.fromDom(node));
+      };
+      var result = find(scope.dom().childNodes, pred);
       return result.map(Element.fromDom);
     };
     var descendant = function (scope, predicate) {
       var descend = function (node) {
         for (var i = 0; i < node.childNodes.length; i++) {
-          if (predicate(Element.fromDom(node.childNodes[i]))) {
-            return Option.some(Element.fromDom(node.childNodes[i]));
+          var child_1 = Element.fromDom(node.childNodes[i]);
+          if (predicate(child_1)) {
+            return Option.some(child_1);
           }
           var res = descend(node.childNodes[i]);
           if (res.isSome()) {
@@ -1530,18 +1230,10 @@ var table = (function (domGlobals) {
       return descend(scope.dom());
     };
 
-    var first = function (selector) {
-      return one(selector);
-    };
     var ancestor$1 = function (scope, selector, isRoot) {
       return ancestor(scope, function (e) {
         return is(e, selector);
       }, isRoot);
-    };
-    var sibling$1 = function (scope, selector) {
-      return sibling(scope, function (e) {
-        return is(e, selector);
-      });
     };
     var child$2 = function (scope, selector) {
       return child$1(scope, function (e) {
@@ -1552,17 +1244,34 @@ var table = (function (domGlobals) {
       return one(selector, scope);
     };
     var closest$1 = function (scope, selector, isRoot) {
-      return ClosestOrAncestor(is, ancestor$1, scope, selector, isRoot);
+      var is$1 = function (element, selector) {
+        return is(element, selector);
+      };
+      return ClosestOrAncestor(is$1, ancestor$1, scope, selector, isRoot);
     };
 
-    var SelectorFind = /*#__PURE__*/Object.freeze({
-        first: first,
-        ancestor: ancestor$1,
-        sibling: sibling$1,
-        child: child$2,
-        descendant: descendant$1,
-        closest: closest$1
-    });
+    var getAttrValue = function (cell, name, fallback) {
+      if (fallback === void 0) {
+        fallback = 0;
+      }
+      return getOpt(cell, name).map(function (value) {
+        return parseInt(value, 10);
+      }).getOr(fallback);
+    };
+    var getSpan = function (cell, type) {
+      return getAttrValue(cell, type, 1);
+    };
+    var hasColspan = function (cell) {
+      return getSpan(cell, 'colspan') > 1;
+    };
+    var hasRowspan = function (cell) {
+      return getSpan(cell, 'rowspan') > 1;
+    };
+    var getCssValue = function (element, property) {
+      return parseInt(get$2(element, property), 10);
+    };
+    var minWidth = constant(10);
+    var minHeight = constant(10);
 
     var firstLayer = function (scope, selector) {
       return filterFirstLayer(scope, selector, constant(true));
@@ -1572,13 +1281,11 @@ var table = (function (domGlobals) {
         return is(x, selector) ? predicate(x) ? [x] : [] : filterFirstLayer(x, selector, predicate);
       });
     };
-    var LayerSelector = {
-      firstLayer: firstLayer,
-      filterFirstLayer: filterFirstLayer
-    };
 
-    var lookup = function (tags, element, _isRoot) {
-      var isRoot = _isRoot !== undefined ? _isRoot : constant(false);
+    var lookup = function (tags, element, isRoot) {
+      if (isRoot === void 0) {
+        isRoot = never;
+      }
       if (isRoot(element)) {
         return Option.none();
       }
@@ -1597,16 +1304,7 @@ var table = (function (domGlobals) {
       ], element, isRoot);
     };
     var cells = function (ancestor) {
-      return LayerSelector.firstLayer(ancestor, 'th,td');
-    };
-    var notCell = function (element, isRoot) {
-      return lookup([
-        'caption',
-        'tr',
-        'tbody',
-        'tfoot',
-        'thead'
-      ], element, isRoot);
+      return firstLayer(ancestor, 'th,td');
     };
     var neighbours = function (selector, element) {
       return parent(element).map(function (parent) {
@@ -1615,77 +1313,46 @@ var table = (function (domGlobals) {
     };
     var neighbourCells = curry(neighbours, 'th,td');
     var neighbourRows = curry(neighbours, 'tr');
-    var firstCell = function (ancestor) {
-      return descendant$1(ancestor, 'th,td');
-    };
     var table = function (element, isRoot) {
       return closest$1(element, 'table', isRoot);
     };
-    var row = function (element, isRoot) {
-      return lookup(['tr'], element, isRoot);
-    };
     var rows = function (ancestor) {
-      return LayerSelector.firstLayer(ancestor, 'tr');
-    };
-    var attr = function (element, property) {
-      return parseInt(get$1(element, property), 10);
-    };
-    var grid$1 = function (element, rowProp, colProp) {
-      var rowsCount = attr(element, rowProp);
-      var cols = attr(element, colProp);
-      return Structs.grid(rowsCount, cols);
-    };
-    var TableLookup = {
-      cell: cell,
-      firstCell: firstCell,
-      cells: cells,
-      neighbourCells: neighbourCells,
-      table: table,
-      row: row,
-      rows: rows,
-      notCell: notCell,
-      neighbourRows: neighbourRows,
-      attr: attr,
-      grid: grid$1
+      return firstLayer(ancestor, 'tr');
     };
 
     var fromTable = function (table) {
-      var rows = TableLookup.rows(table);
-      return map(rows, function (row) {
+      var rows$1 = rows(table);
+      return map(rows$1, function (row) {
         var element = row;
         var parent$1 = parent(element);
         var parentSection = parent$1.map(function (p) {
           var parentName = name(p);
           return parentName === 'tfoot' || parentName === 'thead' || parentName === 'tbody' ? parentName : 'tbody';
         }).getOr('tbody');
-        var cells = map(TableLookup.cells(row), function (cell) {
-          var rowspan = has$1(cell, 'rowspan') ? parseInt(get$1(cell, 'rowspan'), 10) : 1;
-          var colspan = has$1(cell, 'colspan') ? parseInt(get$1(cell, 'colspan'), 10) : 1;
-          return Structs.detail(cell, rowspan, colspan);
+        var cells$1 = map(cells(row), function (cell) {
+          var rowspan = getAttrValue(cell, 'rowspan', 1);
+          var colspan = getAttrValue(cell, 'colspan', 1);
+          return detail(cell, rowspan, colspan);
         });
-        return Structs.rowdata(element, cells, parentSection);
+        return rowdata(element, cells$1, parentSection);
       });
     };
     var fromPastedRows = function (rows, example) {
       return map(rows, function (row) {
-        var cells = map(TableLookup.cells(row), function (cell) {
-          var rowspan = has$1(cell, 'rowspan') ? parseInt(get$1(cell, 'rowspan'), 10) : 1;
-          var colspan = has$1(cell, 'colspan') ? parseInt(get$1(cell, 'colspan'), 10) : 1;
-          return Structs.detail(cell, rowspan, colspan);
+        var cells$1 = map(cells(row), function (cell) {
+          var rowspan = getAttrValue(cell, 'rowspan', 1);
+          var colspan = getAttrValue(cell, 'colspan', 1);
+          return detail(cell, rowspan, colspan);
         });
-        return Structs.rowdata(row, cells, example.section());
+        return rowdata(row, cells$1, example.section());
       });
-    };
-    var DetailsList = {
-      fromTable: fromTable,
-      fromPastedRows: fromPastedRows
     };
 
     var key = function (row, column) {
       return row + ',' + column;
     };
     var getAt = function (warehouse, row, column) {
-      var raw = warehouse.access()[key(row, column)];
+      var raw = warehouse.access[key(row, column)];
       return raw !== undefined ? Option.some(raw) : Option.none();
     };
     var findItem = function (warehouse, item, comparator) {
@@ -1695,7 +1362,7 @@ var table = (function (domGlobals) {
       return filtered.length > 0 ? Option.some(filtered[0]) : Option.none();
     };
     var filterItems = function (warehouse, predicate) {
-      var all = bind(warehouse.all(), function (r) {
+      var all = bind(warehouse.all, function (r) {
         return r.cells();
       });
       return filter(all, predicate);
@@ -1707,12 +1374,12 @@ var table = (function (domGlobals) {
       var maxColumns = 0;
       each(list, function (details, r) {
         var currentRow = [];
-        each(details.cells(), function (detail, c) {
+        each(details.cells(), function (detail) {
           var start = 0;
           while (access[key(r, start)] !== undefined) {
             start++;
           }
-          var current = Structs.extended(detail.element(), detail.rowspan(), detail.colspan(), r, start);
+          var current = extended(detail.element(), detail.rowspan(), detail.colspan(), r, start);
           for (var i = 0; i < detail.colspan(); i++) {
             for (var j = 0; j < detail.rowspan(); j++) {
               var cr = r + j;
@@ -1724,17 +1391,17 @@ var table = (function (domGlobals) {
           }
           currentRow.push(current);
         });
-        cells.push(Structs.rowdata(details.element(), currentRow, details.section()));
+        cells.push(rowdata(details.element(), currentRow, details.section()));
       });
-      var grid = Structs.grid(maxRows, maxColumns);
+      var grid$1 = grid(maxRows, maxColumns);
       return {
-        grid: constant(grid),
-        access: constant(access),
-        all: constant(cells)
+        grid: grid$1,
+        access: access,
+        all: cells
       };
     };
     var justCells = function (warehouse) {
-      var rows = map(warehouse.all(), function (w) {
+      var rows = map(warehouse.all, function (w) {
         return w.cells();
       });
       return flatten(rows);
@@ -1747,15 +1414,22 @@ var table = (function (domGlobals) {
       justCells: justCells
     };
 
-    var statsStruct = Immutable('minRow', 'minCol', 'maxRow', 'maxCol');
+    var statsStruct = function (minRow, minCol, maxRow, maxCol) {
+      return {
+        minRow: minRow,
+        minCol: minCol,
+        maxRow: maxRow,
+        maxCol: maxCol
+      };
+    };
     var findSelectedStats = function (house, isSelected) {
-      var totalColumns = house.grid().columns();
-      var totalRows = house.grid().rows();
+      var totalColumns = house.grid.columns();
+      var totalRows = house.grid.rows();
       var minRow = totalRows;
       var minCol = totalColumns;
       var maxRow = 0;
       var maxCol = 0;
-      each$1(house.access(), function (detail) {
+      each$1(house.access, function (detail) {
         if (isSelected(detail)) {
           var startRow = detail.row();
           var endRow = startRow + detail.rowspan() - 1;
@@ -1783,12 +1457,12 @@ var table = (function (domGlobals) {
       f(row, td);
     };
     var fillInGaps = function (list, house, stats, isSelected) {
-      var totalColumns = house.grid().columns();
-      var totalRows = house.grid().rows();
+      var totalColumns = house.grid.columns();
+      var totalRows = house.grid.rows();
       for (var i = 0; i < totalRows; i++) {
         var seenSelected = false;
         for (var j = 0; j < totalColumns; j++) {
-          if (!(i < stats.minRow() || i > stats.maxRow() || j < stats.minCol() || j > stats.maxCol())) {
+          if (!(i < stats.minRow || i > stats.maxRow || j < stats.minCol || j > stats.maxCol)) {
             var needCell = Warehouse.getAt(house, i, j).filter(isSelected).isNone();
             if (needCell) {
               makeCell(list, seenSelected, i);
@@ -1800,12 +1474,12 @@ var table = (function (domGlobals) {
       }
     };
     var clean = function (table, stats) {
-      var emptyRows = filter(LayerSelector.firstLayer(table, 'tr'), function (row) {
+      var emptyRows = filter(firstLayer(table, 'tr'), function (row) {
         return row.dom().childElementCount === 0;
       });
       each(emptyRows, remove$2);
-      if (stats.minCol() === stats.maxCol() || stats.minRow() === stats.maxRow()) {
-        each(LayerSelector.firstLayer(table, 'th,td'), function (cell) {
+      if (stats.minCol === stats.maxCol || stats.minRow === stats.maxRow) {
+        each(firstLayer(table, 'th,td'), function (cell) {
           remove(cell, 'rowspan');
           remove(cell, 'colspan');
         });
@@ -1819,11 +1493,11 @@ var table = (function (domGlobals) {
       var isSelected = function (detail) {
         return is(detail.element(), selectedSelector);
       };
-      var list = DetailsList.fromTable(table);
+      var list = fromTable(table);
       var house = Warehouse.generate(list);
       var stats = findSelectedStats(house, isSelected);
       var selector = 'th:not(' + selectedSelector + ')' + ',td:not(' + selectedSelector + ')';
-      var unselectedCells = LayerSelector.filterFirstLayer(table, 'th,td', function (cell) {
+      var unselectedCells = filterFirstLayer(table, 'th,td', function (cell) {
         return is(cell, selector);
       });
       each(unselectedCells, remove$2);
@@ -1831,7 +1505,8 @@ var table = (function (domGlobals) {
       clean(table, stats);
       return table;
     };
-    var CopySelected = { extract: extract };
+
+    var nbsp = '\xA0';
 
     function NodeValue (is, name) {
       var get = function (element) {
@@ -1840,18 +1515,9 @@ var table = (function (domGlobals) {
         }
         return getOption(element).getOr('');
       };
-      var getOptionIE10 = function (element) {
-        try {
-          return getOptionSafe(element);
-        } catch (e) {
-          return Option.none();
-        }
-      };
-      var getOptionSafe = function (element) {
+      var getOption = function (element) {
         return is(element) ? Option.from(element.dom().nodeValue) : Option.none();
       };
-      var browser = PlatformDetection$1.detect().browser;
-      var getOption = browser.isIE() && browser.version.major === 10 ? getOptionIE10 : getOptionSafe;
       var set = function (element, value) {
         if (!is(element)) {
           throw new Error('Can only set raw ' + name + ' value of a ' + name + ' node');
@@ -1873,7 +1539,7 @@ var table = (function (domGlobals) {
       return api.getOption(element);
     };
     var set$2 = function (element, value) {
-      api.set(element, value);
+      return api.set(element, value);
     };
 
     var getEnd = function (element) {
@@ -1883,10 +1549,9 @@ var table = (function (domGlobals) {
         return v.length;
       });
     };
-    var NBSP = '\xA0';
     var isTextNodeWithCursorPosition = function (el) {
       return getOption(el).filter(function (text) {
-        return text.trim().length !== 0 || text.indexOf(NBSP) > -1;
+        return text.trim().length !== 0 || text.indexOf(nbsp) > -1;
       }).isSome();
     };
     var elementsWithCursorPosition = [
@@ -1898,7 +1563,7 @@ var table = (function (domGlobals) {
       return hasCursorPosition || contains(elementsWithCursorPosition, name(elem));
     };
 
-    var first$1 = function (element) {
+    var first = function (element) {
       return descendant(element, isCursorPosition);
     };
     var last$1 = function (element) {
@@ -1960,8 +1625,8 @@ var table = (function (domGlobals) {
       });
       return replica;
     };
-    var pasteReplace = function (cellContent) {
-      return cellContent;
+    var pasteReplace = function (cell) {
+      return cell;
     };
     var newRow = function (doc) {
       return function () {
@@ -1969,8 +1634,8 @@ var table = (function (domGlobals) {
       };
     };
     var cloneFormats = function (oldCell, newCell, formats) {
-      var first = first$1(oldCell);
-      return first.map(function (firstText) {
+      var first$1 = first(oldCell);
+      return first$1.map(function (firstText) {
         var formatSelector = formats.join(',');
         var parents = ancestors$1(firstText, formatSelector, function (element) {
           return eq(element, oldCell);
@@ -2028,16 +1693,107 @@ var table = (function (domGlobals) {
         gap: createCell
       };
     };
-    var TableFill = {
-      cellOperations: cellOperations,
-      paste: paste
-    };
 
     var fromHtml$1 = function (html, scope) {
       var doc = scope || domGlobals.document;
       var div = doc.createElement('div');
       div.innerHTML = html;
       return children(Element.fromDom(div));
+    };
+
+    var inSelection = function (bounds, detail) {
+      var leftEdge = detail.column();
+      var rightEdge = detail.column() + detail.colspan() - 1;
+      var topEdge = detail.row();
+      var bottomEdge = detail.row() + detail.rowspan() - 1;
+      return leftEdge <= bounds.finishCol() && rightEdge >= bounds.startCol() && (topEdge <= bounds.finishRow() && bottomEdge >= bounds.startRow());
+    };
+    var isWithin = function (bounds, detail) {
+      return detail.column() >= bounds.startCol() && detail.column() + detail.colspan() - 1 <= bounds.finishCol() && detail.row() >= bounds.startRow() && detail.row() + detail.rowspan() - 1 <= bounds.finishRow();
+    };
+    var isRectangular = function (warehouse, bounds) {
+      var isRect = true;
+      var detailIsWithin = curry(isWithin, bounds);
+      for (var i = bounds.startRow(); i <= bounds.finishRow(); i++) {
+        for (var j = bounds.startCol(); j <= bounds.finishCol(); j++) {
+          isRect = isRect && Warehouse.getAt(warehouse, i, j).exists(detailIsWithin);
+        }
+      }
+      return isRect ? Option.some(bounds) : Option.none();
+    };
+
+    var getBounds = function (detailA, detailB) {
+      return bounds(Math.min(detailA.row(), detailB.row()), Math.min(detailA.column(), detailB.column()), Math.max(detailA.row() + detailA.rowspan() - 1, detailB.row() + detailB.rowspan() - 1), Math.max(detailA.column() + detailA.colspan() - 1, detailB.column() + detailB.colspan() - 1));
+    };
+    var getAnyBox = function (warehouse, startCell, finishCell) {
+      var startCoords = Warehouse.findItem(warehouse, startCell, eq);
+      var finishCoords = Warehouse.findItem(warehouse, finishCell, eq);
+      return startCoords.bind(function (sc) {
+        return finishCoords.map(function (fc) {
+          return getBounds(sc, fc);
+        });
+      });
+    };
+    var getBox = function (warehouse, startCell, finishCell) {
+      return getAnyBox(warehouse, startCell, finishCell).bind(function (bounds) {
+        return isRectangular(warehouse, bounds);
+      });
+    };
+
+    var moveBy = function (warehouse, cell, row, column) {
+      return Warehouse.findItem(warehouse, cell, eq).bind(function (detail) {
+        var startRow = row > 0 ? detail.row() + detail.rowspan() - 1 : detail.row();
+        var startCol = column > 0 ? detail.column() + detail.colspan() - 1 : detail.column();
+        var dest = Warehouse.getAt(warehouse, startRow + row, startCol + column);
+        return dest.map(function (d) {
+          return d.element();
+        });
+      });
+    };
+    var intercepts = function (warehouse, start, finish) {
+      return getAnyBox(warehouse, start, finish).map(function (bounds) {
+        var inside = Warehouse.filterItems(warehouse, curry(inSelection, bounds));
+        return map(inside, function (detail) {
+          return detail.element();
+        });
+      });
+    };
+    var parentCell = function (warehouse, innerCell) {
+      var isContainedBy = function (c1, c2) {
+        return contains$2(c2, c1);
+      };
+      return Warehouse.findItem(warehouse, innerCell, isContainedBy).map(function (detail) {
+        return detail.element();
+      });
+    };
+
+    var moveBy$1 = function (cell, deltaRow, deltaColumn) {
+      return table(cell).bind(function (table) {
+        var warehouse = getWarehouse(table);
+        return moveBy(warehouse, cell, deltaRow, deltaColumn);
+      });
+    };
+    var intercepts$1 = function (table, first, last) {
+      var warehouse = getWarehouse(table);
+      return intercepts(warehouse, first, last);
+    };
+    var nestedIntercepts = function (table, first, firstTable, last, lastTable) {
+      var warehouse = getWarehouse(table);
+      var optStartCell = eq(table, firstTable) ? Option.some(first) : parentCell(warehouse, first);
+      var optLastCell = eq(table, lastTable) ? Option.some(last) : parentCell(warehouse, last);
+      return optStartCell.bind(function (startCell) {
+        return optLastCell.bind(function (lastCell) {
+          return intercepts(warehouse, startCell, lastCell);
+        });
+      });
+    };
+    var getBox$1 = function (table, first, last) {
+      var warehouse = getWarehouse(table);
+      return getBox(warehouse, first, last);
+    };
+    var getWarehouse = function (table) {
+      var list = fromTable(table);
+      return Warehouse.generate(list);
     };
 
     var TagBoundaries = [
@@ -2082,21 +1838,27 @@ var table = (function (domGlobals) {
         return element.dom().ownerDocument;
       };
       var isBoundary = function (element) {
-        if (!isElement(element))
+        if (!isElement(element)) {
           return false;
-        if (name(element) === 'body')
+        }
+        if (name(element) === 'body') {
           return true;
+        }
         return contains(TagBoundaries, name(element));
       };
       var isEmptyTag = function (element) {
-        if (!isElement(element))
+        if (!isElement(element)) {
           return false;
+        }
         return contains([
           'br',
           'img',
           'hr',
           'input'
         ], name(element));
+      };
+      var isNonEditable = function (element) {
+        return isElement(element) && get$1(element, 'contenteditable') === 'false';
       };
       var comparePosition = function (element, other) {
         return element.dom().compareDocumentPosition(other.dom());
@@ -2162,67 +1924,13 @@ var table = (function (domGlobals) {
           getText: get$3,
           setText: set$2,
           isBoundary: isBoundary,
-          isEmptyTag: isEmptyTag
+          isEmptyTag: isEmptyTag,
+          isNonEditable: isNonEditable
         }),
         eq: eq,
         is: is$1
       };
     }
-
-    var leftRight = Immutable('left', 'right');
-    var bisect = function (universe, parent, child) {
-      var children = universe.property().children(parent);
-      var index = findIndex(children, curry(universe.eq, child));
-      return index.map(function (ind) {
-        return {
-          before: constant(children.slice(0, ind)),
-          after: constant(children.slice(ind + 1))
-        };
-      });
-    };
-    var breakToRight = function (universe, parent, child) {
-      return bisect(universe, parent, child).map(function (parts) {
-        var second = universe.create().clone(parent);
-        universe.insert().appendAll(second, parts.after());
-        universe.insert().after(parent, second);
-        return leftRight(parent, second);
-      });
-    };
-    var breakToLeft = function (universe, parent, child) {
-      return bisect(universe, parent, child).map(function (parts) {
-        var prior = universe.create().clone(parent);
-        universe.insert().appendAll(prior, parts.before().concat([child]));
-        universe.insert().appendAll(parent, parts.after());
-        universe.insert().before(parent, prior);
-        return leftRight(prior, parent);
-      });
-    };
-    var breakPath = function (universe, item, isTop, breaker) {
-      var result = Immutable('first', 'second', 'splits');
-      var next = function (child, group, splits) {
-        var fallback = result(child, Option.none(), splits);
-        if (isTop(child))
-          return result(child, group, splits);
-        else {
-          return universe.property().parent(child).bind(function (parent) {
-            return breaker(universe, parent, child).map(function (breakage) {
-              var extra = [{
-                  first: breakage.left,
-                  second: breakage.right
-                }];
-              var nextChild = isTop(parent) ? parent : breakage.left();
-              return next(nextChild, Option.some(breakage.right()), splits.concat(extra));
-            }).getOr(fallback);
-          });
-        }
-      };
-      return next(item, Option.none(), []);
-    };
-    var Breaker = {
-      breakToLeft: breakToLeft,
-      breakToRight: breakToRight,
-      breakPath: breakPath
-    };
 
     var all$1 = function (universe, look, elements, f) {
       var head = elements[0];
@@ -2244,35 +1952,14 @@ var table = (function (domGlobals) {
         return end.filter(curry(universe.eq, s));
       });
     };
-    var Shared = { oneAll: oneAll };
 
     var eq$1 = function (universe, item) {
       return curry(universe.eq, item);
     };
-    var unsafeSubset = function (universe, common, ps1, ps2) {
-      var children = universe.property().children(common);
-      if (universe.eq(common, ps1[0]))
-        return Option.some([ps1[0]]);
-      if (universe.eq(common, ps2[0]))
-        return Option.some([ps2[0]]);
-      var finder = function (ps) {
-        var topDown = reverse(ps);
-        var index = findIndex(topDown, eq$1(universe, common)).getOr(-1);
-        var item = index < topDown.length - 1 ? topDown[index + 1] : topDown[index];
-        return findIndex(children, eq$1(universe, item));
-      };
-      var startIndex = finder(ps1);
-      var endIndex = finder(ps2);
-      return startIndex.bind(function (sIndex) {
-        return endIndex.map(function (eIndex) {
-          var first = Math.min(sIndex, eIndex);
-          var last = Math.max(sIndex, eIndex);
-          return children.slice(first, last + 1);
-        });
-      });
-    };
-    var ancestors$2 = function (universe, start, end, _isRoot) {
-      var isRoot = _isRoot !== undefined ? _isRoot : constant(false);
+    var ancestors$2 = function (universe, start, end, isRoot) {
+      if (isRoot === void 0) {
+        isRoot = never;
+      }
       var ps1 = [start].concat(universe.up().all(start));
       var ps2 = [end].concat(universe.up().all(end));
       var prune = function (path) {
@@ -2294,244 +1981,72 @@ var table = (function (domGlobals) {
         shared: constant(shared)
       };
     };
-    var subset = function (universe, start, end) {
-      var ancs = ancestors$2(universe, start, end);
-      return ancs.shared().bind(function (shared) {
-        return unsafeSubset(universe, shared, ancs.firstpath(), ancs.secondpath());
-      });
-    };
-    var Subset = {
-      subset: subset,
-      ancestors: ancestors$2
-    };
 
-    var sharedOne = function (universe, look, elements) {
-      return Shared.oneAll(universe, look, elements);
-    };
-    var subset$1 = function (universe, start, finish) {
-      return Subset.subset(universe, start, finish);
-    };
-    var ancestors$3 = function (universe, start, finish, _isRoot) {
-      return Subset.ancestors(universe, start, finish, _isRoot);
-    };
-    var breakToLeft$1 = function (universe, parent, child) {
-      return Breaker.breakToLeft(universe, parent, child);
-    };
-    var breakToRight$1 = function (universe, parent, child) {
-      return Breaker.breakToRight(universe, parent, child);
-    };
-    var breakPath$1 = function (universe, child, isTop, breaker) {
-      return Breaker.breakPath(universe, child, isTop, breaker);
-    };
-    var Parent = {
-      sharedOne: sharedOne,
-      subset: subset$1,
-      ancestors: ancestors$3,
-      breakToLeft: breakToLeft$1,
-      breakToRight: breakToRight$1,
-      breakPath: breakPath$1
-    };
+    var sharedOne = oneAll;
+    var ancestors$3 = ancestors$2;
 
     var universe = DomUniverse();
     var sharedOne$1 = function (look, elements) {
-      return Parent.sharedOne(universe, function (universe, element) {
+      return sharedOne(universe, function (_universe, element) {
         return look(element);
       }, elements);
     };
-    var subset$2 = function (start, finish) {
-      return Parent.subset(universe, start, finish);
-    };
-    var ancestors$4 = function (start, finish, _isRoot) {
-      return Parent.ancestors(universe, start, finish, _isRoot);
-    };
-    var breakToLeft$2 = function (parent, child) {
-      return Parent.breakToLeft(universe, parent, child);
-    };
-    var breakToRight$2 = function (parent, child) {
-      return Parent.breakToRight(universe, parent, child);
-    };
-    var breakPath$2 = function (child, isTop, breaker) {
-      return Parent.breakPath(universe, child, isTop, function (u, p, c) {
-        return breaker(p, c);
-      });
-    };
-    var DomParent = {
-      sharedOne: sharedOne$1,
-      subset: subset$2,
-      ancestors: ancestors$4,
-      breakToLeft: breakToLeft$2,
-      breakToRight: breakToRight$2,
-      breakPath: breakPath$2
+    var ancestors$4 = function (start, finish, isRoot) {
+      return ancestors$3(universe, start, finish, isRoot);
     };
 
-    var inSelection = function (bounds, detail) {
-      var leftEdge = detail.column();
-      var rightEdge = detail.column() + detail.colspan() - 1;
-      var topEdge = detail.row();
-      var bottomEdge = detail.row() + detail.rowspan() - 1;
-      return leftEdge <= bounds.finishCol() && rightEdge >= bounds.startCol() && (topEdge <= bounds.finishRow() && bottomEdge >= bounds.startRow());
-    };
-    var isWithin = function (bounds, detail) {
-      return detail.column() >= bounds.startCol() && detail.column() + detail.colspan() - 1 <= bounds.finishCol() && detail.row() >= bounds.startRow() && detail.row() + detail.rowspan() - 1 <= bounds.finishRow();
-    };
-    var isRectangular = function (warehouse, bounds) {
-      var isRect = true;
-      var detailIsWithin = curry(isWithin, bounds);
-      for (var i = bounds.startRow(); i <= bounds.finishRow(); i++) {
-        for (var j = bounds.startCol(); j <= bounds.finishCol(); j++) {
-          isRect = isRect && Warehouse.getAt(warehouse, i, j).exists(detailIsWithin);
-        }
-      }
-      return isRect ? Option.some(bounds) : Option.none();
-    };
-    var CellBounds = {
-      inSelection: inSelection,
-      isWithin: isWithin,
-      isRectangular: isRectangular
-    };
-
-    var getBounds = function (detailA, detailB) {
-      return Structs.bounds(Math.min(detailA.row(), detailB.row()), Math.min(detailA.column(), detailB.column()), Math.max(detailA.row() + detailA.rowspan() - 1, detailB.row() + detailB.rowspan() - 1), Math.max(detailA.column() + detailA.colspan() - 1, detailB.column() + detailB.colspan() - 1));
-    };
-    var getAnyBox = function (warehouse, startCell, finishCell) {
-      var startCoords = Warehouse.findItem(warehouse, startCell, eq);
-      var finishCoords = Warehouse.findItem(warehouse, finishCell, eq);
-      return startCoords.bind(function (sc) {
-        return finishCoords.map(function (fc) {
-          return getBounds(sc, fc);
-        });
-      });
-    };
-    var getBox = function (warehouse, startCell, finishCell) {
-      return getAnyBox(warehouse, startCell, finishCell).bind(function (bounds) {
-        return CellBounds.isRectangular(warehouse, bounds);
-      });
-    };
-    var CellGroup = {
-      getAnyBox: getAnyBox,
-      getBox: getBox
-    };
-
-    var moveBy = function (warehouse, cell, row, column) {
-      return Warehouse.findItem(warehouse, cell, eq).bind(function (detail) {
-        var startRow = row > 0 ? detail.row() + detail.rowspan() - 1 : detail.row();
-        var startCol = column > 0 ? detail.column() + detail.colspan() - 1 : detail.column();
-        var dest = Warehouse.getAt(warehouse, startRow + row, startCol + column);
-        return dest.map(function (d) {
-          return d.element();
-        });
-      });
-    };
-    var intercepts = function (warehouse, start, finish) {
-      return CellGroup.getAnyBox(warehouse, start, finish).map(function (bounds) {
-        var inside = Warehouse.filterItems(warehouse, curry(CellBounds.inSelection, bounds));
-        return map(inside, function (detail) {
-          return detail.element();
-        });
-      });
-    };
-    var parentCell = function (warehouse, innerCell) {
-      var isContainedBy = function (c1, c2) {
-        return contains$2(c2, c1);
-      };
-      return Warehouse.findItem(warehouse, innerCell, isContainedBy).bind(function (detail) {
-        return detail.element();
-      });
-    };
-    var CellFinder = {
-      moveBy: moveBy,
-      intercepts: intercepts,
-      parentCell: parentCell
-    };
-
-    var moveBy$1 = function (cell, deltaRow, deltaColumn) {
-      return TableLookup.table(cell).bind(function (table) {
-        var warehouse = getWarehouse(table);
-        return CellFinder.moveBy(warehouse, cell, deltaRow, deltaColumn);
-      });
-    };
-    var intercepts$1 = function (table, first, last) {
-      var warehouse = getWarehouse(table);
-      return CellFinder.intercepts(warehouse, first, last);
-    };
-    var nestedIntercepts = function (table, first, firstTable, last, lastTable) {
-      var warehouse = getWarehouse(table);
-      var startCell = eq(table, firstTable) ? first : CellFinder.parentCell(warehouse, first);
-      var lastCell = eq(table, lastTable) ? last : CellFinder.parentCell(warehouse, last);
-      return CellFinder.intercepts(warehouse, startCell, lastCell);
-    };
-    var getBox$1 = function (table, first, last) {
-      var warehouse = getWarehouse(table);
-      return CellGroup.getBox(warehouse, first, last);
-    };
-    var getWarehouse = function (table) {
-      var list = DetailsList.fromTable(table);
-      return Warehouse.generate(list);
-    };
-    var TablePositions = {
-      moveBy: moveBy$1,
-      intercepts: intercepts$1,
-      nestedIntercepts: nestedIntercepts,
-      getBox: getBox$1
-    };
-
-    var lookupTable = function (container, isRoot) {
+    var lookupTable = function (container) {
       return ancestor$1(container, 'table');
     };
-    var identified = MixedBag([
-      'boxes',
-      'start',
-      'finish'
-    ], []);
     var identify = function (start, finish, isRoot) {
       var getIsRoot = function (rootTable) {
         return function (element) {
-          return isRoot(element) || eq(element, rootTable);
+          return isRoot !== undefined && isRoot(element) || eq(element, rootTable);
         };
       };
       if (eq(start, finish)) {
-        return Option.some(identified({
+        return Option.some({
           boxes: Option.some([start]),
           start: start,
           finish: finish
-        }));
+        });
       } else {
-        return lookupTable(start, isRoot).bind(function (startTable) {
-          return lookupTable(finish, isRoot).bind(function (finishTable) {
+        return lookupTable(start).bind(function (startTable) {
+          return lookupTable(finish).bind(function (finishTable) {
             if (eq(startTable, finishTable)) {
-              return Option.some(identified({
-                boxes: TablePositions.intercepts(startTable, start, finish),
+              return Option.some({
+                boxes: intercepts$1(startTable, start, finish),
                 start: start,
                 finish: finish
-              }));
+              });
             } else if (contains$2(startTable, finishTable)) {
               var ancestorCells = ancestors$1(finish, 'td,th', getIsRoot(startTable));
               var finishCell = ancestorCells.length > 0 ? ancestorCells[ancestorCells.length - 1] : finish;
-              return Option.some(identified({
-                boxes: TablePositions.nestedIntercepts(startTable, start, startTable, finish, finishTable),
+              return Option.some({
+                boxes: nestedIntercepts(startTable, start, startTable, finish, finishTable),
                 start: start,
                 finish: finishCell
-              }));
+              });
             } else if (contains$2(finishTable, startTable)) {
               var ancestorCells = ancestors$1(start, 'td,th', getIsRoot(finishTable));
               var startCell = ancestorCells.length > 0 ? ancestorCells[ancestorCells.length - 1] : start;
-              return Option.some(identified({
-                boxes: TablePositions.nestedIntercepts(finishTable, start, startTable, finish, finishTable),
+              return Option.some({
+                boxes: nestedIntercepts(finishTable, start, startTable, finish, finishTable),
                 start: start,
                 finish: startCell
-              }));
+              });
             } else {
-              return DomParent.ancestors(start, finish).shared().bind(function (lca) {
+              return ancestors$4(start, finish).shared().bind(function (lca) {
                 return closest$1(lca, 'table', isRoot).bind(function (lcaTable) {
                   var finishAncestorCells = ancestors$1(finish, 'td,th', getIsRoot(lcaTable));
                   var finishCell = finishAncestorCells.length > 0 ? finishAncestorCells[finishAncestorCells.length - 1] : finish;
                   var startAncestorCells = ancestors$1(start, 'td,th', getIsRoot(lcaTable));
                   var startCell = startAncestorCells.length > 0 ? startAncestorCells[startAncestorCells.length - 1] : start;
-                  return Option.some(identified({
-                    boxes: TablePositions.nestedIntercepts(lcaTable, start, startTable, finish, finishTable),
+                  return Option.some({
+                    boxes: nestedIntercepts(lcaTable, start, startTable, finish, finishTable),
                     start: startCell,
                     finish: finishCell
-                  }));
+                  });
                 });
               });
             }
@@ -2551,7 +2066,7 @@ var table = (function (domGlobals) {
     var getEdges = function (container, firstSelectedSelector, lastSelectedSelector) {
       return descendant$1(container, firstSelectedSelector).bind(function (first) {
         return descendant$1(container, lastSelectedSelector).bind(function (last) {
-          return DomParent.sharedOne(lookupTable, [
+          return sharedOne$1(lookupTable, [
             first,
             last
           ]).map(function (tbl) {
@@ -2568,11 +2083,11 @@ var table = (function (domGlobals) {
       return ancestor$1(finish, 'table').bind(function (table) {
         return descendant$1(table, firstSelectedSelector).bind(function (start) {
           return identify(start, finish).bind(function (identified) {
-            return identified.boxes().map(function (boxes) {
+            return identified.boxes.map(function (boxes) {
               return {
-                boxes: constant(boxes),
-                start: constant(identified.start()),
-                finish: constant(identified.finish())
+                boxes: boxes,
+                start: identified.start,
+                finish: identified.finish
               };
             });
           });
@@ -2581,23 +2096,17 @@ var table = (function (domGlobals) {
     };
     var shiftSelection = function (boxes, deltaRow, deltaColumn, firstSelectedSelector, lastSelectedSelector) {
       return getLast(boxes, lastSelectedSelector).bind(function (last) {
-        return TablePositions.moveBy(last, deltaRow, deltaColumn).bind(function (finish) {
+        return moveBy$1(last, deltaRow, deltaColumn).bind(function (finish) {
           return expandTo(finish, firstSelectedSelector);
         });
       });
     };
-    var CellSelection = {
-      identify: identify,
-      retrieve: retrieve,
-      shiftSelection: shiftSelection,
-      getEdges: getEdges
-    };
 
     var retrieve$1 = function (container, selector) {
-      return CellSelection.retrieve(container, selector);
+      return retrieve(container, selector);
     };
     var retrieveBox = function (container, firstSelectedSelector, lastSelectedSelector) {
-      return CellSelection.getEdges(container, firstSelectedSelector, lastSelectedSelector).bind(function (edges) {
+      return getEdges(container, firstSelectedSelector, lastSelectedSelector).bind(function (edges) {
         var isRoot = function (ancestor) {
           return eq(container, ancestor);
         };
@@ -2605,32 +2114,37 @@ var table = (function (domGlobals) {
         var lastAncestor = ancestor$1(edges.last(), 'thead,tfoot,tbody,table', isRoot);
         return firstAncestor.bind(function (fA) {
           return lastAncestor.bind(function (lA) {
-            return eq(fA, lA) ? TablePositions.getBox(edges.table(), edges.first(), edges.last()) : Option.none();
+            return eq(fA, lA) ? getBox$1(edges.table(), edges.first(), edges.last()) : Option.none();
           });
         });
       });
     };
-    var TableSelection = {
-      retrieve: retrieve$1,
-      retrieveBox: retrieveBox
-    };
 
-    var selected = 'data-mce-selected';
-    var selectedSelector = 'td[' + selected + '],th[' + selected + ']';
-    var attributeSelector = '[' + selected + ']';
-    var firstSelected = 'data-mce-first-selected';
-    var firstSelectedSelector = 'td[' + firstSelected + '],th[' + firstSelected + ']';
-    var lastSelected = 'data-mce-last-selected';
-    var lastSelectedSelector = 'td[' + lastSelected + '],th[' + lastSelected + ']';
-    var Ephemera = {
-      selected: constant(selected),
-      selectedSelector: constant(selectedSelector),
-      attributeSelector: constant(attributeSelector),
-      firstSelected: constant(firstSelected),
-      firstSelectedSelector: constant(firstSelectedSelector),
-      lastSelected: constant(lastSelected),
-      lastSelectedSelector: constant(lastSelectedSelector)
-    };
+    var strSelected = 'data-mce-selected';
+    var strSelectedSelector = 'td[' + strSelected + '],th[' + strSelected + ']';
+    var strAttributeSelector = '[' + strSelected + ']';
+    var strFirstSelected = 'data-mce-first-selected';
+    var strFirstSelectedSelector = 'td[' + strFirstSelected + '],th[' + strFirstSelected + ']';
+    var strLastSelected = 'data-mce-last-selected';
+    var strLastSelectedSelector = 'td[' + strLastSelected + '],th[' + strLastSelected + ']';
+    var selected = strSelected;
+    var selectedSelector = strSelectedSelector;
+    var attributeSelector = strAttributeSelector;
+    var firstSelected = strFirstSelected;
+    var firstSelectedSelector = strFirstSelectedSelector;
+    var lastSelected = strLastSelected;
+    var lastSelectedSelector = strLastSelectedSelector;
+
+    var Ephemera = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        selected: selected,
+        selectedSelector: selectedSelector,
+        attributeSelector: attributeSelector,
+        firstSelected: firstSelected,
+        firstSelectedSelector: firstSelectedSelector,
+        lastSelected: lastSelected,
+        lastSelectedSelector: lastSelectedSelector
+    });
 
     var generate$1 = function (cases) {
       if (!isArray(cases)) {
@@ -2662,8 +2176,9 @@ var table = (function (domGlobals) {
             throw new Error('Wrong number of arguments to case ' + key + '. Expected ' + value.length + ' (' + value + '), got ' + argLength);
           }
           var args = new Array(argLength);
-          for (var i = 0; i < args.length; i++)
+          for (var i = 0; i < args.length; i++) {
             args[i] = arguments[i];
+          }
           var match = function (branches) {
             var branchKeys = keys(branches);
             if (constructors.length !== branchKeys.length) {
@@ -2672,8 +2187,9 @@ var table = (function (domGlobals) {
             var allReqd = forall(constructors, function (reqKey) {
               return contains(branchKeys, reqKey);
             });
-            if (!allReqd)
+            if (!allReqd) {
               throw new Error('Not all branches were specified when using match. Specified: ' + branchKeys.join(', ') + '\nRequired: ' + constructors.join(', '));
+            }
             return branches[key].apply(null, args);
           };
           return {
@@ -2707,15 +2223,12 @@ var table = (function (domGlobals) {
     var cata = function (subject, onNone, onMultiple, onSingle) {
       return subject.fold(onNone, onMultiple, onSingle);
     };
-    var SelectionTypes = {
-      cata: cata,
-      none: type$1.none,
-      multiple: type$1.multiple,
-      single: type$1.single
-    };
+    var none$1 = type$1.none;
+    var multiple = type$1.multiple;
+    var single = type$1.single;
 
     var selection = function (cell, selections) {
-      return SelectionTypes.cata(selections.get(), constant([]), identity, constant([cell]));
+      return cata(selections.get(), constant([]), identity, constant([cell]));
     };
     var unmergable = function (cell, selections) {
       var hasSpan = function (elem) {
@@ -2725,22 +2238,17 @@ var table = (function (domGlobals) {
       return candidates.length > 0 && forall(candidates, hasSpan) ? Option.some(candidates) : Option.none();
     };
     var mergable = function (table, selections) {
-      return SelectionTypes.cata(selections.get(), Option.none, function (cells, _env) {
+      return cata(selections.get(), Option.none, function (cells, _env) {
         if (cells.length === 0) {
           return Option.none();
         }
-        return TableSelection.retrieveBox(table, Ephemera.firstSelectedSelector(), Ephemera.lastSelectedSelector()).bind(function (bounds) {
+        return retrieveBox(table, firstSelectedSelector, lastSelectedSelector).bind(function (bounds) {
           return cells.length > 1 ? Option.some({
             bounds: constant(bounds),
             cells: constant(cells)
           }) : Option.none();
         });
       }, Option.none);
-    };
-    var CellOperations = {
-      mergable: mergable,
-      unmergable: unmergable,
-      selection: selection
     };
 
     var noMenu = function (cell) {
@@ -2754,36 +2262,35 @@ var table = (function (domGlobals) {
     var forMenu = function (selections, table, cell) {
       return {
         element: constant(cell),
-        mergable: constant(CellOperations.mergable(table, selections)),
-        unmergable: constant(CellOperations.unmergable(cell, selections)),
-        selection: constant(CellOperations.selection(cell, selections))
+        mergable: constant(mergable(table, selections)),
+        unmergable: constant(unmergable(cell, selections)),
+        selection: constant(selection(cell, selections))
       };
     };
-    var notCell$1 = function (element) {
+    var notCell = function (element) {
       return noMenu(element);
     };
-    var paste$1 = Immutable('element', 'clipboard', 'generators');
+    var paste$1 = function (element, clipboard, generators) {
+      return {
+        element: constant(element),
+        clipboard: constant(clipboard),
+        generators: constant(generators)
+      };
+    };
     var pasteRows = function (selections, table, cell, clipboard, generators) {
       return {
         element: constant(cell),
         mergable: Option.none,
         unmergable: Option.none,
-        selection: constant(CellOperations.selection(cell, selections)),
+        selection: constant(selection(cell, selections)),
         clipboard: constant(clipboard),
         generators: constant(generators)
       };
     };
-    var TableTargets = {
-      noMenu: noMenu,
-      forMenu: forMenu,
-      notCell: notCell$1,
-      paste: paste$1,
-      pasteRows: pasteRows
-    };
 
     var extractSelected = function (cells) {
-      return TableLookup.table(cells[0]).map(deep).map(function (replica) {
-        return [CopySelected.extract(replica, Ephemera.attributeSelector())];
+      return table(cells[0]).map(deep).map(function (replica) {
+        return [extract(replica, attributeSelector)];
       });
     };
     var serializeElements = function (editor, elements) {
@@ -2805,7 +2312,7 @@ var table = (function (domGlobals) {
           });
         };
         if (e.selection === true) {
-          SelectionTypes.cata(selections.get(), noop, multiCellContext, noop);
+          cata(selections.get(), noop, multiCellContext, noop);
         }
       });
       editor.on('BeforeSetContent', function (e) {
@@ -2813,15 +2320,15 @@ var table = (function (domGlobals) {
           var cellOpt = Option.from(editor.dom.getParent(editor.selection.getStart(), 'th,td'));
           cellOpt.each(function (domCell) {
             var cell = Element.fromDom(domCell);
-            TableLookup.table(cell).each(function (table) {
+            table(cell).each(function (table) {
               var elements = filter(fromHtml$1(e.content), function (content) {
                 return name(content) !== 'meta';
               });
               if (elements.length === 1 && name(elements[0]) === 'table') {
                 e.preventDefault();
                 var doc = Element.fromDom(editor.getDoc());
-                var generators = TableFill.paste(doc);
-                var targets = TableTargets.paste(cell, elements[0], generators);
+                var generators = paste(doc);
+                var targets = paste$1(cell, elements[0], generators);
                 actions.pasteCells(table, targets).each(function (rng) {
                   editor.selection.setRng(rng);
                   editor.focus();
@@ -2833,7 +2340,6 @@ var table = (function (domGlobals) {
         }
       });
     };
-    var Clipboard = { registerEvents: registerEvents };
 
     function Dimension (name, getOffset) {
       var set = function (element, h) {
@@ -2896,8 +2402,8 @@ var table = (function (domGlobals) {
       return api$2.getOuter(element);
     };
 
-    var platform = PlatformDetection$1.detect();
     var needManualCalc = function () {
+      var platform = detect$3();
       return platform.browser.isIE() || platform.browser.isEdge();
     };
     var toNumber = function (px, fallback) {
@@ -2917,20 +2423,13 @@ var table = (function (domGlobals) {
       var borders = borderTop + borderBottom;
       return boxSizing === 'border-box' ? height : height - paddingTop - paddingBottom - borders;
     };
-    var getWidth = function (cell) {
-      return getProp(cell, 'width', get$5(cell));
-    };
     var getHeight = function (cell) {
       return needManualCalc() ? getCalculatedHeight(cell) : getProp(cell, 'height', get$4(cell));
     };
-    var RuntimeSize = {
-      getWidth: getWidth,
-      getHeight: getHeight
-    };
 
-    var genericSizeRegex = /(\d+(\.\d+)?)(\w|%)*/;
-    var percentageBasedSizeRegex = /(\d+(\.\d+)?)%/;
-    var pixelBasedSizeRegex = /(\d+(\.\d+)?)px|em/;
+    var rGenericSizeRegex = /(\d+(\.\d+)?)(\w|%)*/;
+    var rPercentageBasedSizeRegex = /(\d+(\.\d+)?)%/;
+    var rPixelBasedSizeRegex = /(\d+(\.\d+)?)px|em/;
     var setPixelWidth = function (cell, amount) {
       set$1(cell, 'width', amount + 'px');
     };
@@ -2942,11 +2441,11 @@ var table = (function (domGlobals) {
     };
     var getHeightValue = function (cell) {
       return getRaw(cell, 'height').getOrThunk(function () {
-        return RuntimeSize.getHeight(cell) + 'px';
+        return getHeight(cell) + 'px';
       });
     };
     var convert = function (cell, number, getter, setter) {
-      var newSize = TableLookup.table(cell).map(function (table) {
+      var newSize = table(cell).map(function (table) {
         var total = getter(table);
         return Math.floor(number / 100 * total);
       }).getOr(number);
@@ -2969,9 +2468,6 @@ var table = (function (domGlobals) {
       var span = getSpan(cell, type);
       return v / span;
     };
-    var getSpan = function (cell, type) {
-      return has$1(cell, type) ? parseInt(get$1(cell, type), 10) : 1;
-    };
     var getRawWidth = function (element) {
       var cssWidth = getRaw(element, 'width');
       return cssWidth.fold(function () {
@@ -2984,8 +2480,8 @@ var table = (function (domGlobals) {
       return cellWidth / tableSize.pixelWidth() * 100;
     };
     var choosePercentageSize = function (element, width, tableSize) {
-      if (percentageBasedSizeRegex.test(width)) {
-        var percentMatch = percentageBasedSizeRegex.exec(width);
+      var percentMatch = rPercentageBasedSizeRegex.exec(width);
+      if (percentMatch !== null) {
         return parseFloat(percentMatch[1]);
       } else {
         var intWidth = get$5(element);
@@ -3005,16 +2501,16 @@ var table = (function (domGlobals) {
       return cellWidth / 100 * tableSize.pixelWidth();
     };
     var choosePixelSize = function (element, width, tableSize) {
-      if (pixelBasedSizeRegex.test(width)) {
-        var pixelMatch = pixelBasedSizeRegex.exec(width);
+      var pixelMatch = rPixelBasedSizeRegex.exec(width);
+      if (pixelMatch !== null) {
         return parseInt(pixelMatch[1], 10);
-      } else if (percentageBasedSizeRegex.test(width)) {
-        var percentMatch = percentageBasedSizeRegex.exec(width);
+      }
+      var percentMatch = rPercentageBasedSizeRegex.exec(width);
+      if (percentMatch !== null) {
         var floatWidth = parseFloat(percentMatch[1]);
         return normalizePixelWidth(floatWidth, tableSize);
-      } else {
-        return get$5(element);
       }
+      return get$5(element);
     };
     var getPixelWidth = function (cell, tableSize) {
       var width = getRawWidth(cell);
@@ -3030,10 +2526,10 @@ var table = (function (domGlobals) {
     var getGenericWidth = function (cell) {
       var width = getRawWidth(cell);
       return width.bind(function (w) {
-        if (genericSizeRegex.test(w)) {
-          var match = genericSizeRegex.exec(w);
+        var match = rGenericSizeRegex.exec(w);
+        if (match !== null) {
           return Option.some({
-            width: constant(match[1]),
+            width: constant(parseFloat(match[1])),
             unit: constant(match[3])
           });
         } else {
@@ -3044,40 +2540,16 @@ var table = (function (domGlobals) {
     var setGenericWidth = function (cell, amount, unit) {
       set$1(cell, 'width', amount + unit);
     };
-    var Sizes = {
-      percentageBasedSizeRegex: constant(percentageBasedSizeRegex),
-      pixelBasedSizeRegex: constant(pixelBasedSizeRegex),
-      setPixelWidth: setPixelWidth,
-      setPercentageWidth: setPercentageWidth,
-      setHeight: setHeight,
-      getPixelWidth: getPixelWidth,
-      getPercentageWidth: getPercentageWidth,
-      getGenericWidth: getGenericWidth,
-      setGenericWidth: setGenericWidth,
-      getHeight: getHeight$1,
-      getRawWidth: getRawWidth
-    };
+    var percentageBasedSizeRegex = constant(rPercentageBasedSizeRegex);
+    var pixelBasedSizeRegex = constant(rPixelBasedSizeRegex);
 
     var halve = function (main, other) {
-      var width = Sizes.getGenericWidth(main);
+      var width = getGenericWidth(main);
       width.each(function (w) {
         var newWidth = w.width() / 2;
-        Sizes.setGenericWidth(main, newWidth, w.unit());
-        Sizes.setGenericWidth(other, newWidth, w.unit());
+        setGenericWidth(main, newWidth, w.unit());
+        setGenericWidth(other, newWidth, w.unit());
       });
-    };
-    var CellMutations = { halve: halve };
-
-    var attached = function (element, scope) {
-      var doc = scope || Element.fromDom(domGlobals.document.documentElement);
-      return ancestor(element, curry(eq, doc)).isSome();
-    };
-    var windowOf = function (element) {
-      var dom = element.dom();
-      if (dom === dom.window && element instanceof domGlobals.Window) {
-        return element;
-      }
-      return isDocument(element) ? dom.defaultView || dom.parentWindow : null;
     };
 
     var r = function (left, top) {
@@ -3097,13 +2569,20 @@ var table = (function (domGlobals) {
       return Position(box.left, box.top);
     };
     var firstDefinedOrZero = function (a, b) {
-      return a !== undefined ? a : b !== undefined ? b : 0;
+      if (a !== undefined) {
+        return a;
+      } else {
+        return b !== undefined ? b : 0;
+      }
     };
     var absolute = function (element) {
       var doc = element.dom().ownerDocument;
       var body = doc.body;
-      var win = windowOf(Element.fromDom(doc));
+      var win = doc.defaultView;
       var html = doc.documentElement;
+      if (body === element.dom()) {
+        return Position(body.offsetLeft, body.offsetTop);
+      }
       var scrollTop = firstDefinedOrZero(win.pageYOffset, html.scrollTop);
       var scrollLeft = firstDefinedOrZero(win.pageXOffset, html.scrollLeft);
       var clientTop = firstDefinedOrZero(html.clientTop, body.clientTop);
@@ -3114,18 +2593,27 @@ var table = (function (domGlobals) {
       var dom = element.dom();
       var doc = dom.ownerDocument;
       var body = doc.body;
-      var html = Element.fromDom(doc.documentElement);
       if (body === dom) {
         return Position(body.offsetLeft, body.offsetTop);
       }
-      if (!attached(element, html)) {
+      if (!inBody(element)) {
         return Position(0, 0);
       }
       return boxPosition(dom);
     };
 
-    var rowInfo = Immutable('row', 'y');
-    var colInfo = Immutable('col', 'x');
+    var rowInfo = function (row, y) {
+      return {
+        row: row,
+        y: y
+      };
+    };
+    var colInfo = function (col, x) {
+      return {
+        col: col,
+        x: x
+      };
+    };
     var rtlEdge = function (cell) {
       var pos = absolute(cell);
       return pos.left() + getOuter$1(cell);
@@ -3162,33 +2650,34 @@ var table = (function (domGlobals) {
       });
       return lines.concat([lastLine]);
     };
-    var negate = function (step, _table) {
+    var negate = function (step) {
       return -step;
     };
     var height = {
       delta: identity,
-      positions: curry(findPositions, getTopEdge, getBottomEdge),
+      positions: function (optElements) {
+        return findPositions(getTopEdge, getBottomEdge, optElements);
+      },
       edge: getTop
     };
     var ltr = {
       delta: identity,
       edge: ltrEdge,
-      positions: curry(findPositions, getLeftEdge, getRightEdge)
+      positions: function (optElements) {
+        return findPositions(getLeftEdge, getRightEdge, optElements);
+      }
     };
     var rtl = {
       delta: negate,
       edge: rtlEdge,
-      positions: curry(findPositions, getRightEdge, getLeftEdge)
-    };
-    var BarPositions = {
-      height: height,
-      rtl: rtl,
-      ltr: ltr
+      positions: function (optElements) {
+        return findPositions(getRightEdge, getLeftEdge, optElements);
+      }
     };
 
     var ResizeDirection = {
-      ltr: BarPositions.ltr,
-      rtl: BarPositions.rtl
+      ltr: ltr,
+      rtl: rtl
     };
 
     function TableDirection (directionAt) {
@@ -3199,7 +2688,7 @@ var table = (function (domGlobals) {
         return auto(table).delta(amount, table);
       };
       var positions = function (cols, table) {
-        return auto(table).positions(cols);
+        return auto(table).positions(cols, table);
       };
       var edge = function (cell) {
         return auto(cell).edge(cell);
@@ -3212,35 +2701,10 @@ var table = (function (domGlobals) {
     }
 
     var getGridSize = function (table) {
-      var input = DetailsList.fromTable(table);
+      var input = fromTable(table);
       var warehouse = Warehouse.generate(input);
-      return warehouse.grid();
+      return warehouse.grid;
     };
-    var TableGridSize = { getGridSize: getGridSize };
-
-    var hasOwnProperty$1 = Object.prototype.hasOwnProperty;
-    var shallow$1 = function (old, nu) {
-      return nu;
-    };
-    var baseMerge = function (merger) {
-      return function () {
-        var objects = new Array(arguments.length);
-        for (var i = 0; i < objects.length; i++)
-          objects[i] = arguments[i];
-        if (objects.length === 0)
-          throw new Error('Can\'t merge zero objects');
-        var ret = {};
-        for (var j = 0; j < objects.length; j++) {
-          var curObject = objects[j];
-          for (var key in curObject)
-            if (hasOwnProperty$1.call(curObject, key)) {
-              ret[key] = merger(ret[key], curObject[key]);
-            }
-        }
-        return ret;
-      };
-    };
-    var merge = baseMerge(shallow$1);
 
     var cat = function (arr) {
       var r = [];
@@ -3251,15 +2715,6 @@ var table = (function (domGlobals) {
         arr[i].each(push);
       }
       return r;
-    };
-    var findMap = function (arr, f) {
-      for (var i = 0; i < arr.length; i++) {
-        var r = f(arr[i], i);
-        if (r.isSome()) {
-          return r;
-        }
-      }
-      return Option.none();
     };
 
     var setIfNot = function (element, property, value, ignore) {
@@ -3327,12 +2782,12 @@ var table = (function (domGlobals) {
       renderOrRemoveSection(bodySection, 'tbody');
       renderOrRemoveSection(footSection, 'tfoot');
       return {
-        newRows: constant(newRows),
-        newCells: constant(newCells)
+        newRows: newRows,
+        newCells: newCells
       };
     };
     var copy$2 = function (grid) {
-      var rows = map(grid, function (row) {
+      return map(grid, function (row) {
         var tr = shallow(row.element());
         each(row.cells(), function (cell) {
           var clonedCell = deep(cell.element());
@@ -3342,11 +2797,6 @@ var table = (function (domGlobals) {
         });
         return tr;
       });
-      return rows;
-    };
-    var Redraw = {
-      render: render,
-      copy: copy$2
     };
 
     var read = function (element, attr) {
@@ -3383,21 +2833,6 @@ var table = (function (domGlobals) {
     var remove$4 = function (element, clazz) {
       return remove$3(element, 'class', clazz);
     };
-    var toggle = function (element, clazz) {
-      if (contains(get$7(element), clazz)) {
-        return remove$4(element, clazz);
-      } else {
-        return add$1(element, clazz);
-      }
-    };
-
-    var ClassList = /*#__PURE__*/Object.freeze({
-        get: get$7,
-        add: add$1,
-        remove: remove$4,
-        toggle: toggle,
-        supports: supports
-    });
 
     var add$2 = function (element, clazz) {
       if (supports(element)) {
@@ -3432,23 +2867,12 @@ var table = (function (domGlobals) {
       }
       return r;
     };
-    var range$1 = function (start, end) {
+    var range = function (start, end) {
       var r = [];
       for (var i = start; i < end; i++) {
         r.push(i);
       }
       return r;
-    };
-    var unique = function (xs, comparator) {
-      var result = [];
-      each(xs, function (x, i) {
-        if (i < xs.length - 1 && !comparator(x, xs[i + 1])) {
-          result.push(x);
-        } else if (i === xs.length - 1) {
-          result.push(x);
-        }
-      });
-      return result;
     };
     var deduce = function (xs, index) {
       if (index < 0 || index >= xs.length - 1) {
@@ -3493,17 +2917,11 @@ var table = (function (domGlobals) {
         });
       });
     };
-    var Util = {
-      repeat: repeat,
-      range: range$1,
-      unique: unique,
-      deduce: deduce
-    };
 
     var columns = function (warehouse) {
-      var grid = warehouse.grid();
-      var cols = Util.range(0, grid.columns());
-      var rowsArr = Util.range(0, grid.rows());
+      var grid = warehouse.grid;
+      var cols = range(0, grid.columns());
+      var rowsArr = range(0, grid.rows());
       return map(cols, function (col) {
         var getBlock = function () {
           return bind(rowsArr, function (r) {
@@ -3534,9 +2952,9 @@ var table = (function (domGlobals) {
       });
     };
     var rows$1 = function (warehouse) {
-      var grid = warehouse.grid();
-      var rowsArr = Util.range(0, grid.rows());
-      var cols = Util.range(0, grid.columns());
+      var grid = warehouse.grid;
+      var rowsArr = range(0, grid.rows());
+      var cols = range(0, grid.columns());
       return map(rowsArr, function (row) {
         var getBlock = function () {
           return bind(cols, function (c) {
@@ -3556,10 +2974,6 @@ var table = (function (domGlobals) {
         return decide(getBlock, isSingle, getFallback);
       });
     };
-    var Blocks = {
-      columns: columns,
-      rows: rows$1
-    };
 
     var css = function (namespace) {
       var dashNamespace = namespace.replace(/\./g, '-');
@@ -3570,54 +2984,50 @@ var table = (function (domGlobals) {
     };
 
     var styles = css('ephox-snooker');
-    var Styles = { resolve: styles.resolve };
+    var resolve = styles.resolve;
 
     var col = function (column, x, y, w, h) {
-      var blocker = Element.fromTag('div');
-      setAll$1(blocker, {
+      var bar = Element.fromTag('div');
+      setAll$1(bar, {
         position: 'absolute',
         left: x - w / 2 + 'px',
         top: y + 'px',
         height: h + 'px',
         width: w + 'px'
       });
-      setAll(blocker, {
+      setAll(bar, {
         'data-column': column,
         'role': 'presentation'
       });
-      return blocker;
+      return bar;
     };
-    var row$1 = function (r, x, y, w, h) {
-      var blocker = Element.fromTag('div');
-      setAll$1(blocker, {
+    var row = function (r, x, y, w, h) {
+      var bar = Element.fromTag('div');
+      setAll$1(bar, {
         position: 'absolute',
         left: x + 'px',
         top: y - h / 2 + 'px',
         height: h + 'px',
         width: w + 'px'
       });
-      setAll(blocker, {
+      setAll(bar, {
         'data-row': r,
         'role': 'presentation'
       });
-      return blocker;
-    };
-    var Bar = {
-      col: col,
-      row: row$1
+      return bar;
     };
 
-    var resizeBar = Styles.resolve('resizer-bar');
-    var resizeRowBar = Styles.resolve('resizer-rows');
-    var resizeColBar = Styles.resolve('resizer-cols');
+    var resizeBar = resolve('resizer-bar');
+    var resizeRowBar = resolve('resizer-rows');
+    var resizeColBar = resolve('resizer-cols');
     var BAR_THICKNESS = 7;
-    var clear = function (wire) {
+    var destroy = function (wire) {
       var previous = descendants$1(wire.parent(), '.' + resizeBar);
       each(previous, remove$2);
     };
     var drawBar = function (wire, positions, create) {
       var origin = wire.origin();
-      each(positions, function (cpOption, i) {
+      each(positions, function (cpOption) {
         cpOption.each(function (cp) {
           var bar = create(origin, cp);
           add$2(bar, resizeBar);
@@ -3627,14 +3037,14 @@ var table = (function (domGlobals) {
     };
     var refreshCol = function (wire, colPositions, position, tableHeight) {
       drawBar(wire, colPositions, function (origin, cp) {
-        var colBar = Bar.col(cp.col(), cp.x() - origin.left(), position.top() - origin.top(), BAR_THICKNESS, tableHeight);
+        var colBar = col(cp.col, cp.x - origin.left(), position.top() - origin.top(), BAR_THICKNESS, tableHeight);
         add$2(colBar, resizeColBar);
         return colBar;
       });
     };
     var refreshRow = function (wire, rowPositions, position, tableWidth) {
       drawBar(wire, rowPositions, function (origin, cp) {
-        var rowBar = Bar.row(cp.row(), position.left() - origin.left(), cp.y() - origin.top(), tableWidth, BAR_THICKNESS);
+        var rowBar = row(cp.row, position.left() - origin.left(), cp.y - origin.top(), tableWidth, BAR_THICKNESS);
         add$2(rowBar, resizeRowBar);
         return rowBar;
       });
@@ -3647,11 +3057,11 @@ var table = (function (domGlobals) {
       refreshCol(wire, colPositions, position, getOuter(table));
     };
     var refresh = function (wire, table, hdirection, vdirection) {
-      clear(wire);
-      var list = DetailsList.fromTable(table);
+      destroy(wire);
+      var list = fromTable(table);
       var warehouse = Warehouse.generate(list);
-      var rows = Blocks.rows(warehouse);
-      var cols = Blocks.columns(warehouse);
+      var rows = rows$1(warehouse);
+      var cols = columns(warehouse);
       refreshGrid(wire, table, rows, cols, hdirection, vdirection);
     };
     var each$2 = function (wire, f) {
@@ -3674,14 +3084,6 @@ var table = (function (domGlobals) {
     var isColBar = function (element) {
       return has$2(element, resizeColBar);
     };
-    var Bars = {
-      refresh: refresh,
-      hide: hide,
-      show: show,
-      destroy: clear,
-      isRowBar: isRowBar,
-      isColBar: isColBar
-    };
 
     var addCell = function (gridRow, index, cell) {
       var cells = gridRow.cells();
@@ -3695,12 +3097,12 @@ var table = (function (domGlobals) {
       cells[index] = cell;
     };
     var setCells = function (gridRow, cells) {
-      return Structs.rowcells(cells, gridRow.section());
+      return rowcells(cells, gridRow.section());
     };
     var mapCells = function (gridRow, f) {
       var cells = gridRow.cells();
       var r = map(cells, f);
-      return Structs.rowcells(r, gridRow.section());
+      return rowcells(r, gridRow.section());
     };
     var getCell = function (gridRow, index) {
       return gridRow.cells()[index];
@@ -3711,19 +3113,10 @@ var table = (function (domGlobals) {
     var cellLength = function (gridRow) {
       return gridRow.cells().length;
     };
-    var GridRow = {
-      addCell: addCell,
-      setCells: setCells,
-      mutateCell: mutateCell,
-      getCell: getCell,
-      getCellElement: getCellElement,
-      mapCells: mapCells,
-      cellLength: cellLength
-    };
 
     var getColumn = function (grid, index) {
       return map(grid, function (row) {
-        return GridRow.getCell(row, index);
+        return getCell(row, index);
       });
     };
     var getRow = function (grid, index) {
@@ -3749,15 +3142,14 @@ var table = (function (domGlobals) {
       var restOfColumn = getColumn(grid, column).slice(row);
       var endRowIndex = findDiff(restOfColumn, comparator);
       return {
-        colspan: constant(endColIndex),
-        rowspan: constant(endRowIndex)
+        colspan: endColIndex,
+        rowspan: endRowIndex
       };
     };
-    var TableGrid = { subgrid: subgrid };
 
     var toDetails = function (grid, comparator) {
-      var seen = map(grid, function (row, ri) {
-        return map(row.cells(), function (col, ci) {
+      var seen = map(grid, function (row) {
+        return map(row.cells(), function () {
           return false;
         });
       });
@@ -3771,73 +3163,68 @@ var table = (function (domGlobals) {
       return map(grid, function (row, ri) {
         var details = bind(row.cells(), function (cell, ci) {
           if (seen[ri][ci] === false) {
-            var result = TableGrid.subgrid(grid, ri, ci, comparator);
-            updateSeen(ri, ci, result.rowspan(), result.colspan());
-            return [Structs.detailnew(cell.element(), result.rowspan(), result.colspan(), cell.isNew())];
+            var result = subgrid(grid, ri, ci, comparator);
+            updateSeen(ri, ci, result.rowspan, result.colspan);
+            return [detailnew(cell.element(), result.rowspan, result.colspan, cell.isNew())];
           } else {
             return [];
           }
         });
-        return Structs.rowdetails(details, row.section());
+        return rowdetails(details, row.section());
       });
     };
     var toGrid = function (warehouse, generators, isNew) {
       var grid = [];
-      for (var i = 0; i < warehouse.grid().rows(); i++) {
+      for (var i = 0; i < warehouse.grid.rows(); i++) {
         var rowCells = [];
-        for (var j = 0; j < warehouse.grid().columns(); j++) {
+        for (var j = 0; j < warehouse.grid.columns(); j++) {
           var element = Warehouse.getAt(warehouse, i, j).map(function (item) {
-            return Structs.elementnew(item.element(), isNew);
+            return elementnew(item.element(), isNew);
           }).getOrThunk(function () {
-            return Structs.elementnew(generators.gap(), true);
+            return elementnew(generators.gap(), true);
           });
           rowCells.push(element);
         }
-        var row = Structs.rowcells(rowCells, warehouse.all()[i].section());
+        var row = rowcells(rowCells, warehouse.all[i].section());
         grid.push(row);
       }
       return grid;
     };
-    var Transitions = {
-      toDetails: toDetails,
-      toGrid: toGrid
-    };
 
     var fromWarehouse = function (warehouse, generators) {
-      return Transitions.toGrid(warehouse, generators, false);
+      return toGrid(warehouse, generators, false);
     };
     var deriveRows = function (rendered, generators) {
       var findRow = function (details) {
         var rowOfCells = findMap(details, function (detail) {
           return parent(detail.element()).map(function (row) {
             var isNew = parent(row).isNone();
-            return Structs.elementnew(row, isNew);
+            return elementnew(row, isNew);
           });
         });
         return rowOfCells.getOrThunk(function () {
-          return Structs.elementnew(generators.row(), true);
+          return elementnew(generators.row(), true);
         });
       };
       return map(rendered, function (details) {
         var row = findRow(details.details());
-        return Structs.rowdatanew(row.element(), details.details(), details.section(), row.isNew());
+        return rowdatanew(row.element(), details.details(), details.section(), row.isNew());
       });
     };
     var toDetailList = function (grid, generators) {
-      var rendered = Transitions.toDetails(grid, eq);
+      var rendered = toDetails(grid, eq);
       return deriveRows(rendered, generators);
     };
     var findInWarehouse = function (warehouse, element) {
-      var all = flatten(map(warehouse.all(), function (r) {
-        return r.cells();
-      }));
-      return find(all, function (e) {
-        return eq(element, e.element());
+      return findMap(warehouse.all, function (r) {
+        return find(r.cells(), function (e) {
+          return eq(element, e.element());
+        });
       });
     };
     var run = function (operation, extract, adjustment, postAction, genWrappers) {
       return function (wire, table, target, generators, direction) {
-        var input = DetailsList.fromTable(table);
+        var input = fromTable(table);
         var warehouse = Warehouse.generate(input);
         var output = extract(warehouse, target).map(function (info) {
           var model = fromWarehouse(warehouse, generators);
@@ -3851,86 +3238,78 @@ var table = (function (domGlobals) {
         return output.fold(function () {
           return Option.none();
         }, function (out) {
-          var newElements = Redraw.render(table, out.grid());
+          var newElements = render(table, out.grid());
           adjustment(table, out.grid(), direction);
           postAction(table);
-          Bars.refresh(wire, table, BarPositions.height, direction);
+          refresh(wire, table, height, direction);
           return Option.some({
             cursor: out.cursor,
-            newRows: newElements.newRows,
-            newCells: newElements.newCells
+            newRows: constant(newElements.newRows),
+            newCells: constant(newElements.newCells)
           });
         });
       };
     };
     var onCell = function (warehouse, target) {
-      return TableLookup.cell(target.element()).bind(function (cell) {
+      return cell(target.element()).bind(function (cell) {
         return findInWarehouse(warehouse, cell);
       });
     };
     var onPaste = function (warehouse, target) {
-      return TableLookup.cell(target.element()).bind(function (cell) {
+      return cell(target.element()).bind(function (cell) {
         return findInWarehouse(warehouse, cell).map(function (details) {
-          return merge(details, {
+          var value = __assign(__assign({}, details), {
             generators: target.generators,
             clipboard: target.clipboard
           });
+          return value;
         });
       });
     };
     var onPasteRows = function (warehouse, target) {
-      var details = map(target.selection(), function (cell) {
-        return TableLookup.cell(cell).bind(function (lc) {
+      var details = map(target.selection(), function (cell$1) {
+        return cell(cell$1).bind(function (lc) {
           return findInWarehouse(warehouse, lc);
         });
       });
       var cells = cat(details);
-      return cells.length > 0 ? Option.some(merge({ cells: cells }, {
+      return cells.length > 0 ? Option.some({
+        cells: cells,
         generators: target.generators,
         clipboard: target.clipboard
-      })) : Option.none();
+      }) : Option.none();
     };
-    var onMergable = function (warehouse, target) {
+    var onMergable = function (_warehouse, target) {
       return target.mergable();
     };
-    var onUnmergable = function (warehouse, target) {
+    var onUnmergable = function (_warehouse, target) {
       return target.unmergable();
     };
     var onCells = function (warehouse, target) {
-      var details = map(target.selection(), function (cell) {
-        return TableLookup.cell(cell).bind(function (lc) {
+      var details = map(target.selection(), function (cell$1) {
+        return cell(cell$1).bind(function (lc) {
           return findInWarehouse(warehouse, lc);
         });
       });
       var cells = cat(details);
       return cells.length > 0 ? Option.some(cells) : Option.none();
     };
-    var RunOperation = {
-      run: run,
-      toDetailList: toDetailList,
-      onCell: onCell,
-      onCells: onCells,
-      onPaste: onPaste,
-      onPasteRows: onPasteRows,
-      onMergable: onMergable,
-      onUnmergable: onUnmergable
-    };
 
-    var value$1 = function (o) {
+    var value = function (o) {
       var is = function (v) {
         return o === v;
       };
-      var or = function (opt) {
-        return value$1(o);
+      var or = function (_opt) {
+        return value(o);
       };
-      var orThunk = function (f) {
-        return value$1(o);
+      var orThunk = function (_f) {
+        return value(o);
       };
       var map = function (f) {
-        return value$1(f(o));
+        return value(f(o));
       };
-      var mapError = function (f) {
-        return value$1(o);
+      var mapError = function (_f) {
+        return value(o);
       };
       var each = function (f) {
         f(o);
@@ -3982,13 +3361,13 @@ var table = (function (domGlobals) {
       var orThunk = function (f) {
         return f();
       };
-      var map = function (f) {
+      var map = function (_f) {
         return error(message);
       };
       var mapError = function (f) {
         return error(f(message));
       };
-      var bind = function (f) {
+      var bind = function (_f) {
         return error(message);
       };
       var fold = function (onError, _) {
@@ -4016,70 +3395,64 @@ var table = (function (domGlobals) {
     var fromOption = function (opt, err) {
       return opt.fold(function () {
         return error(err);
-      }, value$1);
+      }, value);
     };
     var Result = {
-      value: value$1,
+      value: value,
       error: error,
       fromOption: fromOption
     };
 
     var measure = function (startAddress, gridA, gridB) {
-      if (startAddress.row() >= gridA.length || startAddress.column() > GridRow.cellLength(gridA[0])) {
+      if (startAddress.row() >= gridA.length || startAddress.column() > cellLength(gridA[0])) {
         return Result.error('invalid start address out of table bounds, row: ' + startAddress.row() + ', column: ' + startAddress.column());
       }
       var rowRemainder = gridA.slice(startAddress.row());
       var colRemainder = rowRemainder[0].cells().slice(startAddress.column());
-      var colRequired = GridRow.cellLength(gridB[0]);
+      var colRequired = cellLength(gridB[0]);
       var rowRequired = gridB.length;
       return Result.value({
-        rowDelta: constant(rowRemainder.length - rowRequired),
-        colDelta: constant(colRemainder.length - colRequired)
+        rowDelta: rowRemainder.length - rowRequired,
+        colDelta: colRemainder.length - colRequired
       });
     };
     var measureWidth = function (gridA, gridB) {
-      var colLengthA = GridRow.cellLength(gridA[0]);
-      var colLengthB = GridRow.cellLength(gridB[0]);
+      var colLengthA = cellLength(gridA[0]);
+      var colLengthB = cellLength(gridB[0]);
       return {
-        rowDelta: constant(0),
-        colDelta: constant(colLengthA - colLengthB)
+        rowDelta: 0,
+        colDelta: colLengthA - colLengthB
       };
     };
     var fill = function (cells, generator) {
       return map(cells, function () {
-        return Structs.elementnew(generator.cell(), true);
+        return elementnew(generator.cell(), true);
       });
     };
     var rowFill = function (grid, amount, generator) {
-      return grid.concat(Util.repeat(amount, function (_row) {
-        return GridRow.setCells(grid[grid.length - 1], fill(grid[grid.length - 1].cells(), generator));
+      return grid.concat(repeat(amount, function (_row) {
+        return setCells(grid[grid.length - 1], fill(grid[grid.length - 1].cells(), generator));
       }));
     };
     var colFill = function (grid, amount, generator) {
       return map(grid, function (row) {
-        return GridRow.setCells(row, row.cells().concat(fill(Util.range(0, amount), generator)));
+        return setCells(row, row.cells().concat(fill(range(0, amount), generator)));
       });
     };
     var tailor = function (gridA, delta, generator) {
-      var fillCols = delta.colDelta() < 0 ? colFill : identity;
-      var fillRows = delta.rowDelta() < 0 ? rowFill : identity;
-      var modifiedCols = fillCols(gridA, Math.abs(delta.colDelta()), generator);
-      var tailoredGrid = fillRows(modifiedCols, Math.abs(delta.rowDelta()), generator);
-      return tailoredGrid;
-    };
-    var Fitment = {
-      measure: measure,
-      measureWidth: measureWidth,
-      tailor: tailor
+      var fillCols = delta.colDelta < 0 ? colFill : identity;
+      var fillRows = delta.rowDelta < 0 ? rowFill : identity;
+      var modifiedCols = fillCols(gridA, Math.abs(delta.colDelta), generator);
+      return fillRows(modifiedCols, Math.abs(delta.rowDelta), generator);
     };
 
-    var merge$1 = function (grid, bounds, comparator, substitution) {
+    var merge = function (grid, bounds, comparator, substitution) {
       if (grid.length === 0) {
         return grid;
       }
       for (var i = bounds.startRow(); i <= bounds.finishRow(); i++) {
         for (var j = bounds.startCol(); j <= bounds.finishCol(); j++) {
-          GridRow.mutateCell(grid[i], j, Structs.elementnew(substitution(), false));
+          mutateCell(grid[i], j, elementnew(substitution(), false));
         }
       }
       return grid;
@@ -4087,11 +3460,11 @@ var table = (function (domGlobals) {
     var unmerge = function (grid, target, comparator, substitution) {
       var first = true;
       for (var i = 0; i < grid.length; i++) {
-        for (var j = 0; j < GridRow.cellLength(grid[0]); j++) {
-          var current = GridRow.getCellElement(grid[i], j);
+        for (var j = 0; j < cellLength(grid[0]); j++) {
+          var current = getCellElement(grid[i], j);
           var isToReplace = comparator(current, target);
           if (isToReplace === true && first === false) {
-            GridRow.mutateCell(grid[i], j, Structs.elementnew(substitution(), true));
+            mutateCell(grid[i], j, elementnew(substitution(), true));
           } else if (isToReplace === true) {
             first = false;
           }
@@ -4121,11 +3494,11 @@ var table = (function (domGlobals) {
                   replacement = Option.some(substitution());
                 }
                 replacement.each(function (sub) {
-                  GridRow.mutateCell(grid[i], j, Structs.elementnew(sub, true));
+                  mutateCell(grid[i], j, elementnew(sub, true));
                 });
               }
             };
-            for (var j = 0; j < GridRow.cellLength(grid[0]); j++) {
+            for (var j = 0; j < cellLength(grid[0]); j++) {
               _loop_2(j);
             }
           };
@@ -4136,96 +3509,69 @@ var table = (function (domGlobals) {
       }
       return grid;
     };
-    var MergingOperations = {
-      merge: merge$1,
-      unmerge: unmerge,
-      splitRows: splitRows
-    };
 
     var isSpanning = function (grid, row, col, comparator) {
-      var candidate = GridRow.getCell(grid[row], col);
+      var candidate = getCell(grid[row], col);
       var matching = curry(comparator, candidate.element());
       var currentRow = grid[row];
-      return grid.length > 1 && GridRow.cellLength(currentRow) > 1 && (col > 0 && matching(GridRow.getCellElement(currentRow, col - 1)) || col < currentRow.length - 1 && matching(GridRow.getCellElement(currentRow, col + 1)) || row > 0 && matching(GridRow.getCellElement(grid[row - 1], col)) || row < grid.length - 1 && matching(GridRow.getCellElement(grid[row + 1], col)));
+      return grid.length > 1 && cellLength(currentRow) > 1 && (col > 0 && matching(getCellElement(currentRow, col - 1)) || col < currentRow.cells().length - 1 && matching(getCellElement(currentRow, col + 1)) || row > 0 && matching(getCellElement(grid[row - 1], col)) || row < grid.length - 1 && matching(getCellElement(grid[row + 1], col)));
     };
     var mergeTables = function (startAddress, gridA, gridB, generator, comparator) {
       var startRow = startAddress.row();
       var startCol = startAddress.column();
       var mergeHeight = gridB.length;
-      var mergeWidth = GridRow.cellLength(gridB[0]);
+      var mergeWidth = cellLength(gridB[0]);
       var endRow = startRow + mergeHeight;
       var endCol = startCol + mergeWidth;
       for (var r = startRow; r < endRow; r++) {
         for (var c = startCol; c < endCol; c++) {
           if (isSpanning(gridA, r, c, comparator)) {
-            MergingOperations.unmerge(gridA, GridRow.getCellElement(gridA[r], c), comparator, generator.cell);
+            unmerge(gridA, getCellElement(gridA[r], c), comparator, generator.cell);
           }
-          var newCell = GridRow.getCellElement(gridB[r - startRow], c - startCol);
+          var newCell = getCellElement(gridB[r - startRow], c - startCol);
           var replacement = generator.replace(newCell);
-          GridRow.mutateCell(gridA[r], c, Structs.elementnew(replacement, true));
+          mutateCell(gridA[r], c, elementnew(replacement, true));
         }
       }
       return gridA;
     };
-    var merge$2 = function (startAddress, gridA, gridB, generator, comparator) {
-      var result = Fitment.measure(startAddress, gridA, gridB);
+    var merge$1 = function (startAddress, gridA, gridB, generator, comparator) {
+      var result = measure(startAddress, gridA, gridB);
       return result.map(function (delta) {
-        var fittedGrid = Fitment.tailor(gridA, delta, generator);
+        var fittedGrid = tailor(gridA, delta, generator);
         return mergeTables(startAddress, fittedGrid, gridB, generator, comparator);
       });
     };
     var insert = function (index, gridA, gridB, generator, comparator) {
-      MergingOperations.splitRows(gridA, index, comparator, generator.cell);
-      var delta = Fitment.measureWidth(gridB, gridA);
-      var fittedNewGrid = Fitment.tailor(gridB, delta, generator);
-      var secondDelta = Fitment.measureWidth(gridA, fittedNewGrid);
-      var fittedOldGrid = Fitment.tailor(gridA, secondDelta, generator);
+      splitRows(gridA, index, comparator, generator.cell);
+      var delta = measureWidth(gridB, gridA);
+      var fittedNewGrid = tailor(gridB, delta, generator);
+      var secondDelta = measureWidth(gridA, fittedNewGrid);
+      var fittedOldGrid = tailor(gridA, secondDelta, generator);
       return fittedOldGrid.slice(0, index).concat(fittedNewGrid).concat(fittedOldGrid.slice(index, fittedOldGrid.length));
-    };
-    var TableMerge = {
-      merge: merge$2,
-      insert: insert
     };
 
     var insertRowAt = function (grid, index, example, comparator, substitution) {
       var before = grid.slice(0, index);
       var after = grid.slice(index);
-      var between = GridRow.mapCells(grid[example], function (ex, c) {
-        var withinSpan = index > 0 && index < grid.length && comparator(GridRow.getCellElement(grid[index - 1], c), GridRow.getCellElement(grid[index], c));
-        var ret = withinSpan ? GridRow.getCell(grid[index], c) : Structs.elementnew(substitution(ex.element(), comparator), true);
+      var between = mapCells(grid[example], function (ex, c) {
+        var withinSpan = index > 0 && index < grid.length && comparator(getCellElement(grid[index - 1], c), getCellElement(grid[index], c));
+        var ret = withinSpan ? getCell(grid[index], c) : elementnew(substitution(ex.element(), comparator), true);
         return ret;
       });
       return before.concat([between]).concat(after);
     };
     var insertColumnAt = function (grid, index, example, comparator, substitution) {
       return map(grid, function (row) {
-        var withinSpan = index > 0 && index < GridRow.cellLength(row) && comparator(GridRow.getCellElement(row, index - 1), GridRow.getCellElement(row, index));
-        var sub = withinSpan ? GridRow.getCell(row, index) : Structs.elementnew(substitution(GridRow.getCellElement(row, example), comparator), true);
-        return GridRow.addCell(row, index, sub);
+        var withinSpan = index > 0 && index < cellLength(row) && comparator(getCellElement(row, index - 1), getCellElement(row, index));
+        var sub = withinSpan ? getCell(row, index) : elementnew(substitution(getCellElement(row, example), comparator), true);
+        return addCell(row, index, sub);
       });
-    };
-    var splitCellIntoColumns = function (grid, exampleRow, exampleCol, comparator, substitution) {
-      var index = exampleCol + 1;
-      return map(grid, function (row, i) {
-        var isTargetCell = i === exampleRow;
-        var sub = isTargetCell ? Structs.elementnew(substitution(GridRow.getCellElement(row, exampleCol), comparator), true) : GridRow.getCell(row, exampleCol);
-        return GridRow.addCell(row, index, sub);
-      });
-    };
-    var splitCellIntoRows = function (grid, exampleRow, exampleCol, comparator, substitution) {
-      var index = exampleRow + 1;
-      var before = grid.slice(0, index);
-      var after = grid.slice(index);
-      var between = GridRow.mapCells(grid[exampleRow], function (ex, i) {
-        var isTargetCell = i === exampleCol;
-        return isTargetCell ? Structs.elementnew(substitution(ex.element(), comparator), true) : ex;
-      });
-      return before.concat([between]).concat(after);
     };
     var deleteColumnsAt = function (grid, start, finish) {
       var rows = map(grid, function (row) {
         var cells = row.cells().slice(0, start).concat(row.cells().slice(finish + 1));
-        return Structs.rowcells(cells, row.section());
+        return rowcells(cells, row.section());
       });
       return filter(rows, function (row) {
         return row.cells().length > 0;
@@ -4233,14 +3579,6 @@ var table = (function (domGlobals) {
     };
     var deleteRowsAt = function (grid, start, finish) {
       return grid.slice(0, start).concat(grid.slice(finish + 1));
-    };
-    var ModificationOperations = {
-      insertRowAt: insertRowAt,
-      insertColumnAt: insertColumnAt,
-      splitCellIntoColumns: splitCellIntoColumns,
-      splitCellIntoRows: splitCellIntoRows,
-      deleteRowsAt: deleteRowsAt,
-      deleteColumnsAt: deleteColumnsAt
     };
 
     var replaceIn = function (grid, targets, comparator, substitution) {
@@ -4250,21 +3588,21 @@ var table = (function (domGlobals) {
         });
       };
       return map(grid, function (row) {
-        return GridRow.mapCells(row, function (cell) {
-          return isTarget(cell) ? Structs.elementnew(substitution(cell.element(), comparator), true) : cell;
+        return mapCells(row, function (cell) {
+          return isTarget(cell) ? elementnew(substitution(cell.element(), comparator), true) : cell;
         });
       });
     };
     var notStartRow = function (grid, rowIndex, colIndex, comparator) {
-      return GridRow.getCellElement(grid[rowIndex], colIndex) !== undefined && (rowIndex > 0 && comparator(GridRow.getCellElement(grid[rowIndex - 1], colIndex), GridRow.getCellElement(grid[rowIndex], colIndex)));
+      return getCellElement(grid[rowIndex], colIndex) !== undefined && (rowIndex > 0 && comparator(getCellElement(grid[rowIndex - 1], colIndex), getCellElement(grid[rowIndex], colIndex)));
     };
     var notStartColumn = function (row, index, comparator) {
-      return index > 0 && comparator(GridRow.getCellElement(row, index - 1), GridRow.getCellElement(row, index));
+      return index > 0 && comparator(getCellElement(row, index - 1), getCellElement(row, index));
     };
     var replaceColumn = function (grid, index, comparator, substitution) {
       var targets = bind(grid, function (row, i) {
         var alreadyAdded = notStartRow(grid, i, index, comparator) || notStartColumn(row, index, comparator);
-        return alreadyAdded ? [] : [GridRow.getCell(row, index)];
+        return alreadyAdded ? [] : [getCell(row, index)];
       });
       return replaceIn(grid, targets, comparator, substitution);
     };
@@ -4276,46 +3614,31 @@ var table = (function (domGlobals) {
       });
       return replaceIn(grid, targets, comparator, substitution);
     };
-    var TransformOperations = {
-      replaceColumn: replaceColumn,
-      replaceRow: replaceRow
-    };
 
-    var none$1 = function () {
-      return folder(function (n, o, l, m, r) {
-        return n();
-      });
-    };
-    var only = function (index) {
-      return folder(function (n, o, l, m, r) {
-        return o(index);
-      });
-    };
-    var left = function (index, next) {
-      return folder(function (n, o, l, m, r) {
-        return l(index, next);
-      });
-    };
-    var middle = function (prev, index, next) {
-      return folder(function (n, o, l, m, r) {
-        return m(prev, index, next);
-      });
-    };
-    var right = function (prev, index) {
-      return folder(function (n, o, l, m, r) {
-        return r(prev, index);
-      });
-    };
-    var folder = function (fold) {
-      return { fold: fold };
-    };
-    var ColumnContext = {
-      none: none$1,
-      only: only,
-      left: left,
-      middle: middle,
-      right: right
-    };
+    var adt = Adt.generate([
+      { none: [] },
+      { only: ['index'] },
+      {
+        left: [
+          'index',
+          'next'
+        ]
+      },
+      {
+        middle: [
+          'prev',
+          'index',
+          'next'
+        ]
+      },
+      {
+        right: [
+          'prev',
+          'index'
+        ]
+      }
+    ]);
+    var ColumnContext = __assign({}, adt);
 
     var neighbours$1 = function (input, index) {
       if (input.length === 0) {
@@ -4362,10 +3685,10 @@ var table = (function (domGlobals) {
         }
       };
       var onLeft = onChange;
-      var onMiddle = function (prev, index, next) {
+      var onMiddle = function (_prev, index, next) {
         return onChange(index, next);
       };
-      var onRight = function (prev, index) {
+      var onRight = function (_prev, index) {
         if (step >= 0) {
           return zero(result.slice(0, index)).concat([step]);
         } else {
@@ -4375,66 +3698,24 @@ var table = (function (domGlobals) {
       };
       return context.fold(onNone, onOnly, onLeft, onMiddle, onRight);
     };
-    var Deltas = { determine: determine };
 
-    var getSpan$1 = function (cell, type) {
-      return has$1(cell, type) && parseInt(get$1(cell, type), 10) > 1;
-    };
-    var hasColspan = function (cell) {
-      return getSpan$1(cell, 'colspan');
-    };
-    var hasRowspan = function (cell) {
-      return getSpan$1(cell, 'rowspan');
-    };
-    var getInt = function (element, property) {
-      return parseInt(get$2(element, property), 10);
-    };
-    var CellUtils = {
-      hasColspan: hasColspan,
-      hasRowspan: hasRowspan,
-      minWidth: constant(10),
-      minHeight: constant(10),
-      getInt: getInt
-    };
-
-    var getRaw$1 = function (cell, property, getter) {
-      return getRaw(cell, property).fold(function () {
-        return getter(cell) + 'px';
-      }, function (raw) {
-        return raw;
-      });
-    };
-    var getRawW = function (cell) {
-      return getRaw$1(cell, 'width', Sizes.getPixelWidth);
-    };
-    var getRawH = function (cell) {
-      return getRaw$1(cell, 'height', Sizes.getHeight);
-    };
     var getWidthFrom = function (warehouse, direction, getWidth, fallback, tableSize) {
-      var columns = Blocks.columns(warehouse);
-      var backups = map(columns, function (cellOption) {
+      var columns$1 = columns(warehouse);
+      var backups = map(columns$1, function (cellOption) {
         return cellOption.map(direction.edge);
       });
-      return map(columns, function (cellOption, c) {
-        var columnCell = cellOption.filter(not(CellUtils.hasColspan));
+      return map(columns$1, function (cellOption, c) {
+        var columnCell = cellOption.filter(not(hasColspan));
         return columnCell.fold(function () {
-          var deduced = Util.deduce(backups, c);
+          var deduced = deduce(backups, c);
           return fallback(deduced);
         }, function (cell) {
           return getWidth(cell, tableSize);
         });
       });
     };
-    var getDeduced = function (deduced) {
-      return deduced.map(function (d) {
-        return d + 'px';
-      }).getOr('');
-    };
-    var getRawWidths = function (warehouse, direction) {
-      return getWidthFrom(warehouse, direction, getRawW, getDeduced);
-    };
     var getPercentageWidths = function (warehouse, direction, tableSize) {
-      return getWidthFrom(warehouse, direction, Sizes.getPercentageWidth, function (deduced) {
+      return getWidthFrom(warehouse, direction, getPercentageWidth, function (deduced) {
         return deduced.fold(function () {
           return tableSize.minCellWidth();
         }, function (cellWidth) {
@@ -4443,19 +3724,19 @@ var table = (function (domGlobals) {
       }, tableSize);
     };
     var getPixelWidths = function (warehouse, direction, tableSize) {
-      return getWidthFrom(warehouse, direction, Sizes.getPixelWidth, function (deduced) {
+      return getWidthFrom(warehouse, direction, getPixelWidth, function (deduced) {
         return deduced.getOrThunk(tableSize.minCellWidth);
       }, tableSize);
     };
     var getHeightFrom = function (warehouse, direction, getHeight, fallback) {
-      var rows = Blocks.rows(warehouse);
+      var rows = rows$1(warehouse);
       var backups = map(rows, function (cellOption) {
         return cellOption.map(direction.edge);
       });
       return map(rows, function (cellOption, c) {
-        var rowCell = cellOption.filter(not(CellUtils.hasRowspan));
+        var rowCell = cellOption.filter(not(hasRowspan));
         return rowCell.fold(function () {
-          var deduced = Util.deduce(backups, c);
+          var deduced = deduce(backups, c);
           return fallback(deduced);
         }, function (cell) {
           return getHeight(cell);
@@ -4463,19 +3744,9 @@ var table = (function (domGlobals) {
       });
     };
     var getPixelHeights = function (warehouse, direction) {
-      return getHeightFrom(warehouse, direction, Sizes.getHeight, function (deduced) {
-        return deduced.getOrThunk(CellUtils.minHeight);
+      return getHeightFrom(warehouse, direction, getHeight$1, function (deduced) {
+        return deduced.getOrThunk(minHeight);
       });
-    };
-    var getRawHeights = function (warehouse, direction) {
-      return getHeightFrom(warehouse, direction, getRawH, getDeduced);
-    };
-    var ColumnSizes = {
-      getRawWidths: getRawWidths,
-      getPixelWidths: getPixelWidths,
-      getPercentageWidths: getPercentageWidths,
-      getPixelHeights: getPixelHeights,
-      getRawHeights: getRawHeights
     };
 
     var total = function (start, end, measures) {
@@ -4490,9 +3761,9 @@ var table = (function (domGlobals) {
       return map(all, function (cell) {
         var width = total(cell.column(), cell.column() + cell.colspan(), widths);
         return {
-          element: cell.element,
-          width: constant(width),
-          colspan: cell.colspan
+          element: cell.element(),
+          width: width,
+          colspan: cell.colspan()
         };
       });
     };
@@ -4508,17 +3779,12 @@ var table = (function (domGlobals) {
       });
     };
     var matchRowHeight = function (warehouse, heights) {
-      return map(warehouse.all(), function (row, i) {
+      return map(warehouse.all, function (row, i) {
         return {
           element: row.element,
           height: constant(heights[i])
         };
       });
-    };
-    var Recalculations = {
-      recalculateWidth: recalculateWidth,
-      recalculateHeight: recalculateHeight,
-      matchRowHeight: matchRowHeight
     };
 
     var percentageSize = function (width, element) {
@@ -4531,61 +3797,62 @@ var table = (function (domGlobals) {
         return [100 - w];
       };
       var minCellWidth = function () {
-        return CellUtils.minWidth() / pixelWidth * 100;
+        return minWidth() / pixelWidth * 100;
       };
       var setTableWidth = function (table, _newWidths, delta) {
-        var total = floatWidth + delta;
-        Sizes.setPercentageWidth(table, total);
+        var ratio = delta / 100;
+        var change = ratio * floatWidth;
+        setPercentageWidth(table, floatWidth + change);
       };
       return {
         width: constant(floatWidth),
         pixelWidth: constant(pixelWidth),
-        getWidths: ColumnSizes.getPercentageWidths,
+        getWidths: getPercentageWidths,
         getCellDelta: getCellDelta,
         singleColumnWidth: singleColumnWidth,
         minCellWidth: minCellWidth,
-        setElementWidth: Sizes.setPercentageWidth,
+        setElementWidth: setPercentageWidth,
         setTableWidth: setTableWidth
       };
     };
     var pixelSize = function (width) {
-      var intWidth = parseInt(width, 10);
       var getCellDelta = identity;
       var singleColumnWidth = function (w, delta) {
-        var newNext = Math.max(CellUtils.minWidth(), w + delta);
+        var newNext = Math.max(minWidth(), w + delta);
         return [newNext - w];
       };
       var setTableWidth = function (table, newWidths, _delta) {
         var total = foldr(newWidths, function (b, a) {
           return b + a;
         }, 0);
-        Sizes.setPixelWidth(table, total);
+        setPixelWidth(table, total);
       };
       return {
-        width: constant(intWidth),
-        pixelWidth: constant(intWidth),
-        getWidths: ColumnSizes.getPixelWidths,
+        width: constant(width),
+        pixelWidth: constant(width),
+        getWidths: getPixelWidths,
         getCellDelta: getCellDelta,
         singleColumnWidth: singleColumnWidth,
-        minCellWidth: CellUtils.minWidth,
-        setElementWidth: Sizes.setPixelWidth,
+        minCellWidth: minWidth,
+        setElementWidth: setPixelWidth,
         setTableWidth: setTableWidth
       };
     };
     var chooseSize = function (element, width) {
-      if (Sizes.percentageBasedSizeRegex().test(width)) {
-        var percentMatch = Sizes.percentageBasedSizeRegex().exec(width);
+      var percentMatch = percentageBasedSizeRegex().exec(width);
+      if (percentMatch !== null) {
         return percentageSize(percentMatch[1], element);
-      } else if (Sizes.pixelBasedSizeRegex().test(width)) {
-        var pixelMatch = Sizes.pixelBasedSizeRegex().exec(width);
-        return pixelSize(pixelMatch[1]);
-      } else {
-        var fallbackWidth = get$5(element);
-        return pixelSize(fallbackWidth);
       }
+      var pixelMatch = pixelBasedSizeRegex().exec(width);
+      if (pixelMatch !== null) {
+        var intWidth = parseInt(pixelMatch[1], 10);
+        return pixelSize(intWidth);
+      }
+      var fallbackWidth = get$5(element);
+      return pixelSize(fallbackWidth);
     };
     var getTableSize = function (element) {
-      var width = Sizes.getRawWidth(element);
+      var width = getRawWidth(element);
       return width.fold(function () {
         var fallbackWidth = get$5(element);
         return pixelSize(fallbackWidth);
@@ -4593,7 +3860,6 @@ var table = (function (domGlobals) {
         return chooseSize(element, w);
       });
     };
-    var TableSize = { getTableSize: getTableSize };
 
     var getWarehouse$1 = function (list) {
       return Warehouse.generate(list);
@@ -4604,62 +3870,86 @@ var table = (function (domGlobals) {
       }, 0);
     };
     var getTableWarehouse = function (table) {
-      var list = DetailsList.fromTable(table);
+      var list = fromTable(table);
       return getWarehouse$1(list);
     };
     var adjustWidth = function (table, delta, index, direction) {
-      var tableSize = TableSize.getTableSize(table);
+      var tableSize = getTableSize(table);
       var step = tableSize.getCellDelta(delta);
       var warehouse = getTableWarehouse(table);
       var widths = tableSize.getWidths(warehouse, direction, tableSize);
-      var deltas = Deltas.determine(widths, index, step, tableSize);
+      var deltas = determine(widths, index, step, tableSize);
       var newWidths = map(deltas, function (dx, i) {
         return dx + widths[i];
       });
-      var newSizes = Recalculations.recalculateWidth(warehouse, newWidths);
+      var newSizes = recalculateWidth(warehouse, newWidths);
       each(newSizes, function (cell) {
-        tableSize.setElementWidth(cell.element(), cell.width());
+        tableSize.setElementWidth(cell.element, cell.width);
       });
-      if (index === warehouse.grid().columns() - 1) {
+      if (index === warehouse.grid.columns() - 1) {
         tableSize.setTableWidth(table, newWidths, step);
       }
     };
     var adjustHeight = function (table, delta, index, direction) {
       var warehouse = getTableWarehouse(table);
-      var heights = ColumnSizes.getPixelHeights(warehouse, direction);
+      var heights = getPixelHeights(warehouse, direction);
       var newHeights = map(heights, function (dy, i) {
-        return index === i ? Math.max(delta + dy, CellUtils.minHeight()) : dy;
+        return index === i ? Math.max(delta + dy, minHeight()) : dy;
       });
-      var newCellSizes = Recalculations.recalculateHeight(warehouse, newHeights);
-      var newRowSizes = Recalculations.matchRowHeight(warehouse, newHeights);
+      var newCellSizes = recalculateHeight(warehouse, newHeights);
+      var newRowSizes = matchRowHeight(warehouse, newHeights);
       each(newRowSizes, function (row) {
-        Sizes.setHeight(row.element(), row.height());
+        setHeight(row.element(), row.height());
       });
       each(newCellSizes, function (cell) {
-        Sizes.setHeight(cell.element(), cell.height());
+        setHeight(cell.element(), cell.height());
       });
       var total = sumUp(newHeights);
-      Sizes.setHeight(table, total);
+      setHeight(table, total);
     };
     var adjustWidthTo = function (table, list, direction) {
-      var tableSize = TableSize.getTableSize(table);
+      var tableSize = getTableSize(table);
       var warehouse = getWarehouse$1(list);
       var widths = tableSize.getWidths(warehouse, direction, tableSize);
-      var newSizes = Recalculations.recalculateWidth(warehouse, widths);
+      var newSizes = recalculateWidth(warehouse, widths);
       each(newSizes, function (cell) {
-        tableSize.setElementWidth(cell.element(), cell.width());
+        tableSize.setElementWidth(cell.element, cell.width);
       });
-      var total = foldr(widths, function (b, a) {
-        return a + b;
-      }, 0);
       if (newSizes.length > 0) {
-        tableSize.setTableWidth(table, total);
+        tableSize.setTableWidth(table, widths, tableSize.getCellDelta(0));
       }
     };
-    var Adjustments = {
-      adjustWidth: adjustWidth,
-      adjustHeight: adjustHeight,
-      adjustWidthTo: adjustWidthTo
+
+    var sort = function (arr) {
+      return arr.slice(0).sort();
+    };
+    var reqMessage = function (required, keys) {
+      throw new Error('All required keys (' + sort(required).join(', ') + ') were not specified. Specified keys were: ' + sort(keys).join(', ') + '.');
+    };
+    var unsuppMessage = function (unsupported) {
+      throw new Error('Unsupported keys for object: ' + sort(unsupported).join(', '));
+    };
+    var validateStrArr = function (label, array) {
+      if (!isArray(array)) {
+        throw new Error('The ' + label + ' fields must be an array. Was: ' + array + '.');
+      }
+      each(array, function (a) {
+        if (!isString(a)) {
+          throw new Error('The value ' + a + ' in the ' + label + ' fields was not a string.');
+        }
+      });
+    };
+    var invalidTypeMessage = function (incorrect, type) {
+      throw new Error('All values need to be of type: ' + type + '. Keys (' + sort(incorrect).join(', ') + ') were not.');
+    };
+    var checkDupes = function (everything) {
+      var sorted = sort(everything);
+      var dupe = find(sorted, function (s, i) {
+        return i < sorted.length - 1 && s === sorted[i + 1];
+      });
+      dupe.each(function (d) {
+        throw new Error('The field: ' + d + ' occurs more than once in the combined fields: [' + sorted.join(', ') + '].');
+      });
     };
 
     var base = function (handleUnsupported, required) {
@@ -4669,8 +3959,9 @@ var table = (function (domGlobals) {
       });
     };
     var baseWith = function (handleUnsupported, required, pred) {
-      if (required.length === 0)
+      if (required.length === 0) {
         throw new Error('You must specify at least one required field.');
+      }
       validateStrArr('required', required);
       checkDupes(required);
       return function (obj) {
@@ -4678,14 +3969,16 @@ var table = (function (domGlobals) {
         var allReqd = forall(required, function (req) {
           return contains(keys$1, req);
         });
-        if (!allReqd)
+        if (!allReqd) {
           reqMessage(required, keys$1);
+        }
         handleUnsupported(required, keys$1);
         var invalidKeys = filter(required, function (key) {
           return !pred.validate(obj[key], key);
         });
-        if (invalidKeys.length > 0)
+        if (invalidKeys.length > 0) {
           invalidTypeMessage(invalidKeys, pred.label);
+        }
         return obj;
       };
     };
@@ -4693,39 +3986,35 @@ var table = (function (domGlobals) {
       var unsupported = filter(keys, function (key) {
         return !contains(required, key);
       });
-      if (unsupported.length > 0)
+      if (unsupported.length > 0) {
         unsuppMessage(unsupported);
+      }
     };
-    var allowExtra = noop;
     var exactly = function (required) {
       return base(handleExact, required);
     };
-    var ensure = function (required) {
-      return base(allowExtra, required);
-    };
-    var ensureWith = function (required, condition) {
-      return baseWith(allowExtra, required, condition);
-    };
 
-    var Contracts = /*#__PURE__*/Object.freeze({
-        exactly: exactly,
-        ensure: ensure,
-        ensureWith: ensureWith
-    });
-
+    var verifyGenerators = exactly([
+      'cell',
+      'row',
+      'replace',
+      'gap'
+    ]);
     var elementToData = function (element) {
-      var colspan = has$1(element, 'colspan') ? parseInt(get$1(element, 'colspan'), 10) : 1;
-      var rowspan = has$1(element, 'rowspan') ? parseInt(get$1(element, 'rowspan'), 10) : 1;
+      var colspan = getAttrValue(element, 'colspan', 1);
+      var rowspan = getAttrValue(element, 'rowspan', 1);
       return {
         element: constant(element),
         colspan: constant(colspan),
         rowspan: constant(rowspan)
       };
     };
-    var modification = function (generators, _toData) {
-      contract(generators);
+    var modification = function (generators, toData) {
+      if (toData === void 0) {
+        toData = elementToData;
+      }
+      verifyGenerators(generators);
       var position = Cell(Option.none());
-      var toData = _toData !== undefined ? _toData : elementToData;
       var nu = function (data) {
         return generators.cell(data);
       };
@@ -4760,7 +4049,7 @@ var table = (function (domGlobals) {
     var transform = function (scope, tag) {
       return function (generators) {
         var position = Cell(Option.none());
-        contract(generators);
+        verifyGenerators(generators);
         var list = [];
         var find$1 = function (element, comparator) {
           return find(list, function (x) {
@@ -4768,7 +4057,8 @@ var table = (function (domGlobals) {
           });
         };
         var makeNew = function (element) {
-          var cell = generators.replace(element, tag, { scope: scope });
+          var attrs = { scope: scope };
+          var cell = generators.replace(element, tag, attrs);
           list.push({
             item: element,
             sub: cell
@@ -4792,7 +4082,7 @@ var table = (function (domGlobals) {
       };
     };
     var merging = function (generators) {
-      contract(generators);
+      verifyGenerators(generators);
       var position = Cell(Option.none());
       var combine = function (cell) {
         if (position.get().isNone()) {
@@ -4814,12 +4104,6 @@ var table = (function (domGlobals) {
         cursor: position.get
       };
     };
-    var contract = exactly([
-      'cell',
-      'row',
-      'replace',
-      'gap'
-    ]);
     var Generators = {
       modification: modification,
       transform: transform,
@@ -4869,42 +4153,6 @@ var table = (function (domGlobals) {
       var tagName = universe.property().name(item);
       return contains(blockList, tagName);
     };
-    var isFormatting = function (universe, item) {
-      var tagName = universe.property().name(item);
-      return contains([
-        'address',
-        'pre',
-        'p',
-        'h1',
-        'h2',
-        'h3',
-        'h4',
-        'h5',
-        'h6'
-      ], tagName);
-    };
-    var isHeading = function (universe, item) {
-      var tagName = universe.property().name(item);
-      return contains([
-        'h1',
-        'h2',
-        'h3',
-        'h4',
-        'h5',
-        'h6'
-      ], tagName);
-    };
-    var isContainer = function (universe, item) {
-      return contains([
-        'div',
-        'li',
-        'td',
-        'th',
-        'blockquote',
-        'body',
-        'caption'
-      ], universe.property().name(item));
-    };
     var isEmptyTag = function (universe, item) {
       return contains([
         'br',
@@ -4913,60 +4161,19 @@ var table = (function (domGlobals) {
         'input'
       ], universe.property().name(item));
     };
-    var isFrame = function (universe, item) {
-      return universe.property().name(item) === 'iframe';
-    };
-    var isInline = function (universe, item) {
-      return !(isBlock(universe, item) || isEmptyTag(universe, item)) && universe.property().name(item) !== 'li';
-    };
-    var Structure = {
-      isBlock: isBlock,
-      isList: isList,
-      isFormatting: isFormatting,
-      isHeading: isHeading,
-      isContainer: isContainer,
-      isEmptyTag: isEmptyTag,
-      isFrame: isFrame,
-      isInline: isInline
-    };
 
     var universe$1 = DomUniverse();
     var isBlock$1 = function (element) {
-      return Structure.isBlock(universe$1, element);
+      return isBlock(universe$1, element);
     };
     var isList$1 = function (element) {
-      return Structure.isList(universe$1, element);
-    };
-    var isFormatting$1 = function (element) {
-      return Structure.isFormatting(universe$1, element);
-    };
-    var isHeading$1 = function (element) {
-      return Structure.isHeading(universe$1, element);
-    };
-    var isContainer$1 = function (element) {
-      return Structure.isContainer(universe$1, element);
+      return isList(universe$1, element);
     };
     var isEmptyTag$1 = function (element) {
-      return Structure.isEmptyTag(universe$1, element);
-    };
-    var isFrame$1 = function (element) {
-      return Structure.isFrame(universe$1, element);
-    };
-    var isInline$1 = function (element) {
-      return Structure.isInline(universe$1, element);
-    };
-    var DomStructure = {
-      isBlock: isBlock$1,
-      isList: isList$1,
-      isFormatting: isFormatting$1,
-      isHeading: isHeading$1,
-      isContainer: isContainer$1,
-      isEmptyTag: isEmptyTag$1,
-      isFrame: isFrame$1,
-      isInline: isInline$1
+      return isEmptyTag(universe$1, element);
     };
 
-    var merge$3 = function (cells) {
+    var merge$2 = function (cells) {
       var isBr = function (el) {
         return name(el) === 'br';
       };
@@ -4976,23 +4183,24 @@ var table = (function (domGlobals) {
         });
       };
       var isListItem = function (el) {
-        return name(el) === 'li' || ancestor(el, DomStructure.isList).isSome();
+        return name(el) === 'li' || ancestor(el, isList$1).isSome();
       };
       var siblingIsBlock = function (el) {
         return nextSibling(el).map(function (rightSibling) {
-          if (DomStructure.isBlock(rightSibling)) {
+          if (isBlock$1(rightSibling)) {
             return true;
           }
-          if (DomStructure.isEmptyTag(rightSibling)) {
+          if (isEmptyTag$1(rightSibling)) {
             return name(rightSibling) === 'img' ? false : true;
           }
+          return false;
         }).getOr(false);
       };
       var markCell = function (cell) {
         return last$1(cell).bind(function (rightEdge) {
           var rightSiblingIsBlock = siblingIsBlock(rightEdge);
           return parent(rightEdge).map(function (parent) {
-            return rightSiblingIsBlock === true || isListItem(parent) || isBr(rightEdge) || DomStructure.isBlock(parent) && !eq(cell, parent) ? [] : [Element.fromTag('br')];
+            return rightSiblingIsBlock === true || isListItem(parent) || isBr(rightEdge) || isBlock$1(parent) && !eq(cell, parent) ? [] : [Element.fromTag('br')];
           });
         }).getOr([]);
       };
@@ -5007,15 +4215,19 @@ var table = (function (domGlobals) {
       empty(cells[0]);
       append$1(cells[0], contents);
     };
-    var TableContent = { merge: merge$3 };
 
     var prune = function (table) {
-      var cells = TableLookup.cells(table);
-      if (cells.length === 0) {
+      var cells$1 = cells(table);
+      if (cells$1.length === 0) {
         remove$2(table);
       }
     };
-    var outcome = Immutable('grid', 'cursor');
+    var outcome = function (grid, cursor) {
+      return {
+        grid: constant(grid),
+        cursor: constant(cursor)
+      };
+    };
     var elementFromGrid = function (grid, row, column) {
       return findIn(grid, row, column).orThunk(function () {
         return findIn(grid, 0, 0);
@@ -5049,123 +4261,91 @@ var table = (function (domGlobals) {
         return detailA.column() - detailB.column();
       });
     };
-    var insertRowBefore = function (grid, detail, comparator, genWrappers) {
-      var example = detail.row();
-      var targetIndex = detail.row();
-      var newGrid = ModificationOperations.insertRowAt(grid, targetIndex, example, comparator, genWrappers.getOrInit);
-      return bundle(newGrid, targetIndex, detail.column());
-    };
-    var insertRowsBefore = function (grid, details, comparator, genWrappers) {
+    var opInsertRowsBefore = function (grid, details, comparator, genWrappers) {
       var example = details[0].row();
       var targetIndex = details[0].row();
       var rows = uniqueRows(details);
       var newGrid = foldl(rows, function (newG, _row) {
-        return ModificationOperations.insertRowAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
+        return insertRowAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
       }, grid);
       return bundle(newGrid, targetIndex, details[0].column());
     };
-    var insertRowAfter = function (grid, detail, comparator, genWrappers) {
-      var example = detail.row();
-      var targetIndex = detail.row() + detail.rowspan();
-      var newGrid = ModificationOperations.insertRowAt(grid, targetIndex, example, comparator, genWrappers.getOrInit);
-      return bundle(newGrid, targetIndex, detail.column());
-    };
-    var insertRowsAfter = function (grid, details, comparator, genWrappers) {
+    var opInsertRowsAfter = function (grid, details, comparator, genWrappers) {
       var rows = uniqueRows(details);
       var example = rows[rows.length - 1].row();
       var targetIndex = rows[rows.length - 1].row() + rows[rows.length - 1].rowspan();
       var newGrid = foldl(rows, function (newG, _row) {
-        return ModificationOperations.insertRowAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
+        return insertRowAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
       }, grid);
       return bundle(newGrid, targetIndex, details[0].column());
     };
-    var insertColumnBefore = function (grid, detail, comparator, genWrappers) {
-      var example = detail.column();
-      var targetIndex = detail.column();
-      var newGrid = ModificationOperations.insertColumnAt(grid, targetIndex, example, comparator, genWrappers.getOrInit);
-      return bundle(newGrid, detail.row(), targetIndex);
-    };
-    var insertColumnsBefore = function (grid, details, comparator, genWrappers) {
+    var opInsertColumnsBefore = function (grid, details, comparator, genWrappers) {
       var columns = uniqueColumns(details);
       var example = columns[0].column();
       var targetIndex = columns[0].column();
       var newGrid = foldl(columns, function (newG, _row) {
-        return ModificationOperations.insertColumnAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
+        return insertColumnAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
       }, grid);
       return bundle(newGrid, details[0].row(), targetIndex);
     };
-    var insertColumnAfter = function (grid, detail, comparator, genWrappers) {
-      var example = detail.column();
-      var targetIndex = detail.column() + detail.colspan();
-      var newGrid = ModificationOperations.insertColumnAt(grid, targetIndex, example, comparator, genWrappers.getOrInit);
-      return bundle(newGrid, detail.row(), targetIndex);
-    };
-    var insertColumnsAfter = function (grid, details, comparator, genWrappers) {
+    var opInsertColumnsAfter = function (grid, details, comparator, genWrappers) {
       var example = details[details.length - 1].column();
       var targetIndex = details[details.length - 1].column() + details[details.length - 1].colspan();
       var columns = uniqueColumns(details);
       var newGrid = foldl(columns, function (newG, _row) {
-        return ModificationOperations.insertColumnAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
+        return insertColumnAt(newG, targetIndex, example, comparator, genWrappers.getOrInit);
       }, grid);
       return bundle(newGrid, details[0].row(), targetIndex);
     };
-    var makeRowHeader = function (grid, detail, comparator, genWrappers) {
-      var newGrid = TransformOperations.replaceRow(grid, detail.row(), comparator, genWrappers.replaceOrInit);
+    var opMakeRowHeader = function (grid, detail, comparator, genWrappers) {
+      var newGrid = replaceRow(grid, detail.row(), comparator, genWrappers.replaceOrInit);
       return bundle(newGrid, detail.row(), detail.column());
     };
-    var makeColumnHeader = function (grid, detail, comparator, genWrappers) {
-      var newGrid = TransformOperations.replaceColumn(grid, detail.column(), comparator, genWrappers.replaceOrInit);
+    var opMakeColumnHeader = function (grid, detail, comparator, genWrappers) {
+      var newGrid = replaceColumn(grid, detail.column(), comparator, genWrappers.replaceOrInit);
       return bundle(newGrid, detail.row(), detail.column());
     };
-    var unmakeRowHeader = function (grid, detail, comparator, genWrappers) {
-      var newGrid = TransformOperations.replaceRow(grid, detail.row(), comparator, genWrappers.replaceOrInit);
+    var opUnmakeRowHeader = function (grid, detail, comparator, genWrappers) {
+      var newGrid = replaceRow(grid, detail.row(), comparator, genWrappers.replaceOrInit);
       return bundle(newGrid, detail.row(), detail.column());
     };
-    var unmakeColumnHeader = function (grid, detail, comparator, genWrappers) {
-      var newGrid = TransformOperations.replaceColumn(grid, detail.column(), comparator, genWrappers.replaceOrInit);
+    var opUnmakeColumnHeader = function (grid, detail, comparator, genWrappers) {
+      var newGrid = replaceColumn(grid, detail.column(), comparator, genWrappers.replaceOrInit);
       return bundle(newGrid, detail.row(), detail.column());
     };
-    var splitCellIntoColumns$1 = function (grid, detail, comparator, genWrappers) {
-      var newGrid = ModificationOperations.splitCellIntoColumns(grid, detail.row(), detail.column(), comparator, genWrappers.getOrInit);
-      return bundle(newGrid, detail.row(), detail.column());
-    };
-    var splitCellIntoRows$1 = function (grid, detail, comparator, genWrappers) {
-      var newGrid = ModificationOperations.splitCellIntoRows(grid, detail.row(), detail.column(), comparator, genWrappers.getOrInit);
-      return bundle(newGrid, detail.row(), detail.column());
-    };
-    var eraseColumns = function (grid, details, comparator, _genWrappers) {
+    var opEraseColumns = function (grid, details, _comparator, _genWrappers) {
       var columns = uniqueColumns(details);
-      var newGrid = ModificationOperations.deleteColumnsAt(grid, columns[0].column(), columns[columns.length - 1].column());
+      var newGrid = deleteColumnsAt(grid, columns[0].column(), columns[columns.length - 1].column());
       var cursor = elementFromGrid(newGrid, details[0].row(), details[0].column());
       return outcome(newGrid, cursor);
     };
-    var eraseRows = function (grid, details, comparator, _genWrappers) {
+    var opEraseRows = function (grid, details, _comparator, _genWrappers) {
       var rows = uniqueRows(details);
-      var newGrid = ModificationOperations.deleteRowsAt(grid, rows[0].row(), rows[rows.length - 1].row());
+      var newGrid = deleteRowsAt(grid, rows[0].row(), rows[rows.length - 1].row());
       var cursor = elementFromGrid(newGrid, details[0].row(), details[0].column());
       return outcome(newGrid, cursor);
     };
-    var mergeCells = function (grid, mergable, comparator, _genWrappers) {
+    var opMergeCells = function (grid, mergable, comparator, _genWrappers) {
       var cells = mergable.cells();
-      TableContent.merge(cells);
-      var newGrid = MergingOperations.merge(grid, mergable.bounds(), comparator, constant(cells[0]));
+      merge$2(cells);
+      var newGrid = merge(grid, mergable.bounds(), comparator, constant(cells[0]));
       return outcome(newGrid, Option.from(cells[0]));
     };
-    var unmergeCells = function (grid, unmergable, comparator, genWrappers) {
+    var opUnmergeCells = function (grid, unmergable, comparator, genWrappers) {
       var newGrid = foldr(unmergable, function (b, cell) {
-        return MergingOperations.unmerge(b, cell, comparator, genWrappers.combine(cell));
+        return unmerge(b, cell, comparator, genWrappers.combine(cell));
       }, grid);
       return outcome(newGrid, Option.from(unmergable[0]));
     };
-    var pasteCells = function (grid, pasteDetails, comparator, genWrappers) {
+    var opPasteCells = function (grid, pasteDetails, comparator, _genWrappers) {
       var gridify = function (table, generators) {
-        var list = DetailsList.fromTable(table);
+        var list = fromTable(table);
         var wh = Warehouse.generate(list);
-        return Transitions.toGrid(wh, generators, true);
+        return toGrid(wh, generators, true);
       };
       var gridB = gridify(pasteDetails.clipboard(), pasteDetails.generators());
-      var startAddress = Structs.address(pasteDetails.row(), pasteDetails.column());
-      var mergedGrid = TableMerge.merge(startAddress, grid, gridB, pasteDetails.generators(), comparator);
+      var startAddress = address(pasteDetails.row(), pasteDetails.column());
+      var mergedGrid = merge$1(startAddress, grid, gridB, pasteDetails.generators(), comparator);
       return mergedGrid.fold(function () {
         return outcome(grid, Option.some(pasteDetails.element()));
       }, function (nuGrid) {
@@ -5174,50 +4354,42 @@ var table = (function (domGlobals) {
       });
     };
     var gridifyRows = function (rows, generators, example) {
-      var pasteDetails = DetailsList.fromPastedRows(rows, example);
+      var pasteDetails = fromPastedRows(rows, example);
       var wh = Warehouse.generate(pasteDetails);
-      return Transitions.toGrid(wh, generators, true);
+      return toGrid(wh, generators, true);
     };
-    var pasteRowsBefore = function (grid, pasteDetails, comparator, genWrappers) {
+    var opPasteRowsBefore = function (grid, pasteDetails, comparator, _genWrappers) {
       var example = grid[pasteDetails.cells[0].row()];
       var index = pasteDetails.cells[0].row();
       var gridB = gridifyRows(pasteDetails.clipboard(), pasteDetails.generators(), example);
-      var mergedGrid = TableMerge.insert(index, grid, gridB, pasteDetails.generators(), comparator);
+      var mergedGrid = insert(index, grid, gridB, pasteDetails.generators(), comparator);
       var cursor = elementFromGrid(mergedGrid, pasteDetails.cells[0].row(), pasteDetails.cells[0].column());
       return outcome(mergedGrid, cursor);
     };
-    var pasteRowsAfter = function (grid, pasteDetails, comparator, genWrappers) {
+    var opPasteRowsAfter = function (grid, pasteDetails, comparator, _genWrappers) {
       var example = grid[pasteDetails.cells[0].row()];
       var index = pasteDetails.cells[pasteDetails.cells.length - 1].row() + pasteDetails.cells[pasteDetails.cells.length - 1].rowspan();
       var gridB = gridifyRows(pasteDetails.clipboard(), pasteDetails.generators(), example);
-      var mergedGrid = TableMerge.insert(index, grid, gridB, pasteDetails.generators(), comparator);
+      var mergedGrid = insert(index, grid, gridB, pasteDetails.generators(), comparator);
       var cursor = elementFromGrid(mergedGrid, pasteDetails.cells[0].row(), pasteDetails.cells[0].column());
       return outcome(mergedGrid, cursor);
     };
-    var resize = Adjustments.adjustWidthTo;
-    var TableOperations = {
-      insertRowBefore: RunOperation.run(insertRowBefore, RunOperation.onCell, noop, noop, Generators.modification),
-      insertRowsBefore: RunOperation.run(insertRowsBefore, RunOperation.onCells, noop, noop, Generators.modification),
-      insertRowAfter: RunOperation.run(insertRowAfter, RunOperation.onCell, noop, noop, Generators.modification),
-      insertRowsAfter: RunOperation.run(insertRowsAfter, RunOperation.onCells, noop, noop, Generators.modification),
-      insertColumnBefore: RunOperation.run(insertColumnBefore, RunOperation.onCell, resize, noop, Generators.modification),
-      insertColumnsBefore: RunOperation.run(insertColumnsBefore, RunOperation.onCells, resize, noop, Generators.modification),
-      insertColumnAfter: RunOperation.run(insertColumnAfter, RunOperation.onCell, resize, noop, Generators.modification),
-      insertColumnsAfter: RunOperation.run(insertColumnsAfter, RunOperation.onCells, resize, noop, Generators.modification),
-      splitCellIntoColumns: RunOperation.run(splitCellIntoColumns$1, RunOperation.onCell, resize, noop, Generators.modification),
-      splitCellIntoRows: RunOperation.run(splitCellIntoRows$1, RunOperation.onCell, noop, noop, Generators.modification),
-      eraseColumns: RunOperation.run(eraseColumns, RunOperation.onCells, resize, prune, Generators.modification),
-      eraseRows: RunOperation.run(eraseRows, RunOperation.onCells, noop, prune, Generators.modification),
-      makeColumnHeader: RunOperation.run(makeColumnHeader, RunOperation.onCell, noop, noop, Generators.transform('row', 'th')),
-      unmakeColumnHeader: RunOperation.run(unmakeColumnHeader, RunOperation.onCell, noop, noop, Generators.transform(null, 'td')),
-      makeRowHeader: RunOperation.run(makeRowHeader, RunOperation.onCell, noop, noop, Generators.transform('col', 'th')),
-      unmakeRowHeader: RunOperation.run(unmakeRowHeader, RunOperation.onCell, noop, noop, Generators.transform(null, 'td')),
-      mergeCells: RunOperation.run(mergeCells, RunOperation.onMergable, noop, noop, Generators.merging),
-      unmergeCells: RunOperation.run(unmergeCells, RunOperation.onUnmergable, resize, noop, Generators.merging),
-      pasteCells: RunOperation.run(pasteCells, RunOperation.onPaste, resize, noop, Generators.modification),
-      pasteRowsBefore: RunOperation.run(pasteRowsBefore, RunOperation.onPasteRows, noop, noop, Generators.modification),
-      pasteRowsAfter: RunOperation.run(pasteRowsAfter, RunOperation.onPasteRows, noop, noop, Generators.modification)
-    };
+    var resize = adjustWidthTo;
+    var insertRowsBefore = run(opInsertRowsBefore, onCells, noop, noop, Generators.modification);
+    var insertRowsAfter = run(opInsertRowsAfter, onCells, noop, noop, Generators.modification);
+    var insertColumnsBefore = run(opInsertColumnsBefore, onCells, resize, noop, Generators.modification);
+    var insertColumnsAfter = run(opInsertColumnsAfter, onCells, resize, noop, Generators.modification);
+    var eraseColumns = run(opEraseColumns, onCells, resize, prune, Generators.modification);
+    var eraseRows = run(opEraseRows, onCells, noop, prune, Generators.modification);
+    var makeColumnHeader = run(opMakeColumnHeader, onCell, noop, noop, Generators.transform('row', 'th'));
+    var unmakeColumnHeader = run(opUnmakeColumnHeader, onCell, noop, noop, Generators.transform(null, 'td'));
+    var makeRowHeader = run(opMakeRowHeader, onCell, noop, noop, Generators.transform('col', 'th'));
+    var unmakeRowHeader = run(opUnmakeRowHeader, onCell, noop, noop, Generators.transform(null, 'td'));
+    var mergeCells = run(opMergeCells, onMergable, noop, noop, Generators.merging);
+    var unmergeCells = run(opUnmergeCells, onUnmergable, resize, noop, Generators.merging);
+    var pasteCells = run(opPasteCells, onPaste, resize, noop, Generators.modification);
+    var pasteRowsBefore = run(opPasteRowsBefore, onPasteRows, noop, noop, Generators.modification);
+    var pasteRowsAfter = run(opPasteRowsAfter, onPasteRows, noop, noop, Generators.modification);
 
     var getBody$1 = function (editor) {
       return Element.fromDom(editor.getBody());
@@ -5260,7 +4432,6 @@ var table = (function (domGlobals) {
       var dir = getDirection(element);
       return dir === 'rtl' ? rtl$1 : ltr$1;
     };
-    var Direction = { directionAt: directionAt };
 
     var defaultTableToolbar = 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol';
     var defaultStyles = {
@@ -5307,6 +4478,9 @@ var table = (function (domGlobals) {
     var getTableClassList = function (editor) {
       return editor.getParam('table_class_list', [], 'array');
     };
+    var isPercentagesForced = function (editor) {
+      return editor.getParam('table_responsive_width') === true;
+    };
     var isPixelsForced = function (editor) {
       return editor.getParam('table_responsive_width') === false;
     };
@@ -5348,17 +4522,69 @@ var table = (function (domGlobals) {
         height: height
       });
     };
+    var fireTableSelectionChange = function (editor, cells, start, finish, otherCells) {
+      editor.fire('TableSelectionChange', {
+        cells: cells,
+        start: start,
+        finish: finish,
+        otherCells: otherCells
+      });
+    };
+    var fireTableSelectionClear = function (editor) {
+      editor.fire('TableSelectionClear');
+    };
+
+    var point = function (element, offset) {
+      return {
+        element: constant(element),
+        offset: constant(offset)
+      };
+    };
+
+    var scan = function (universe, element, direction) {
+      if (universe.property().isText(element) && universe.property().getText(element).trim().length === 0 || universe.property().isComment(element)) {
+        return direction(element).bind(function (elem) {
+          return scan(universe, elem, direction).orThunk(function () {
+            return Option.some(elem);
+          });
+        });
+      } else {
+        return Option.none();
+      }
+    };
+    var toEnd = function (universe, element) {
+      if (universe.property().isText(element)) {
+        return universe.property().getText(element).length;
+      }
+      var children = universe.property().children(element);
+      return children.length;
+    };
+    var freefallRtl = function (universe, element) {
+      var candidate = scan(universe, element, universe.query().prevSibling).getOr(element);
+      if (universe.property().isText(candidate)) {
+        return point(candidate, toEnd(universe, candidate));
+      }
+      var children = universe.property().children(candidate);
+      return children.length > 0 ? freefallRtl(universe, children[children.length - 1]) : point(candidate, toEnd(universe, candidate));
+    };
+
+    var freefallRtl$1 = freefallRtl;
+
+    var universe$2 = DomUniverse();
+    var freefallRtl$2 = function (element) {
+      return freefallRtl$1(universe$2, element);
+    };
 
     var TableActions = function (editor, lazyWire) {
       var isTableBody = function (editor) {
         return name(getBody$1(editor)) === 'table';
       };
       var lastRowGuard = function (table) {
-        var size = TableGridSize.getGridSize(table);
+        var size = getGridSize(table);
         return isTableBody(editor) === false || size.rows() > 1;
       };
       var lastColumnGuard = function (table) {
-        var size = TableGridSize.getGridSize(table);
+        var size = getGridSize(table);
         return isTableBody(editor) === false || size.columns() > 1;
       };
       var cloneFormats = getCloneElements(editor);
@@ -5367,8 +4593,8 @@ var table = (function (domGlobals) {
           removeDataStyle(table);
           var wire = lazyWire();
           var doc = Element.fromDom(editor.getDoc());
-          var direction = TableDirection(Direction.directionAt);
-          var generators = TableFill.cellOperations(mutate, doc, cloneFormats);
+          var direction = TableDirection(directionAt);
+          var generators = cellOperations(mutate, doc, cloneFormats);
           return guard(table) ? operation(wire, table, target, generators, direction).bind(function (result) {
             each(result.newRows(), function (row) {
               fireNewRow(editor, row.dom());
@@ -5377,54 +4603,62 @@ var table = (function (domGlobals) {
               fireNewCell(editor, cell.dom());
             });
             return result.cursor().map(function (cell) {
+              var des = freefallRtl$2(cell);
               var rng = editor.dom.createRng();
-              rng.setStart(cell.dom(), 0);
-              rng.setEnd(cell.dom(), 0);
+              rng.setStart(des.element().dom(), des.offset());
+              rng.setEnd(des.element().dom(), des.offset());
               return rng;
             });
           }) : Option.none();
         };
       };
-      var deleteRow = execute(TableOperations.eraseRows, lastRowGuard, noop, lazyWire);
-      var deleteColumn = execute(TableOperations.eraseColumns, lastColumnGuard, noop, lazyWire);
-      var insertRowsBefore = execute(TableOperations.insertRowsBefore, always, noop, lazyWire);
-      var insertRowsAfter = execute(TableOperations.insertRowsAfter, always, noop, lazyWire);
-      var insertColumnsBefore = execute(TableOperations.insertColumnsBefore, always, CellMutations.halve, lazyWire);
-      var insertColumnsAfter = execute(TableOperations.insertColumnsAfter, always, CellMutations.halve, lazyWire);
-      var mergeCells = execute(TableOperations.mergeCells, always, noop, lazyWire);
-      var unmergeCells = execute(TableOperations.unmergeCells, always, noop, lazyWire);
-      var pasteRowsBefore = execute(TableOperations.pasteRowsBefore, always, noop, lazyWire);
-      var pasteRowsAfter = execute(TableOperations.pasteRowsAfter, always, noop, lazyWire);
-      var pasteCells = execute(TableOperations.pasteCells, always, noop, lazyWire);
+      var deleteRow = execute(eraseRows, lastRowGuard, noop, lazyWire);
+      var deleteColumn = execute(eraseColumns, lastColumnGuard, noop, lazyWire);
+      var insertRowsBefore$1 = execute(insertRowsBefore, always, noop, lazyWire);
+      var insertRowsAfter$1 = execute(insertRowsAfter, always, noop, lazyWire);
+      var insertColumnsBefore$1 = execute(insertColumnsBefore, always, halve, lazyWire);
+      var insertColumnsAfter$1 = execute(insertColumnsAfter, always, halve, lazyWire);
+      var mergeCells$1 = execute(mergeCells, always, noop, lazyWire);
+      var unmergeCells$1 = execute(unmergeCells, always, noop, lazyWire);
+      var pasteRowsBefore$1 = execute(pasteRowsBefore, always, noop, lazyWire);
+      var pasteRowsAfter$1 = execute(pasteRowsAfter, always, noop, lazyWire);
+      var pasteCells$1 = execute(pasteCells, always, noop, lazyWire);
       return {
         deleteRow: deleteRow,
         deleteColumn: deleteColumn,
-        insertRowsBefore: insertRowsBefore,
-        insertRowsAfter: insertRowsAfter,
-        insertColumnsBefore: insertColumnsBefore,
-        insertColumnsAfter: insertColumnsAfter,
-        mergeCells: mergeCells,
-        unmergeCells: unmergeCells,
-        pasteRowsBefore: pasteRowsBefore,
-        pasteRowsAfter: pasteRowsAfter,
-        pasteCells: pasteCells
+        insertRowsBefore: insertRowsBefore$1,
+        insertRowsAfter: insertRowsAfter$1,
+        insertColumnsBefore: insertColumnsBefore$1,
+        insertColumnsAfter: insertColumnsAfter$1,
+        mergeCells: mergeCells$1,
+        unmergeCells: unmergeCells$1,
+        pasteRowsBefore: pasteRowsBefore$1,
+        pasteRowsAfter: pasteRowsAfter$1,
+        pasteCells: pasteCells$1
       };
     };
 
     var copyRows = function (table, target, generators) {
-      var list = DetailsList.fromTable(table);
+      var list = fromTable(table);
       var house = Warehouse.generate(list);
-      var details = RunOperation.onCells(house, target);
+      var details = onCells(house, target);
       return details.map(function (selectedCells) {
-        var grid = Transitions.toGrid(house, generators, false);
+        var grid = toGrid(house, generators, false);
         var slicedGrid = grid.slice(selectedCells[0].row(), selectedCells[selectedCells.length - 1].row() + selectedCells[selectedCells.length - 1].rowspan());
-        var slicedDetails = RunOperation.toDetailList(slicedGrid, generators);
-        return Redraw.copy(slicedDetails);
+        var slicedDetails = toDetailList(slicedGrid, generators);
+        return copy$2(slicedDetails);
       });
     };
-    var CopyRows = { copyRows: copyRows };
 
     var global$1 = tinymce.util.Tools.resolve('tinymce.util.Tools');
+
+    var getSelectionStartFromSelector = function (selector) {
+      return function (editor) {
+        return Option.from(editor.dom.getParent(editor.selection.getStart(), selector)).map(Element.fromDom);
+      };
+    };
+    var getSelectionStartCell = getSelectionStartFromSelector('th,td');
+    var getSelectionStartCellOrCaption = getSelectionStartFromSelector('th,td,caption');
 
     var getTDTHOverallStyle = function (dom, elm, name) {
       var cells = dom.select('td,th', elm);
@@ -5464,26 +4698,6 @@ var table = (function (domGlobals) {
         editor.formatter.remove('valign' + name, {}, elm);
       });
     };
-    var Styles$1 = {
-      applyAlign: applyAlign,
-      applyVAlign: applyVAlign,
-      unApplyAlign: unApplyAlign,
-      unApplyVAlign: unApplyVAlign,
-      getTDTHOverallStyle: getTDTHOverallStyle
-    };
-
-    var __assign = function () {
-      __assign = Object.assign || function __assign(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-          s = arguments[i];
-          for (var p in s)
-            if (Object.prototype.hasOwnProperty.call(s, p))
-              t[p] = s[p];
-        }
-        return t;
-      };
-      return __assign.apply(this, arguments);
-    };
 
     var buildListItems = function (inputList, itemCallback, startItems) {
       var appendItems = function (values, output) {
@@ -5508,10 +4722,12 @@ var table = (function (domGlobals) {
       var rgbToHex = function (value) {
         return startsWith(value, 'rgb') ? dom.toHex(value) : value;
       };
+      var borderWidth = getRaw(Element.fromDom(elm), 'border-width').getOr('');
       var borderStyle = getRaw(Element.fromDom(elm), 'border-style').getOr('');
       var borderColor = getRaw(Element.fromDom(elm), 'border-color').map(rgbToHex).getOr('');
       var bgColor = getRaw(Element.fromDom(elm), 'background-color').map(rgbToHex).getOr('');
       return {
+        borderwidth: borderWidth,
         borderstyle: borderStyle,
         bordercolor: borderColor,
         backgroundcolor: bgColor
@@ -5523,7 +4739,7 @@ var table = (function (domGlobals) {
       var keys$1 = keys(baseData);
       each(comparisonData, function (items) {
         each(keys$1, function (key) {
-          each$1(items, function (itemValue, itemKey, _) {
+          each$1(items, function (itemValue, itemKey) {
             var comparisonValue = baseData[key];
             if (comparisonValue !== '' && key === itemKey) {
               if (comparisonValue !== itemValue) {
@@ -5535,8 +4751,8 @@ var table = (function (domGlobals) {
       });
       return baseData;
     };
-    var getAdvancedTab = function () {
-      var items = [
+    var getAdvancedTab = function (dialogName) {
+      var advTabItems = [
         {
           name: 'borderstyle',
           type: 'selectbox',
@@ -5599,6 +4815,12 @@ var table = (function (domGlobals) {
           label: 'Background color'
         }
       ];
+      var borderWidth = {
+        name: 'borderwidth',
+        type: 'input',
+        label: 'Border width'
+      };
+      var items = dialogName === 'cell' ? [borderWidth].concat(advTabItems) : advTabItems;
       return {
         title: 'Advanced',
         name: 'advanced',
@@ -5669,9 +4891,9 @@ var table = (function (domGlobals) {
         }, function (cellpadding) {
           return { cellpadding: cellpadding };
         });
-        return __assign({}, spacing, padding);
+        return __assign(__assign({}, spacing), padding);
       };
-      var data = __assign({}, defaultData, style, attrs, advStyle, getBorder(), getCellPaddingCellSpacing());
+      var data = __assign(__assign(__assign(__assign(__assign(__assign({}, defaultData), style), attrs), advStyle), getBorder()), getCellPaddingCellSpacing());
       return data;
     };
     var extractDataFromTableElement = function (editor, elm, hasAdvTableTab) {
@@ -5680,56 +4902,46 @@ var table = (function (domGlobals) {
         if (shouldStyleWithCss(editor) && optBorderWidth.isSome()) {
           return optBorderWidth.getOr('');
         }
-        return dom.getAttrib(elm, 'border') || Styles$1.getTDTHOverallStyle(editor.dom, elm, 'border-width') || Styles$1.getTDTHOverallStyle(editor.dom, elm, 'border');
+        return dom.getAttrib(elm, 'border') || getTDTHOverallStyle(editor.dom, elm, 'border-width') || getTDTHOverallStyle(editor.dom, elm, 'border');
       };
       var dom = editor.dom;
-      var data = __assign({
+      var data = __assign(__assign({
         width: dom.getStyle(elm, 'width') || dom.getAttrib(elm, 'width'),
         height: dom.getStyle(elm, 'height') || dom.getAttrib(elm, 'height'),
         cellspacing: dom.getStyle(elm, 'border-spacing') || dom.getAttrib(elm, 'cellspacing'),
-        cellpadding: dom.getAttrib(elm, 'cellpadding') || Styles$1.getTDTHOverallStyle(editor.dom, elm, 'padding'),
+        cellpadding: dom.getAttrib(elm, 'cellpadding') || getTDTHOverallStyle(editor.dom, elm, 'padding'),
         border: getBorder(dom, elm),
         caption: !!dom.select('caption', elm)[0],
         class: dom.getAttrib(elm, 'class', '')
-      }, getHAlignment('align', 'align', editor, elm), hasAdvTableTab ? extractAdvancedStyles(dom, elm) : {});
+      }, getHAlignment('align', 'align', editor, elm)), hasAdvTableTab ? extractAdvancedStyles(dom, elm) : {});
       return data;
     };
     var extractDataFromRowElement = function (editor, elm, hasAdvancedRowTab) {
       var dom = editor.dom;
-      var data = __assign({
+      var data = __assign(__assign({
         height: dom.getStyle(elm, 'height') || dom.getAttrib(elm, 'height'),
         scope: dom.getAttrib(elm, 'scope'),
         class: dom.getAttrib(elm, 'class', ''),
         align: '',
         type: elm.parentNode.nodeName.toLowerCase()
-      }, getHAlignment('align', 'align', editor, elm), hasAdvancedRowTab ? extractAdvancedStyles(dom, elm) : {});
+      }, getHAlignment('align', 'align', editor, elm)), hasAdvancedRowTab ? extractAdvancedStyles(dom, elm) : {});
       return data;
     };
     var extractDataFromCellElement = function (editor, elm, hasAdvancedCellTab) {
       var dom = editor.dom;
-      var data = __assign({
+      var data = __assign(__assign(__assign({
         width: dom.getStyle(elm, 'width') || dom.getAttrib(elm, 'width'),
         height: dom.getStyle(elm, 'height') || dom.getAttrib(elm, 'height'),
         scope: dom.getAttrib(elm, 'scope'),
         celltype: elm.nodeName.toLowerCase(),
         class: dom.getAttrib(elm, 'class', '')
-      }, getHAlignment('align', 'halign', editor, elm), getVAlignment('valign', 'valign', editor, elm), hasAdvancedCellTab ? extractAdvancedStyles(dom, elm) : {});
+      }, getHAlignment('align', 'halign', editor, elm)), getVAlignment('valign', 'valign', editor, elm)), hasAdvancedCellTab ? extractAdvancedStyles(dom, elm) : {});
       return data;
-    };
-    var Helpers = {
-      buildListItems: buildListItems,
-      extractAdvancedStyles: extractAdvancedStyles,
-      getSharedValues: getSharedValues,
-      getAdvancedTab: getAdvancedTab,
-      extractDataFromTableElement: extractDataFromTableElement,
-      extractDataFromRowElement: extractDataFromRowElement,
-      extractDataFromCellElement: extractDataFromCellElement,
-      extractDataFromSettings: extractDataFromSettings
     };
 
     var getClassList = function (editor) {
       var rowClassList = getCellClassList(editor);
-      var classes = Helpers.buildListItems(rowClassList, function (item) {
+      var classes = buildListItems(rowClassList, function (item) {
         if (item.value) {
           item.textStyle = function () {
             return editor.formatter.getCssText({
@@ -5856,7 +5068,6 @@ var table = (function (domGlobals) {
         return children$3.concat(classlist);
       });
     };
-    var CellDialogGeneralTab = { getItems: getItems };
 
     var normal = function (dom, node) {
       var setAttrib = function (attr, value) {
@@ -5886,7 +5097,7 @@ var table = (function (domGlobals) {
         setStyle: setStyle
       };
     };
-    var DomModifiers = {
+    var DomModifier = {
       normal: normal,
       ifTruthy: ifTruthy
     };
@@ -5901,22 +5112,23 @@ var table = (function (domGlobals) {
       modifiers.setStyle('background-color', data.backgroundcolor);
       modifiers.setStyle('border-color', data.bordercolor);
       modifiers.setStyle('border-style', data.borderstyle);
+      modifiers.setStyle('border-width', addSizeSuffix(data.borderwidth));
     };
     var applyToSingle = function (editor, cells, data) {
       var dom = editor.dom;
       var cellElm = data.celltype && cells[0].nodeName.toLowerCase() !== data.celltype ? dom.rename(cells[0], data.celltype) : cells[0];
-      var modifiers = DomModifiers.normal(dom, cellElm);
+      var modifiers = DomModifier.normal(dom, cellElm);
       updateSimpleProps(modifiers, data);
       if (hasAdvancedCellTab(editor)) {
         updateAdvancedProps(modifiers, data);
       }
-      Styles$1.unApplyAlign(editor, cellElm);
-      Styles$1.unApplyVAlign(editor, cellElm);
+      unApplyAlign(editor, cellElm);
+      unApplyVAlign(editor, cellElm);
       if (data.halign) {
-        Styles$1.applyAlign(editor, cellElm, data.halign);
+        applyAlign(editor, cellElm, data.halign);
       }
       if (data.valign) {
-        Styles$1.applyVAlign(editor, cellElm, data.valign);
+        applyVAlign(editor, cellElm, data.valign);
       }
     };
     var applyToMultiple = function (editor, cells, data) {
@@ -5925,16 +5137,16 @@ var table = (function (domGlobals) {
         if (data.celltype && cellElm.nodeName.toLowerCase() !== data.celltype) {
           cellElm = dom.rename(cellElm, data.celltype);
         }
-        var modifiers = DomModifiers.ifTruthy(dom, cellElm);
+        var modifiers = DomModifier.ifTruthy(dom, cellElm);
         updateSimpleProps(modifiers, data);
         if (hasAdvancedCellTab(editor)) {
           updateAdvancedProps(modifiers, data);
         }
         if (data.halign) {
-          Styles$1.applyAlign(editor, cellElm, data.halign);
+          applyAlign(editor, cellElm, data.halign);
         }
         if (data.valign) {
-          Styles$1.applyVAlign(editor, cellElm, data.valign);
+          applyVAlign(editor, cellElm, data.valign);
         }
       });
     };
@@ -5959,18 +5171,18 @@ var table = (function (domGlobals) {
         return;
       }
       var cellsData = global$1.map(cells, function (cellElm) {
-        return Helpers.extractDataFromCellElement(editor, cellElm, hasAdvancedCellTab(editor));
+        return extractDataFromCellElement(editor, cellElm, hasAdvancedCellTab(editor));
       });
-      var data = Helpers.getSharedValues(cellsData);
+      var data = getSharedValues(cellsData);
       var dialogTabPanel = {
         type: 'tabpanel',
         tabs: [
           {
             title: 'General',
             name: 'general',
-            items: CellDialogGeneralTab.getItems(editor)
+            items: getItems(editor)
           },
-          Helpers.getAdvancedTab()
+          getAdvancedTab('cell')
         ]
       };
       var dialogPanel = {
@@ -5978,7 +5190,7 @@ var table = (function (domGlobals) {
         items: [{
             type: 'grid',
             columns: 2,
-            items: CellDialogGeneralTab.getItems(editor)
+            items: getItems(editor)
           }]
       };
       editor.windowManager.open({
@@ -6002,11 +5214,10 @@ var table = (function (domGlobals) {
         onSubmit: curry(onSubmitCellForm, editor, cells)
       });
     };
-    var CellDialog = { open: open };
 
     var getClassList$1 = function (editor) {
       var rowClassList = getRowClassList(editor);
-      var classes = Helpers.buildListItems(rowClassList, function (item) {
+      var classes = buildListItems(rowClassList, function (item) {
         if (item.value) {
           item.textStyle = function () {
             return editor.formatter.getCssText({
@@ -6082,7 +5293,6 @@ var table = (function (domGlobals) {
         return formChildren.concat(classes);
       });
     };
-    var RowDialogGeneralTab = { getItems: getItems$1 };
 
     var switchRowType = function (dom, rowElm, toType) {
       var tableElm = dom.getParent(rowElm, 'table');
@@ -6100,36 +5310,40 @@ var table = (function (domGlobals) {
           tableElm.appendChild(parentElm);
         }
       }
-      parentElm.appendChild(rowElm);
+      if (toType === 'tbody' && oldParentElm.nodeName === 'THEAD' && parentElm.firstChild) {
+        parentElm.insertBefore(rowElm, parentElm.firstChild);
+      } else {
+        parentElm.appendChild(rowElm);
+      }
       if (!oldParentElm.hasChildNodes()) {
         dom.remove(oldParentElm);
       }
     };
-    var updateAdvancedProps$1 = function (modifiers, data) {
-      modifiers.setStyle('background-color', data.backgroundcolor);
-      modifiers.setStyle('border-color', data.bordercolor);
-      modifiers.setStyle('border-style', data.borderstyle);
+    var updateAdvancedProps$1 = function (modifier, data) {
+      modifier.setStyle('background-color', data.backgroundcolor);
+      modifier.setStyle('border-color', data.bordercolor);
+      modifier.setStyle('border-style', data.borderstyle);
     };
     var onSubmitRowForm = function (editor, rows, oldData, api) {
       var dom = editor.dom;
       var data = api.getData();
       api.close();
-      var createModifier = rows.length === 1 ? DomModifiers.normal : DomModifiers.ifTruthy;
+      var createModifier = rows.length === 1 ? DomModifier.normal : DomModifier.ifTruthy;
       editor.undoManager.transact(function () {
         global$1.each(rows, function (rowElm) {
           if (data.type !== rowElm.parentNode.nodeName.toLowerCase()) {
             switchRowType(editor.dom, rowElm, data.type);
           }
-          var modifiers = createModifier(dom, rowElm);
-          modifiers.setAttrib('scope', data.scope);
-          modifiers.setAttrib('class', data.class);
-          modifiers.setStyle('height', addSizeSuffix(data.height));
+          var modifier = createModifier(dom, rowElm);
+          modifier.setAttrib('scope', data.scope);
+          modifier.setAttrib('class', data.class);
+          modifier.setStyle('height', addSizeSuffix(data.height));
           if (hasAdvancedRowTab(editor)) {
-            updateAdvancedProps$1(modifiers, data);
+            updateAdvancedProps$1(modifier, data);
           }
           if (data.align !== oldData.align) {
-            Styles$1.unApplyAlign(editor, rowElm);
-            Styles$1.applyAlign(editor, rowElm, data.align);
+            unApplyAlign(editor, rowElm);
+            applyAlign(editor, rowElm, data.align);
           }
         });
         editor.focus();
@@ -6157,18 +5371,18 @@ var table = (function (domGlobals) {
         return;
       }
       var rowsData = global$1.map(rows, function (rowElm) {
-        return Helpers.extractDataFromRowElement(editor, rowElm, hasAdvancedRowTab(editor));
+        return extractDataFromRowElement(editor, rowElm, hasAdvancedRowTab(editor));
       });
-      var data = Helpers.getSharedValues(rowsData);
+      var data = getSharedValues(rowsData);
       var dialogTabPanel = {
         type: 'tabpanel',
         tabs: [
           {
             title: 'General',
             name: 'general',
-            items: RowDialogGeneralTab.getItems(editor)
+            items: getItems$1(editor)
           },
-          Helpers.getAdvancedTab()
+          getAdvancedTab('row')
         ]
       };
       var dialogPanel = {
@@ -6176,7 +5390,7 @@ var table = (function (domGlobals) {
         items: [{
             type: 'grid',
             columns: 2,
-            items: RowDialogGeneralTab.getItems(editor)
+            items: getItems$1(editor)
           }]
       };
       editor.windowManager.open({
@@ -6200,7 +5414,6 @@ var table = (function (domGlobals) {
         onSubmit: curry(onSubmitRowForm, editor, rows, data)
       });
     };
-    var RowDialog = { open: open$1 };
 
     var global$2 = tinymce.util.Tools.resolve('tinymce.Env');
 
@@ -6308,19 +5521,20 @@ var table = (function (domGlobals) {
         return table.dom();
       }).getOr(null);
     };
-    var InsertTable = { insert: insert$1 };
 
     var getItems$2 = function (editor, hasClasses, insertNewTable) {
       var rowColCountItems = !insertNewTable ? [] : [
         {
           type: 'input',
           name: 'cols',
-          label: 'Cols'
+          label: 'Cols',
+          inputMode: 'numeric'
         },
         {
           type: 'input',
           name: 'rows',
-          label: 'Rows'
+          label: 'Rows',
+          inputMode: 'numeric'
         }
       ];
       var alwaysItems = [
@@ -6339,12 +5553,14 @@ var table = (function (domGlobals) {
         {
           type: 'input',
           name: 'cellspacing',
-          label: 'Cell spacing'
+          label: 'Cell spacing',
+          inputMode: 'numeric'
         },
         {
           type: 'input',
           name: 'cellpadding',
-          label: 'Cell padding'
+          label: 'Cell padding',
+          inputMode: 'numeric'
         },
         {
           type: 'input',
@@ -6388,7 +5604,7 @@ var table = (function (domGlobals) {
           type: 'selectbox',
           name: 'class',
           label: 'Class',
-          items: Helpers.buildListItems(getTableClassList(editor), function (item) {
+          items: buildListItems(getTableClassList(editor), function (item) {
             if (item.value) {
               item.textStyle = function () {
                 return editor.formatter.getCssText({
@@ -6401,7 +5617,6 @@ var table = (function (domGlobals) {
         }] : [];
       return rowColCountItems.concat(alwaysItems).concat(appearanceItems).concat(alignmentItem).concat(classListItem);
     };
-    var TableDialogGeneralTab = { getItems: getItems$2 };
 
     var styleTDTH = function (dom, elm, name, value) {
       if (elm.tagName === 'TD' || elm.tagName === 'TH') {
@@ -6453,8 +5668,8 @@ var table = (function (domGlobals) {
         styles['border-color'] = data.bordercolor;
         styles['border-style'] = data.borderstyle;
       }
-      attrs.style = dom.serializeStyle(merge(getDefaultStyles(editor), styles));
-      dom.setAttribs(tableElm, merge(getDefaultAttributes(editor), attrs));
+      attrs.style = dom.serializeStyle(__assign(__assign({}, getDefaultStyles(editor)), styles));
+      dom.setAttribs(tableElm, __assign(__assign({}, getDefaultAttributes(editor)), attrs));
     };
     var onSubmitTableForm = function (editor, tableElm, api) {
       var dom = editor.dom;
@@ -6468,7 +5683,7 @@ var table = (function (domGlobals) {
         if (!tableElm) {
           var cols = parseInt(data.cols, 10) || 1;
           var rows = parseInt(data.rows, 10) || 1;
-          tableElm = InsertTable.insert(editor, cols, rows);
+          tableElm = insert$1(editor, cols, rows);
         }
         applyDataToElement(editor, tableElm, data);
         captionElm = dom.select('caption', tableElm)[0];
@@ -6477,13 +5692,13 @@ var table = (function (domGlobals) {
         }
         if (!captionElm && data.caption) {
           captionElm = dom.create('caption');
-          captionElm.innerHTML = !global$2.ie ? '<br data-mce-bogus="1"/>' : '\xA0';
+          captionElm.innerHTML = !global$2.ie ? '<br data-mce-bogus="1"/>' : nbsp;
           tableElm.insertBefore(captionElm, tableElm.firstChild);
         }
         if (data.align === '') {
-          Styles$1.unApplyAlign(editor, tableElm);
+          unApplyAlign(editor, tableElm);
         } else {
-          Styles$1.applyAlign(editor, tableElm, data.align);
+          applyAlign(editor, tableElm, data.align);
         }
         editor.focus();
         editor.addVisual();
@@ -6492,11 +5707,11 @@ var table = (function (domGlobals) {
     var open$2 = function (editor, insertNewTable) {
       var dom = editor.dom;
       var tableElm;
-      var data = Helpers.extractDataFromSettings(editor, hasAdvancedTableTab(editor));
+      var data = extractDataFromSettings(editor, hasAdvancedTableTab(editor));
       if (insertNewTable === false) {
         tableElm = dom.getParent(editor.selection.getStart(), 'table');
         if (tableElm) {
-          data = Helpers.extractDataFromTableElement(editor, tableElm, hasAdvancedTableTab(editor));
+          data = extractDataFromTableElement(editor, tableElm, hasAdvancedTableTab(editor));
         } else {
           if (hasAdvancedTableTab(editor)) {
             data.borderstyle = '';
@@ -6522,7 +5737,7 @@ var table = (function (domGlobals) {
       var generalPanel = {
         type: 'grid',
         columns: 2,
-        items: TableDialogGeneralTab.getItems(editor, hasClasses, insertNewTable)
+        items: getItems$2(editor, hasClasses, insertNewTable)
       };
       var nonAdvancedForm = function () {
         return {
@@ -6539,7 +5754,7 @@ var table = (function (domGlobals) {
               name: 'general',
               items: [generalPanel]
             },
-            Helpers.getAdvancedTab()
+            getAdvancedTab('table')
           ]
         };
       };
@@ -6565,22 +5780,13 @@ var table = (function (domGlobals) {
         initialData: data
       });
     };
-    var TableDialog = { open: open$2 };
-
-    var getSelectionStartFromSelector = function (selector) {
-      return function (editor) {
-        return Option.from(editor.dom.getParent(editor.selection.getStart(), selector)).map(Element.fromDom);
-      };
-    };
-    var getSelectionStartCell = getSelectionStartFromSelector('th,td');
-    var getSelectionStartCellOrCaption = getSelectionStartFromSelector('th,td,caption');
 
     var each$3 = global$1.each;
     var registerCommands = function (editor, actions, cellSelection, selections, clipboardRows) {
       var isRoot = getIsRoot(editor);
       var eraseTable = function () {
         getSelectionStartCellOrCaption(editor).each(function (cellOrCaption) {
-          var tableOpt = TableLookup.table(cellOrCaption, isRoot);
+          var tableOpt = table(cellOrCaption, isRoot);
           tableOpt.filter(not(isRoot)).each(function (table) {
             var cursor = Element.fromText('');
             after(table, cursor);
@@ -6599,28 +5805,13 @@ var table = (function (domGlobals) {
         });
       };
       var getTableFromCell = function (cell) {
-        return TableLookup.table(cell, isRoot);
-      };
-      var getSize = function (table) {
-        return {
-          width: getPixelWidth$1(table.dom()),
-          height: getPixelWidth$1(table.dom())
-        };
-      };
-      var resizeChange = function (editor, oldSize, table) {
-        var newSize = getSize(table);
-        if (oldSize.width !== newSize.width || oldSize.height !== newSize.height) {
-          fireObjectResizeStart(editor, table.dom(), oldSize.width, oldSize.height);
-          fireObjectResized(editor, table.dom(), newSize.width, newSize.height);
-        }
+        return table(cell, isRoot);
       };
       var actOnSelection = function (execute) {
         getSelectionStartCell(editor).each(function (cell) {
           getTableFromCell(cell).each(function (table) {
-            var targets = TableTargets.forMenu(selections, table, cell);
-            var beforeSize = getSize(table);
+            var targets = forMenu(selections, table, cell);
             execute(table, targets).each(function (rng) {
-              resizeChange(editor, beforeSize, table);
               editor.selection.setRng(rng);
               editor.focus();
               cellSelection.clear(table);
@@ -6629,13 +5820,13 @@ var table = (function (domGlobals) {
           });
         });
       };
-      var copyRowSelection = function (execute) {
+      var copyRowSelection = function (_execute) {
         return getSelectionStartCell(editor).map(function (cell) {
           return getTableFromCell(cell).bind(function (table) {
             var doc = Element.fromDom(editor.getDoc());
-            var targets = TableTargets.forMenu(selections, table, cell);
-            var generators = TableFill.cellOperations(noop, doc, Option.none());
-            return CopyRows.copyRows(table, targets, generators);
+            var targets = forMenu(selections, table, cell);
+            var generators = cellOperations(noop, doc, Option.none());
+            return copyRows(table, targets, generators);
           });
         });
       };
@@ -6647,8 +5838,8 @@ var table = (function (domGlobals) {
           getSelectionStartCell(editor).each(function (cell) {
             getTableFromCell(cell).each(function (table) {
               var doc = Element.fromDom(editor.getDoc());
-              var generators = TableFill.paste(doc);
-              var targets = TableTargets.pasteRows(selections, table, cell, clonedRows, generators);
+              var generators = paste(doc);
+              var targets = pasteRows(selections, table, cell, clonedRows, generators);
               execute(table, targets).each(function (rng) {
                 editor.selection.setRng(rng);
                 editor.focus();
@@ -6683,21 +5874,21 @@ var table = (function (domGlobals) {
         mceTableDeleteRow: function () {
           actOnSelection(actions.deleteRow);
         },
-        mceTableCutRow: function (grid) {
+        mceTableCutRow: function (_grid) {
           copyRowSelection().each(function (selection) {
             clipboardRows.set(selection);
             actOnSelection(actions.deleteRow);
           });
         },
-        mceTableCopyRow: function (grid) {
+        mceTableCopyRow: function (_grid) {
           copyRowSelection().each(function (selection) {
             clipboardRows.set(selection);
           });
         },
-        mceTablePasteRowBefore: function (grid) {
+        mceTablePasteRowBefore: function (_grid) {
           pasteOnSelection(actions.pasteRowsBefore);
         },
-        mceTablePasteRowAfter: function (grid) {
+        mceTablePasteRowAfter: function (_grid) {
           pasteOnSelection(actions.pasteRowsAfter);
         },
         mceTableDelete: eraseTable
@@ -6705,19 +5896,18 @@ var table = (function (domGlobals) {
         editor.addCommand(name, func);
       });
       each$3({
-        mceInsertTable: curry(TableDialog.open, editor, true),
-        mceTableProps: curry(TableDialog.open, editor, false),
-        mceTableRowProps: curry(RowDialog.open, editor),
-        mceTableCellProps: curry(CellDialog.open, editor)
+        mceInsertTable: curry(open$2, editor, true),
+        mceTableProps: curry(open$2, editor, false),
+        mceTableRowProps: curry(open$1, editor),
+        mceTableCellProps: curry(open, editor)
       }, function (func, name) {
         editor.addCommand(name, function () {
           func();
         });
       });
     };
-    var Commands = { registerCommands: registerCommands };
 
-    var only$1 = function (element) {
+    var only = function (element) {
       var parent = Option.from(element.dom().documentElement).map(Element.fromDom).getOr(element);
       return {
         parent: constant(parent),
@@ -6726,7 +5916,9 @@ var table = (function (domGlobals) {
       };
     };
     var detached = function (editable, chrome) {
-      var origin = curry(absolute, chrome);
+      var origin = function () {
+        return absolute(chrome);
+      };
       return {
         parent: constant(chrome),
         view: constant(editable),
@@ -6741,17 +5933,38 @@ var table = (function (domGlobals) {
       };
     };
     var ResizeWire = {
-      only: only$1,
+      only: only,
       detached: detached,
       body: body$1
     };
 
-    function Event (fields) {
+    var Immutable = function () {
+      var fields = [];
+      for (var _i = 0; _i < arguments.length; _i++) {
+        fields[_i] = arguments[_i];
+      }
+      return function () {
+        var values = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+          values[_i] = arguments[_i];
+        }
+        if (fields.length !== values.length) {
+          throw new Error('Wrong number of arguments to struct. Expected "[' + fields.length + ']", got ' + values.length + ' arguments');
+        }
+        var struct = {};
+        each(fields, function (name, i) {
+          struct[name] = constant(values[i]);
+        });
+        return struct;
+      };
+    };
+
+    var Event = function (fields) {
       var struct = Immutable.apply(null, fields);
       var handlers = [];
       var bind = function (handler) {
         if (handler === undefined) {
-          throw 'Event bind error: undefined handler';
+          throw new Error('Event bind error: undefined handler');
         }
         handlers.push(handler);
       };
@@ -6761,7 +5974,11 @@ var table = (function (domGlobals) {
         });
       };
       var trigger = function () {
-        var event = struct.apply(null, arguments);
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+          args[_i] = arguments[_i];
+        }
+        var event = struct.apply(null, args);
         each(handlers, function (handler) {
           handler(event);
         });
@@ -6771,7 +5988,7 @@ var table = (function (domGlobals) {
         unbind: unbind,
         trigger: trigger
       };
-    }
+    };
 
     var create = function (typeDefs) {
       var registry = map$1(typeDefs, function (event) {
@@ -6788,59 +6005,6 @@ var table = (function (domGlobals) {
         trigger: trigger
       };
     };
-    var Events = { create: create };
-
-    var mode = exactly([
-      'compare',
-      'extract',
-      'mutate',
-      'sink'
-    ]);
-    var sink = exactly([
-      'element',
-      'start',
-      'stop',
-      'destroy'
-    ]);
-    var api$3 = exactly([
-      'forceDrop',
-      'drop',
-      'move',
-      'delayDrop'
-    ]);
-    var DragApis = {
-      mode: mode,
-      sink: sink,
-      api: api$3
-    };
-
-    var styles$1 = css('ephox-dragster');
-    var Styles$2 = { resolve: styles$1.resolve };
-
-    function Blocker (options) {
-      var settings = merge({ 'layerClass': Styles$2.resolve('blocker') }, options);
-      var div = Element.fromTag('div');
-      set(div, 'role', 'presentation');
-      setAll$1(div, {
-        position: 'fixed',
-        left: '0px',
-        top: '0px',
-        width: '100%',
-        height: '100%'
-      });
-      add$2(div, Styles$2.resolve('blocker'));
-      add$2(div, settings.layerClass);
-      var element = function () {
-        return div;
-      };
-      var destroy = function () {
-        remove$2(div);
-      };
-      return {
-        element: element,
-        destroy: destroy
-      };
-    }
 
     var mkEvent = function (target, x, y, stop, prevent, kill, raw) {
       return {
@@ -6853,21 +6017,22 @@ var table = (function (domGlobals) {
         raw: constant(raw)
       };
     };
+    var fromRawEvent = function (rawEvent) {
+      var target = Element.fromDom(rawEvent.target);
+      var stop = function () {
+        return rawEvent.stopPropagation();
+      };
+      var prevent = function () {
+        return rawEvent.preventDefault();
+      };
+      var kill = compose(prevent, stop);
+      return mkEvent(target, rawEvent.clientX, rawEvent.clientY, stop, prevent, kill, rawEvent);
+    };
     var handle = function (filter, handler) {
       return function (rawEvent) {
-        if (!filter(rawEvent)) {
-          return;
+        if (filter(rawEvent)) {
+          handler(fromRawEvent(rawEvent));
         }
-        var target = Element.fromDom(rawEvent.target);
-        var stop = function () {
-          rawEvent.stopPropagation();
-        };
-        var prevent = function () {
-          rawEvent.preventDefault();
-        };
-        var kill = compose(prevent, stop);
-        var evt = mkEvent(target, rawEvent.clientX, rawEvent.clientY, stop, prevent, kill, rawEvent);
-        handler(evt);
       };
     };
     var binder = function (element, event, filter, handler, useCapture) {
@@ -6886,6 +6051,54 @@ var table = (function (domGlobals) {
     var bind$2 = function (element, event, handler) {
       return bind$1(element, event, filter$1, handler);
     };
+    var fromRawEvent$1 = fromRawEvent;
+
+    var styles$1 = css('ephox-dragster');
+    var resolve$1 = styles$1.resolve;
+
+    var Blocker = function (options) {
+      var settings = __assign({ layerClass: resolve$1('blocker') }, options);
+      var div = Element.fromTag('div');
+      set(div, 'role', 'presentation');
+      setAll$1(div, {
+        position: 'fixed',
+        left: '0px',
+        top: '0px',
+        width: '100%',
+        height: '100%'
+      });
+      add$2(div, resolve$1('blocker'));
+      add$2(div, settings.layerClass);
+      var element = function () {
+        return div;
+      };
+      var destroy = function () {
+        remove$2(div);
+      };
+      return {
+        element: element,
+        destroy: destroy
+      };
+    };
+
+    var DragMode = exactly([
+      'compare',
+      'extract',
+      'mutate',
+      'sink'
+    ]);
+    var DragSink = exactly([
+      'element',
+      'start',
+      'stop',
+      'destroy'
+    ]);
+    var DragApi = exactly([
+      'forceDrop',
+      'drop',
+      'move',
+      'delayDrop'
+    ]);
 
     var compare = function (old, nu) {
       return Position(nu.left() - old.left(), nu.top() - old.top());
@@ -6896,7 +6109,7 @@ var table = (function (domGlobals) {
     var mutate = function (mutation, info) {
       mutation.mutate(info.left(), info.top());
     };
-    var sink$1 = function (dragApi, settings) {
+    var sink = function (dragApi, settings) {
       var blocker = Blocker(settings);
       var mdown = bind$2(blocker.element(), 'mousedown', dragApi.forceDrop);
       var mup = bind$2(blocker.element(), 'mouseup', dragApi.drop);
@@ -6915,19 +6128,46 @@ var table = (function (domGlobals) {
       var stop = function () {
         remove$2(blocker.element());
       };
-      return DragApis.sink({
+      return DragSink({
         element: blocker.element,
         start: start,
         stop: stop,
         destroy: destroy
       });
     };
-    var MouseDrag = DragApis.mode({
+    var MouseDrag = DragMode({
       compare: compare,
       extract: extract$1,
-      sink: sink$1,
+      sink: sink,
       mutate: mutate
     });
+
+    var last$2 = function (fn, rate) {
+      var timer = null;
+      var cancel = function () {
+        if (timer !== null) {
+          domGlobals.clearTimeout(timer);
+          timer = null;
+        }
+      };
+      var throttle = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+          args[_i] = arguments[_i];
+        }
+        if (timer !== null) {
+          domGlobals.clearTimeout(timer);
+        }
+        timer = domGlobals.setTimeout(function () {
+          fn.apply(null, args);
+          timer = null;
+        }, rate);
+      };
+      return {
+        cancel: cancel,
+        throttle: throttle
+      };
+    };
 
     function InDrag () {
       var previous = Option.none();
@@ -6950,7 +6190,7 @@ var table = (function (domGlobals) {
           });
         });
       };
-      var events = Events.create({ move: Event(['info']) });
+      var events = create({ move: Event(['info']) });
       return {
         onEvent: onEvent,
         reset: reset,
@@ -6958,11 +6198,9 @@ var table = (function (domGlobals) {
       };
     }
 
-    function NoDrag (anchor) {
-      var onEvent = function (event, mode) {
-      };
+    function NoDrag () {
       return {
-        onEvent: onEvent,
+        onEvent: noop,
         reset: noop
       };
     }
@@ -6994,35 +6232,9 @@ var table = (function (domGlobals) {
       };
     }
 
-    var last$2 = function (fn, rate) {
-      var timer = null;
-      var cancel = function () {
-        if (timer !== null) {
-          domGlobals.clearTimeout(timer);
-          timer = null;
-        }
-      };
-      var throttle = function () {
-        var args = [];
-        for (var _i = 0; _i < arguments.length; _i++) {
-          args[_i] = arguments[_i];
-        }
-        if (timer !== null)
-          domGlobals.clearTimeout(timer);
-        timer = domGlobals.setTimeout(function () {
-          fn.apply(null, args);
-          timer = null;
-        }, rate);
-      };
-      return {
-        cancel: cancel,
-        throttle: throttle
-      };
-    };
-
     var setup = function (mutation, mode, settings) {
       var active = false;
-      var events = Events.create({
+      var events = create({
         start: Event([]),
         stop: Event([])
       });
@@ -7040,7 +6252,7 @@ var table = (function (domGlobals) {
         movement.on();
         events.trigger.start();
       };
-      var mousemove = function (event, ui) {
+      var mousemove = function (event) {
         throttledDrop.cancel();
         movement.onEvent(event, mode);
       };
@@ -7055,13 +6267,16 @@ var table = (function (domGlobals) {
       };
       var runIfActive = function (f) {
         return function () {
-          var args = Array.prototype.slice.call(arguments, 0);
+          var args = [];
+          for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+          }
           if (active) {
-            return f.apply(null, args);
+            f.apply(null, args);
           }
         };
       };
-      var sink = mode.sink(DragApis.api({
+      var sink = mode.sink(DragApi({
         forceDrop: drop,
         drop: runIfActive(drop),
         move: runIfActive(mousemove),
@@ -7079,17 +6294,24 @@ var table = (function (domGlobals) {
         events: events.registry
       };
     };
-    var Dragging = { setup: setup };
 
-    var transform$1 = function (mutation, options) {
-      var settings = options !== undefined ? options : {};
+    var transform$1 = function (mutation, settings) {
+      if (settings === void 0) {
+        settings = {};
+      }
       var mode = settings.mode !== undefined ? settings.mode : MouseDrag;
-      return Dragging.setup(mutation, mode, options);
+      return setup(mutation, mode, settings);
     };
-    var Dragger = { transform: transform$1 };
 
-    function Mutation () {
-      var events = Events.create({
+    var isContentEditableTrue = function (elm) {
+      return get$1(elm, 'contenteditable') === 'true';
+    };
+    var findClosestContentEditable = function (target, isRoot) {
+      return closest$1(target, '[contenteditable]', isRoot);
+    };
+
+    var Mutation = function () {
+      var events = create({
         drag: Event([
           'xDelta',
           'yDelta'
@@ -7102,10 +6324,10 @@ var table = (function (domGlobals) {
         mutate: mutate,
         events: events.registry
       };
-    }
+    };
 
-    function BarMutation () {
-      var events = Events.create({
+    var BarMutation = function () {
+      var events = create({
         drag: Event([
           'xDelta',
           'yDelta',
@@ -7131,36 +6353,29 @@ var table = (function (domGlobals) {
         mutate: delegate.mutate,
         events: events.registry
       };
-    }
-
-    var isContentEditableTrue = function (elm) {
-      return get$1(elm, 'contenteditable') === 'true';
-    };
-    var findClosestContentEditable = function (target, isRoot) {
-      return closest$1(target, '[contenteditable]', isRoot);
     };
 
-    var resizeBarDragging = Styles.resolve('resizer-bar-dragging');
-    function BarManager (wire, direction, hdirection) {
+    var resizeBarDragging = resolve('resizer-bar-dragging');
+    var BarManager = function (wire, direction, hdirection) {
       var mutation = BarMutation();
-      var resizing = Dragger.transform(mutation, {});
+      var resizing = transform$1(mutation, {});
       var hoverTable = Option.none();
       var getResizer = function (element, type) {
         return Option.from(get$1(element, type));
       };
       mutation.events.drag.bind(function (event) {
         getResizer(event.target(), 'data-row').each(function (_dataRow) {
-          var currentRow = CellUtils.getInt(event.target(), 'top');
+          var currentRow = getCssValue(event.target(), 'top');
           set$1(event.target(), 'top', currentRow + event.yDelta() + 'px');
         });
         getResizer(event.target(), 'data-column').each(function (_dataCol) {
-          var currentCol = CellUtils.getInt(event.target(), 'left');
+          var currentCol = getCssValue(event.target(), 'left');
           set$1(event.target(), 'left', currentCol + event.xDelta() + 'px');
         });
       });
       var getDelta = function (target, dir) {
-        var newX = CellUtils.getInt(target, dir);
-        var oldX = parseInt(get$1(target, 'data-initial-' + dir), 10);
+        var newX = getCssValue(target, dir);
+        var oldX = getAttrValue(target, 'data-initial-' + dir, 0);
         return newX - oldX;
       };
       resizing.events.stop.bind(function () {
@@ -7176,23 +6391,23 @@ var table = (function (domGlobals) {
               remove(target, 'data-initial-left');
               events.trigger.adjustWidth(table, delta, parseInt(column, 10));
             });
-            Bars.refresh(wire, table, hdirection, direction);
+            refresh(wire, table, hdirection, direction);
           });
         });
       });
       var handler = function (target, dir) {
         events.trigger.startAdjust();
         mutation.assign(target);
-        set(target, 'data-initial-' + dir, parseInt(get$2(target, dir), 10));
+        set(target, 'data-initial-' + dir, getCssValue(target, dir));
         add$2(target, resizeBarDragging);
         set$1(target, 'opacity', '0.2');
         resizing.go(wire.parent());
       };
       var mousedown = bind$2(wire.parent(), 'mousedown', function (event) {
-        if (Bars.isRowBar(event.target())) {
+        if (isRowBar(event.target())) {
           handler(event.target(), 'top');
         }
-        if (Bars.isColBar(event.target())) {
+        if (isColBar(event.target())) {
           handler(event.target(), 'left');
         }
       });
@@ -7207,23 +6422,23 @@ var table = (function (domGlobals) {
       var mouseover = bind$2(wire.view(), 'mouseover', function (event) {
         findClosestEditableTable(event.target()).fold(function () {
           if (inBody(event.target())) {
-            Bars.destroy(wire);
+            destroy(wire);
           }
         }, function (table) {
           hoverTable = Option.some(table);
-          Bars.refresh(wire, table, hdirection, direction);
+          refresh(wire, table, hdirection, direction);
         });
       });
-      var destroy = function () {
+      var destroy$1 = function () {
         mousedown.unbind();
         mouseover.unbind();
         resizing.destroy();
-        Bars.destroy(wire);
+        destroy(wire);
       };
-      var refresh = function (tbl) {
-        Bars.refresh(wire, tbl, hdirection, direction);
+      var refresh$1 = function (tbl) {
+        refresh(wire, tbl, hdirection, direction);
       };
-      var events = Events.create({
+      var events = create({
         adjustHeight: Event([
           'table',
           'delta',
@@ -7237,37 +6452,37 @@ var table = (function (domGlobals) {
         startAdjust: Event([])
       });
       return {
-        destroy: destroy,
-        refresh: refresh,
+        destroy: destroy$1,
+        refresh: refresh$1,
         on: resizing.on,
         off: resizing.off,
-        hideBars: curry(Bars.hide, wire),
-        showBars: curry(Bars.show, wire),
+        hideBars: curry(hide, wire),
+        showBars: curry(show, wire),
         events: events.registry
       };
-    }
+    };
 
-    function TableResize (wire, vdirection) {
-      var hdirection = BarPositions.height;
+    var create$1 = function (wire, vdirection) {
+      var hdirection = height;
       var manager = BarManager(wire, vdirection, hdirection);
-      var events = Events.create({
+      var events = create({
         beforeResize: Event(['table']),
         afterResize: Event(['table']),
         startDrag: Event([])
       });
       manager.events.adjustHeight.bind(function (event) {
         events.trigger.beforeResize(event.table());
-        var delta = hdirection.delta(event.delta());
-        Adjustments.adjustHeight(event.table(), delta, event.row(), hdirection);
+        var delta = hdirection.delta(event.delta(), event.table());
+        adjustHeight(event.table(), delta, event.row(), hdirection);
         events.trigger.afterResize(event.table());
       });
-      manager.events.startAdjust.bind(function (event) {
+      manager.events.startAdjust.bind(function (_event) {
         events.trigger.startDrag();
       });
       manager.events.adjustWidth.bind(function (event) {
         events.trigger.beforeResize(event.table());
         var delta = vdirection.delta(event.delta(), event.table());
-        Adjustments.adjustWidth(event.table(), delta, event.column(), vdirection);
+        adjustWidth(event.table(), delta, event.column(), vdirection);
         events.trigger.afterResize(event.table());
       });
       return {
@@ -7278,7 +6493,8 @@ var table = (function (domGlobals) {
         destroy: manager.destroy,
         events: events.registry
       };
-    }
+    };
+    var TableResize = { create: create$1 };
 
     var createContainer = function () {
       var container = Element.fromTag('div');
@@ -7293,7 +6509,7 @@ var table = (function (domGlobals) {
       append(body(), container);
       return container;
     };
-    var get$9 = function (editor, container) {
+    var get$9 = function (editor, _container) {
       return editor.inline ? ResizeWire.body(getBody$1(editor), createContainer()) : ResizeWire.only(Element.fromDom(editor.getDoc()));
     };
     var remove$6 = function (editor, wire) {
@@ -7301,22 +6517,42 @@ var table = (function (domGlobals) {
         remove$2(wire.parent());
       }
     };
-    var TableWire = {
-      get: get$9,
-      remove: remove$6
+
+    var calculatePercentageWidth = function (element, parent) {
+      return getPixelWidth$1(element.dom()) / getPixelWidth$1(parent.dom()) * 100 + '%';
+    };
+    var enforcePercentage = function (rawTable) {
+      var table = Element.fromDom(rawTable);
+      parent(table).map(function (parent) {
+        return calculatePercentageWidth(table, parent);
+      }).each(function (tablePercentage) {
+        set$1(table, 'width', tablePercentage);
+        each(descendants$1(table, 'tr'), function (tr) {
+          each(children(tr), function (td) {
+            set$1(td, 'width', calculatePercentageWidth(td, tr));
+          });
+        });
+      });
+    };
+    var enforcePixels = function (table) {
+      set$1(Element.fromDom(table), 'width', getPixelWidth$1(table).toString() + 'px');
     };
 
-    var ResizeHandler = function (editor) {
+    var getResizeHandler = function (editor) {
       var selectionRng = Option.none();
       var resize = Option.none();
       var wire = Option.none();
       var percentageBasedSizeRegex = /(\d+(\.\d+)?)%/;
-      var startW, startRawW;
+      var startW;
+      var startRawW;
       var isTable = function (elm) {
         return elm.nodeName === 'TABLE';
       };
       var getRawWidth = function (elm) {
-        return editor.dom.getStyle(elm, 'width') || editor.dom.getAttrib(elm, 'width');
+        var raw = editor.dom.getStyle(elm, 'width') || editor.dom.getAttrib(elm, 'width');
+        return Option.from(raw).filter(function (s) {
+          return s.length > 0;
+        });
       };
       var lazyResize = function () {
         return resize;
@@ -7329,17 +6565,17 @@ var table = (function (domGlobals) {
           sz.destroy();
         });
         wire.each(function (w) {
-          TableWire.remove(editor, w);
+          remove$6(editor, w);
         });
       };
       editor.on('init', function () {
-        var direction = TableDirection(Direction.directionAt);
-        var rawWire = TableWire.get(editor);
+        var direction = TableDirection(directionAt);
+        var rawWire = get$9(editor);
         wire = Option.some(rawWire);
         if (hasObjectResizing(editor) && hasTableResizeBars(editor)) {
-          var sz = TableResize(rawWire, direction);
+          var sz = TableResize.create(rawWire, direction);
           sz.on();
-          sz.events.startDrag.bind(function (event) {
+          sz.events.startDrag.bind(function (_event) {
             selectionRng = Option.some(editor.selection.getRng());
           });
           sz.events.beforeResize.bind(function (event) {
@@ -7363,8 +6599,16 @@ var table = (function (domGlobals) {
       editor.on('ObjectResizeStart', function (e) {
         var targetElm = e.target;
         if (isTable(targetElm)) {
+          var tableHasPercentage = getRawWidth(targetElm).map(function (w) {
+            return percentageBasedSizeRegex.test(w);
+          }).getOr(false);
+          if (tableHasPercentage && isPixelsForced(editor)) {
+            enforcePixels(targetElm);
+          } else if (!tableHasPercentage && isPercentagesForced(editor)) {
+            enforcePercentage(targetElm);
+          }
           startW = e.width;
-          startRawW = getRawWidth(targetElm);
+          startRawW = getRawWidth(targetElm).getOr('');
         }
       });
       editor.on('ObjectResized', function (e) {
@@ -7395,7 +6639,7 @@ var table = (function (domGlobals) {
       });
       editor.on('SwitchMode', function () {
         lazyResize().each(function (resize) {
-          if (editor.readonly) {
+          if (editor.mode.isReadOnly()) {
             resize.hideBars();
           } else {
             resize.showBars();
@@ -7409,46 +6653,35 @@ var table = (function (domGlobals) {
       };
     };
 
-    var folder$1 = function (fold) {
-      return { fold: fold };
-    };
+    var adt$1 = Adt.generate([
+      { none: ['current'] },
+      { first: ['current'] },
+      {
+        middle: [
+          'current',
+          'target'
+        ]
+      },
+      { last: ['current'] }
+    ]);
     var none$2 = function (current) {
-      return folder$1(function (n, f, m, l) {
-        return n(current);
-      });
+      if (current === void 0) {
+        current = undefined;
+      }
+      return adt$1.none(current);
     };
-    var first$2 = function (current) {
-      return folder$1(function (n, f, m, l) {
-        return f(current);
-      });
-    };
-    var middle$1 = function (current, target) {
-      return folder$1(function (n, f, m, l) {
-        return m(current, target);
-      });
-    };
-    var last$3 = function (current) {
-      return folder$1(function (n, f, m, l) {
-        return l(current);
-      });
-    };
-    var CellLocation = {
-      none: none$2,
-      first: first$2,
-      middle: middle$1,
-      last: last$3
-    };
+    var CellLocation = __assign(__assign({}, adt$1), { none: none$2 });
 
     var detect$4 = function (current, isRoot) {
-      return TableLookup.table(current, isRoot).bind(function (table) {
-        var all = TableLookup.cells(table);
+      return table(current, isRoot).bind(function (table) {
+        var all = cells(table);
         var index = findIndex(all, function (x) {
           return eq(current, x);
         });
-        return index.map(function (ind) {
+        return index.map(function (index) {
           return {
-            index: constant(ind),
-            all: constant(all)
+            index: index,
+            all: all
           };
         });
       });
@@ -7458,7 +6691,7 @@ var table = (function (domGlobals) {
       return detection.fold(function () {
         return CellLocation.none(current);
       }, function (info) {
-        return info.index() + 1 < info.all().length ? CellLocation.middle(current, info.all()[info.index() + 1]) : CellLocation.last(current);
+        return info.index + 1 < info.all.length ? CellLocation.middle(current, info.all[info.index + 1]) : CellLocation.last(current);
       });
     };
     var prev = function (current, isRoot) {
@@ -7466,15 +6699,21 @@ var table = (function (domGlobals) {
       return detection.fold(function () {
         return CellLocation.none();
       }, function (info) {
-        return info.index() - 1 >= 0 ? CellLocation.middle(current, info.all()[info.index() - 1]) : CellLocation.first(current);
+        return info.index - 1 >= 0 ? CellLocation.middle(current, info.all[info.index - 1]) : CellLocation.first(current);
       });
     };
-    var CellNavigation = {
-      next: next,
-      prev: prev
-    };
 
-    var adt = Adt.generate([
+    var create$2 = function (start, soffset, finish, foffset) {
+      return {
+        start: constant(start),
+        soffset: constant(soffset),
+        finish: constant(finish),
+        foffset: constant(foffset)
+      };
+    };
+    var SimRange = { create: create$2 };
+
+    var adt$2 = Adt.generate([
       { before: ['element'] },
       {
         on: [
@@ -7490,9 +6729,9 @@ var table = (function (domGlobals) {
     var getStart = function (situ) {
       return situ.fold(identity, identity, identity);
     };
-    var before$2 = adt.before;
-    var on = adt.on;
-    var after$2 = adt.after;
+    var before$2 = adt$2.before;
+    var on = adt$2.on;
+    var after$2 = adt$2.after;
     var Situ = {
       before: before$2,
       on: on,
@@ -7501,7 +6740,7 @@ var table = (function (domGlobals) {
       getStart: getStart
     };
 
-    var type$2 = Adt.generate([
+    var adt$3 = Adt.generate([
       { domRange: ['rng'] },
       {
         relative: [
@@ -7518,38 +6757,37 @@ var table = (function (domGlobals) {
         ]
       }
     ]);
-    var range$2 = Immutable('start', 'soffset', 'finish', 'foffset');
+    var exactFromRange = function (simRange) {
+      return adt$3.exact(simRange.start(), simRange.soffset(), simRange.finish(), simRange.foffset());
+    };
     var getStart$1 = function (selection) {
       return selection.match({
         domRange: function (rng) {
           return Element.fromDom(rng.startContainer);
         },
-        relative: function (startSitu, finishSitu) {
+        relative: function (startSitu, _finishSitu) {
           return Situ.getStart(startSitu);
         },
-        exact: function (start, soffset, finish, foffset) {
+        exact: function (start, _soffset, _finish, _foffset) {
           return start;
         }
       });
     };
+    var domRange = adt$3.domRange;
+    var relative = adt$3.relative;
+    var exact = adt$3.exact;
     var getWin = function (selection) {
       var start = getStart$1(selection);
       return defaultView(start);
     };
-    var relative = type$2.relative;
-    var exact = type$2.exact;
-
-    var makeRange = function (start, soffset, finish, foffset) {
-      var doc = owner(start);
-      var rng = doc.dom().createRange();
-      rng.setStart(start.dom(), soffset);
-      rng.setEnd(finish.dom(), foffset);
-      return rng;
-    };
-    var after$3 = function (start, soffset, finish, foffset) {
-      var r = makeRange(start, soffset, finish, foffset);
-      var same = eq(start, finish) && soffset === foffset;
-      return r.collapsed && !same;
+    var range$1 = SimRange.create;
+    var Selection = {
+      domRange: domRange,
+      relative: relative,
+      exact: exact,
+      exactFromRange: exactFromRange,
+      getWin: getWin,
+      range: range$1
     };
 
     var selectNodeContents = function (win, element) {
@@ -7558,7 +6796,7 @@ var table = (function (domGlobals) {
       return rng;
     };
     var selectNodeContentsUsing = function (rng, element) {
-      rng.selectNodeContents(element.dom());
+      return rng.selectNodeContents(element.dom());
     };
     var setStart = function (rng, situ) {
       situ.fold(function (e) {
@@ -7606,7 +6844,7 @@ var table = (function (domGlobals) {
       return rect.width > 0 || rect.height > 0 ? Option.some(rect).map(toRect) : Option.none();
     };
 
-    var adt$1 = Adt.generate([
+    var adt$4 = Adt.generate([
       {
         ltr: [
           'start',
@@ -7664,12 +6902,12 @@ var table = (function (domGlobals) {
           return rev.collapsed === false;
         });
         return reversed.map(function (rev) {
-          return adt$1.rtl(Element.fromDom(rev.endContainer), rev.endOffset, Element.fromDom(rev.startContainer), rev.startOffset);
+          return adt$4.rtl(Element.fromDom(rev.endContainer), rev.endOffset, Element.fromDom(rev.startContainer), rev.startOffset);
         }).getOrThunk(function () {
-          return fromRange(win, adt$1.ltr, rng);
+          return fromRange(win, adt$4.ltr, rng);
         });
       } else {
-        return fromRange(win, adt$1.ltr, rng);
+        return fromRange(win, adt$4.ltr, rng);
       }
     };
     var diagnose = function (win, selection) {
@@ -7693,6 +6931,8 @@ var table = (function (domGlobals) {
         }
       });
     };
+    var ltr$2 = adt$4.ltr;
+    var rtl$2 = adt$4.rtl;
 
     var searchForPoint = function (rectForOffset, x, y, maxX, length) {
       if (length === 0) {
@@ -7745,10 +6985,6 @@ var table = (function (domGlobals) {
       });
     };
 
-    var TextPoint = /*#__PURE__*/Object.freeze({
-        locate: locate
-    });
-
     var searchInChildren = function (doc, node, x, y) {
       var r = doc.dom().createRange();
       var nodes = children(node);
@@ -7758,8 +6994,7 @@ var table = (function (domGlobals) {
       });
     };
     var locateNode = function (doc, node, x, y) {
-      var locator = isText(node) ? locate : searchInChildren;
-      return locator(doc, node, x, y);
+      return isText(node) ? locate(doc, node, x, y) : searchInChildren(doc, node, x, y);
     };
     var locate$1 = function (doc, node, x, y) {
       var r = doc.dom().createRange();
@@ -7786,7 +7021,7 @@ var table = (function (domGlobals) {
       cursorRange.selectNode(node.dom());
       var rect = cursorRange.getBoundingClientRect();
       var collapseDirection = getCollapseDirection(rect, x);
-      var f = collapseDirection === COLLAPSE_TO_LEFT ? first$1 : last$1;
+      var f = collapseDirection === COLLAPSE_TO_LEFT ? first : last$1;
       return f(node).map(function (target) {
         return createCollapsedNode(doc, target, collapseDirection);
       });
@@ -7835,7 +7070,7 @@ var table = (function (domGlobals) {
     var fromPoint$1 = function (win, x, y) {
       var doc = Element.fromDom(win.document);
       return availableSearch(doc, x, y).map(function (rng) {
-        return range$2(Element.fromDom(rng.startContainer), rng.startOffset, Element.fromDom(rng.endContainer), rng.endOffset);
+        return SimRange.create(Element.fromDom(rng.startContainer), rng.startOffset, Element.fromDom(rng.endContainer), rng.endOffset);
       });
     };
 
@@ -7855,12 +7090,12 @@ var table = (function (domGlobals) {
     var preprocessRelative = function (startSitu, finishSitu) {
       var start = startSitu.fold(Situ.before, beforeSpecial, Situ.after);
       var finish = finishSitu.fold(Situ.before, beforeSpecial, Situ.after);
-      return relative(start, finish);
+      return Selection.relative(start, finish);
     };
     var preprocessExact = function (start, soffset, finish, foffset) {
       var startSitu = beforeSpecial(start, soffset);
       var finishSitu = beforeSpecial(finish, foffset);
-      return relative(startSitu, finishSitu);
+      return Selection.relative(startSitu, finishSitu);
     };
     var preprocess = function (selection) {
       return selection.match({
@@ -7872,6 +7107,19 @@ var table = (function (domGlobals) {
         relative: preprocessRelative,
         exact: preprocessExact
       });
+    };
+
+    var makeRange = function (start, soffset, finish, foffset) {
+      var doc = owner(start);
+      var rng = doc.dom().createRange();
+      rng.setStart(start.dom(), soffset);
+      rng.setEnd(finish.dom(), foffset);
+      return rng;
+    };
+    var after$3 = function (start, soffset, finish, foffset) {
+      var r = makeRange(start, soffset, finish, foffset);
+      var same = eq(start, finish) && soffset === foffset;
+      return r.collapsed && !same;
     };
 
     var doSetNativeRange = function (win, rng) {
@@ -7918,7 +7166,7 @@ var table = (function (domGlobals) {
       setRangeFromRelative(win, relative);
     };
     var toNative = function (selection) {
-      var win = getWin(selection).dom();
+      var win = Selection.getWin(selection).dom();
       var getDomRange = function (start, soffset, finish, foffset) {
         return exactToNative(win, start, soffset, finish, foffset);
       };
@@ -7932,7 +7180,7 @@ var table = (function (domGlobals) {
       if (selection.rangeCount > 0) {
         var firstRng = selection.getRangeAt(0);
         var lastRng = selection.getRangeAt(selection.rangeCount - 1);
-        return Option.some(range$2(Element.fromDom(firstRng.startContainer), firstRng.startOffset, Element.fromDom(lastRng.endContainer), lastRng.endOffset));
+        return Option.some(SimRange.create(Element.fromDom(firstRng.startContainer), firstRng.startOffset, Element.fromDom(lastRng.endContainer), lastRng.endOffset));
       } else {
         return Option.none();
       }
@@ -7940,7 +7188,7 @@ var table = (function (domGlobals) {
     var doGetExact = function (selection) {
       var anchor = Element.fromDom(selection.anchorNode);
       var focus = Element.fromDom(selection.focusNode);
-      return after$3(anchor, selection.anchorOffset, focus, selection.focusOffset) ? Option.some(range$2(anchor, selection.anchorOffset, focus, selection.focusOffset)) : readRange(selection);
+      return after$3(anchor, selection.anchorOffset, focus, selection.focusOffset) ? Option.some(SimRange.create(anchor, selection.anchorOffset, focus, selection.focusOffset)) : readRange(selection);
     };
     var setToElement = function (win, element) {
       var rng = selectNodeContents(win, element);
@@ -7953,7 +7201,7 @@ var table = (function (domGlobals) {
     };
     var get$a = function (win) {
       return getExact(win).map(function (range) {
-        return exact(range.start(), range.soffset(), range.finish(), range.foffset());
+        return Selection.exact(range.start(), range.soffset(), range.finish(), range.foffset());
       });
     };
     var getFirstRect$1 = function (win, selection) {
@@ -7963,7 +7211,7 @@ var table = (function (domGlobals) {
     var getAtPoint = function (win, x, y) {
       return fromPoint$1(win, x, y);
     };
-    var clear$1 = function (win) {
+    var clear = function (win) {
       var selection = win.getSelection();
       selection.removeAllRanges();
     };
@@ -7971,13 +7219,13 @@ var table = (function (domGlobals) {
     var global$3 = tinymce.util.Tools.resolve('tinymce.util.VK');
 
     var forward = function (editor, isRoot, cell, lazyWire) {
-      return go(editor, isRoot, CellNavigation.next(cell), lazyWire);
+      return go(editor, isRoot, next(cell), lazyWire);
     };
     var backward = function (editor, isRoot, cell, lazyWire) {
-      return go(editor, isRoot, CellNavigation.prev(cell), lazyWire);
+      return go(editor, isRoot, prev(cell), lazyWire);
     };
     var getCellFirstCursorPosition = function (editor, cell) {
-      var selection = exact(cell, 0, cell, 0);
+      var selection = Selection.exact(cell, 0, cell, 0);
       return toNative(selection);
     };
     var getNewRowCursorPosition = function (editor, table) {
@@ -7988,14 +7236,14 @@ var table = (function (domGlobals) {
         });
       });
     };
-    var go = function (editor, isRoot, cell, actions, lazyWire) {
+    var go = function (editor, isRoot, cell, actions, _lazyWire) {
       return cell.fold(Option.none, Option.none, function (current, next) {
-        return first$1(next).map(function (cell) {
+        return first(next).map(function (cell) {
           return getCellFirstCursorPosition(editor, cell);
         });
       }, function (current) {
-        return TableLookup.table(current, isRoot).bind(function (table) {
-          var targets = TableTargets.noMenu(current);
+        return table(current, isRoot).bind(function (table) {
+          var targets = noMenu(current);
           editor.undoManager.transact(function () {
             actions.insertRowsAfter(table, targets);
           });
@@ -8018,7 +7266,7 @@ var table = (function (domGlobals) {
         var rng = editor.selection.getRng();
         if (rng.collapsed) {
           var start = Element.fromDom(rng.startContainer);
-          TableLookup.cell(start, isRoot_1).each(function (cell) {
+          cell(start, isRoot_1).each(function (cell) {
             event.preventDefault();
             var navigation = event.shiftKey ? backward : forward;
             var rng = navigation(editor, isRoot_1, cell, actions, lazyWire);
@@ -8029,136 +7277,28 @@ var table = (function (domGlobals) {
         }
       }
     };
-    var TabContext = { handle: handle$1 };
 
-    var response = Immutable('selection', 'kill');
-    var Responses = { response: response };
-
-    var isKey = function (key) {
-      return function (keycode) {
-        return keycode === key;
-      };
-    };
-    var isUp = isKey(38);
-    var isDown = isKey(40);
-    var isNavigation = function (keycode) {
-      return keycode >= 37 && keycode <= 40;
-    };
-    var SelectionKeys = {
-      ltr: {
-        isBackward: isKey(37),
-        isForward: isKey(39)
-      },
-      rtl: {
-        isBackward: isKey(39),
-        isForward: isKey(37)
-      },
-      isUp: isUp,
-      isDown: isDown,
-      isNavigation: isNavigation
-    };
-
-    var convertToRange = function (win, selection) {
-      var rng = asLtrRange(win, selection);
+    var create$3 = function (selection, kill) {
       return {
-        start: constant(Element.fromDom(rng.startContainer)),
-        soffset: constant(rng.startOffset),
-        finish: constant(Element.fromDom(rng.endContainer)),
-        foffset: constant(rng.endOffset)
+        selection: constant(selection),
+        kill: constant(kill)
       };
     };
-    var makeSitus = function (start, soffset, finish, foffset) {
+    var Response = { create: create$3 };
+
+    var create$4 = function (start, soffset, finish, foffset) {
       return {
         start: constant(Situ.on(start, soffset)),
         finish: constant(Situ.on(finish, foffset))
       };
     };
-    var Util$1 = {
-      convertToRange: convertToRange,
-      makeSitus: makeSitus
-    };
+    var Situs = { create: create$4 };
 
-    var isSafari = PlatformDetection$1.detect().browser.isSafari();
-    var get$b = function (_DOC) {
-      var doc = _DOC !== undefined ? _DOC.dom() : domGlobals.document;
-      var x = doc.body.scrollLeft || doc.documentElement.scrollLeft;
-      var y = doc.body.scrollTop || doc.documentElement.scrollTop;
-      return Position(x, y);
+    var convertToRange = function (win, selection) {
+      var rng = asLtrRange(win, selection);
+      return SimRange.create(Element.fromDom(rng.startContainer), rng.startOffset, Element.fromDom(rng.endContainer), rng.endOffset);
     };
-    var by = function (x, y, _DOC) {
-      var doc = _DOC !== undefined ? _DOC.dom() : domGlobals.document;
-      var win = doc.defaultView;
-      win.scrollBy(x, y);
-    };
-
-    function WindowBridge (win) {
-      var elementFromPoint = function (x, y) {
-        return Element.fromPoint(Element.fromDom(win.document), x, y);
-      };
-      var getRect = function (element) {
-        return element.dom().getBoundingClientRect();
-      };
-      var getRangedRect = function (start, soffset, finish, foffset) {
-        var sel = exact(start, soffset, finish, foffset);
-        return getFirstRect$1(win, sel).map(function (structRect) {
-          return map$1(structRect, apply);
-        });
-      };
-      var getSelection = function () {
-        return get$a(win).map(function (exactAdt) {
-          return Util$1.convertToRange(win, exactAdt);
-        });
-      };
-      var fromSitus = function (situs) {
-        var relative$1 = relative(situs.start(), situs.finish());
-        return Util$1.convertToRange(win, relative$1);
-      };
-      var situsFromPoint = function (x, y) {
-        return getAtPoint(win, x, y).map(function (exact) {
-          return {
-            start: constant(Situ.on(exact.start(), exact.soffset())),
-            finish: constant(Situ.on(exact.finish(), exact.foffset()))
-          };
-        });
-      };
-      var clearSelection = function () {
-        clear$1(win);
-      };
-      var selectContents = function (element) {
-        setToElement(win, element);
-      };
-      var setSelection = function (sel) {
-        setExact(win, sel.start(), sel.soffset(), sel.finish(), sel.foffset());
-      };
-      var setRelativeSelection = function (start, finish) {
-        setRelative(win, start, finish);
-      };
-      var getInnerHeight = function () {
-        return win.innerHeight;
-      };
-      var getScrollY = function () {
-        var pos = get$b(Element.fromDom(win.document));
-        return pos.top();
-      };
-      var scrollBy = function (x, y) {
-        by(x, y, Element.fromDom(win.document));
-      };
-      return {
-        elementFromPoint: elementFromPoint,
-        getRect: getRect,
-        getRangedRect: getRangedRect,
-        getSelection: getSelection,
-        fromSitus: fromSitus,
-        situsFromPoint: situsFromPoint,
-        clearSelection: clearSelection,
-        setSelection: setSelection,
-        setRelativeSelection: setRelativeSelection,
-        selectContents: selectContents,
-        getInnerHeight: getInnerHeight,
-        getScrollY: getScrollY,
-        scrollBy: scrollBy
-      };
-    }
+    var makeSitus = Situs.create;
 
     var sync = function (container, isRoot, start, soffset, finish, foffset, selectRange) {
       if (!(eq(start, finish) && soffset === foffset)) {
@@ -8173,11 +7313,11 @@ var table = (function (domGlobals) {
     };
     var detect$5 = function (container, isRoot, start, finish, selectRange) {
       if (!eq(start, finish)) {
-        return CellSelection.identify(start, finish, isRoot).bind(function (cellSel) {
-          var boxes = cellSel.boxes().getOr([]);
+        return identify(start, finish, isRoot).bind(function (cellSel) {
+          var boxes = cellSel.boxes.getOr([]);
           if (boxes.length > 0) {
-            selectRange(container, boxes, cellSel.start(), cellSel.finish());
-            return Option.some(Responses.response(Option.some(Util$1.makeSitus(start, 0, start, getEnd(start))), true));
+            selectRange(container, boxes, cellSel.start, cellSel.finish);
+            return Option.some(Response.create(Option.some(makeSitus(start, 0, start, getEnd(start))), true));
           } else {
             return Option.none();
           }
@@ -8188,127 +7328,19 @@ var table = (function (domGlobals) {
     };
     var update = function (rows, columns, container, selected, annotations) {
       var updateSelection = function (newSels) {
-        annotations.clear(container);
-        annotations.selectRange(container, newSels.boxes(), newSels.start(), newSels.finish());
-        return newSels.boxes();
+        annotations.clearBeforeUpdate(container);
+        annotations.selectRange(container, newSels.boxes, newSels.start, newSels.finish);
+        return newSels.boxes;
       };
-      return CellSelection.shiftSelection(selected, rows, columns, annotations.firstSelectedSelector(), annotations.lastSelectedSelector()).map(updateSelection);
-    };
-    var KeySelection = {
-      sync: sync,
-      detect: detect$5,
-      update: update
+      return shiftSelection(selected, rows, columns, annotations.firstSelectedSelector, annotations.lastSelectedSelector).map(updateSelection);
     };
 
-    var nu$3 = MixedBag([
-      'left',
-      'top',
-      'right',
-      'bottom'
-    ], []);
-    var moveDown = function (caret, amount) {
-      return nu$3({
-        left: caret.left(),
-        top: caret.top() + amount,
-        right: caret.right(),
-        bottom: caret.bottom() + amount
-      });
+    var traverse = function (item, mode) {
+      return {
+        item: constant(item),
+        mode: constant(mode)
+      };
     };
-    var moveUp = function (caret, amount) {
-      return nu$3({
-        left: caret.left(),
-        top: caret.top() - amount,
-        right: caret.right(),
-        bottom: caret.bottom() - amount
-      });
-    };
-    var moveBottomTo = function (caret, bottom) {
-      var height = caret.bottom() - caret.top();
-      return nu$3({
-        left: caret.left(),
-        top: bottom - height,
-        right: caret.right(),
-        bottom: bottom
-      });
-    };
-    var moveTopTo = function (caret, top) {
-      var height = caret.bottom() - caret.top();
-      return nu$3({
-        left: caret.left(),
-        top: top,
-        right: caret.right(),
-        bottom: top + height
-      });
-    };
-    var translate = function (caret, xDelta, yDelta) {
-      return nu$3({
-        left: caret.left() + xDelta,
-        top: caret.top() + yDelta,
-        right: caret.right() + xDelta,
-        bottom: caret.bottom() + yDelta
-      });
-    };
-    var getTop$1 = function (caret) {
-      return caret.top();
-    };
-    var getBottom = function (caret) {
-      return caret.bottom();
-    };
-    var toString = function (caret) {
-      return '(' + caret.left() + ', ' + caret.top() + ') -> (' + caret.right() + ', ' + caret.bottom() + ')';
-    };
-    var Carets = {
-      nu: nu$3,
-      moveUp: moveUp,
-      moveDown: moveDown,
-      moveBottomTo: moveBottomTo,
-      moveTopTo: moveTopTo,
-      getTop: getTop$1,
-      getBottom: getBottom,
-      translate: translate,
-      toString: toString
-    };
-
-    var getPartialBox = function (bridge, element, offset) {
-      if (offset >= 0 && offset < getEnd(element))
-        return bridge.getRangedRect(element, offset, element, offset + 1);
-      else if (offset > 0)
-        return bridge.getRangedRect(element, offset - 1, element, offset);
-      return Option.none();
-    };
-    var toCaret = function (rect) {
-      return Carets.nu({
-        left: rect.left,
-        top: rect.top,
-        right: rect.right,
-        bottom: rect.bottom
-      });
-    };
-    var getElemBox = function (bridge, element) {
-      return Option.some(bridge.getRect(element));
-    };
-    var getBoxAt = function (bridge, element, offset) {
-      if (isElement(element))
-        return getElemBox(bridge, element).map(toCaret);
-      else if (isText(element))
-        return getPartialBox(bridge, element, offset).map(toCaret);
-      else
-        return Option.none();
-    };
-    var getEntireBox = function (bridge, element) {
-      if (isElement(element))
-        return getElemBox(bridge, element).map(toCaret);
-      else if (isText(element))
-        return bridge.getRangedRect(element, 0, element, getEnd(element)).map(toCaret);
-      else
-        return Option.none();
-    };
-    var Rectangles = {
-      getBoxAt: getBoxAt,
-      getEntireBox: getEntireBox
-    };
-
-    var traverse = Immutable('item', 'mode');
     var backtrack = function (universe, item, _direction, transition) {
       if (transition === void 0) {
         transition = sidestep;
@@ -8368,7 +7400,7 @@ var table = (function (domGlobals) {
       });
     };
 
-    var left$1 = function () {
+    var left = function () {
       var sibling = function (universe, item) {
         return universe.query().prevSibling(item);
       };
@@ -8380,7 +7412,7 @@ var table = (function (domGlobals) {
         first: first
       };
     };
-    var right$1 = function () {
+    var right = function () {
       var sibling = function (universe, item) {
         return universe.query().nextSibling(item);
       };
@@ -8393,30 +7425,26 @@ var table = (function (domGlobals) {
       };
     };
     var Walkers = {
-      left: left$1,
-      right: right$1
+      left: left,
+      right: right
     };
 
     var hone = function (universe, item, predicate, mode, direction, isRoot) {
       var next = go$1(universe, item, mode, direction);
       return next.bind(function (n) {
-        if (isRoot(n.item()))
+        if (isRoot(n.item())) {
           return Option.none();
-        else
+        } else {
           return predicate(n.item()) ? Option.some(n.item()) : hone(universe, n.item(), predicate, n.mode(), direction, isRoot);
+        }
       });
     };
-    var left$2 = function (universe, item, predicate, isRoot) {
+    var left$1 = function (universe, item, predicate, isRoot) {
       return hone(universe, item, predicate, sidestep, Walkers.left(), isRoot);
     };
-    var right$2 = function (universe, item, predicate, isRoot) {
+    var right$1 = function (universe, item, predicate, isRoot) {
       return hone(universe, item, predicate, sidestep, Walkers.right(), isRoot);
     };
-
-    var Seeker = /*#__PURE__*/Object.freeze({
-        left: left$2,
-        right: right$2
-    });
 
     var isLeaf = function (universe) {
       return function (element) {
@@ -8429,188 +7457,84 @@ var table = (function (domGlobals) {
     var after$4 = function (universe, item, isRoot) {
       return seekRight(universe, item, isLeaf(universe), isRoot);
     };
-    var seekLeft = left$2;
-    var seekRight = right$2;
+    var seekLeft = left$1;
+    var seekRight = right$1;
 
-    var universe$2 = DomUniverse();
+    var universe$3 = DomUniverse();
     var before$4 = function (element, isRoot) {
-      return before$3(universe$2, element, isRoot);
+      return before$3(universe$3, element, isRoot);
     };
     var after$5 = function (element, isRoot) {
-      return after$4(universe$2, element, isRoot);
+      return after$4(universe$3, element, isRoot);
     };
     var seekLeft$1 = function (element, predicate, isRoot) {
-      return seekLeft(universe$2, element, predicate, isRoot);
+      return seekLeft(universe$3, element, predicate, isRoot);
     };
     var seekRight$1 = function (element, predicate, isRoot) {
-      return seekRight(universe$2, element, predicate, isRoot);
+      return seekRight(universe$3, element, predicate, isRoot);
     };
 
-    var JUMP_SIZE = 5;
-    var NUM_RETRIES = 100;
-    var adt$2 = Adt.generate([
-      { 'none': [] },
-      { 'retry': ['caret'] }
-    ]);
-    var isOutside = function (caret, box) {
-      return caret.left() < box.left() || Math.abs(box.right() - caret.left()) < 1 || caret.left() > box.right();
-    };
-    var inOutsideBlock = function (bridge, element, caret) {
-      return closest(element, DomStructure.isBlock).fold(constant(false), function (cell) {
-        return Rectangles.getEntireBox(bridge, cell).exists(function (box) {
-          return isOutside(caret, box);
-        });
-      });
-    };
-    var adjustDown = function (bridge, element, guessBox, original, caret) {
-      var lowerCaret = Carets.moveDown(caret, JUMP_SIZE);
-      if (Math.abs(guessBox.bottom() - original.bottom()) < 1)
-        return adt$2.retry(lowerCaret);
-      else if (guessBox.top() > caret.bottom())
-        return adt$2.retry(lowerCaret);
-      else if (guessBox.top() === caret.bottom())
-        return adt$2.retry(Carets.moveDown(caret, 1));
-      else
-        return inOutsideBlock(bridge, element, caret) ? adt$2.retry(Carets.translate(lowerCaret, JUMP_SIZE, 0)) : adt$2.none();
-    };
-    var adjustUp = function (bridge, element, guessBox, original, caret) {
-      var higherCaret = Carets.moveUp(caret, JUMP_SIZE);
-      if (Math.abs(guessBox.top() - original.top()) < 1)
-        return adt$2.retry(higherCaret);
-      else if (guessBox.bottom() < caret.top())
-        return adt$2.retry(higherCaret);
-      else if (guessBox.bottom() === caret.top())
-        return adt$2.retry(Carets.moveUp(caret, 1));
-      else
-        return inOutsideBlock(bridge, element, caret) ? adt$2.retry(Carets.translate(higherCaret, JUMP_SIZE, 0)) : adt$2.none();
-    };
-    var upMovement = {
-      point: Carets.getTop,
-      adjuster: adjustUp,
-      move: Carets.moveUp,
-      gather: before$4
-    };
-    var downMovement = {
-      point: Carets.getBottom,
-      adjuster: adjustDown,
-      move: Carets.moveDown,
-      gather: after$5
-    };
-    var isAtTable = function (bridge, x, y) {
-      return bridge.elementFromPoint(x, y).filter(function (elm) {
-        return name(elm) === 'table';
-      }).isSome();
-    };
-    var adjustForTable = function (bridge, movement, original, caret, numRetries) {
-      return adjustTil(bridge, movement, original, movement.move(caret, JUMP_SIZE), numRetries);
-    };
-    var adjustTil = function (bridge, movement, original, caret, numRetries) {
-      if (numRetries === 0)
-        return Option.some(caret);
-      if (isAtTable(bridge, caret.left(), movement.point(caret)))
-        return adjustForTable(bridge, movement, original, caret, numRetries - 1);
-      return bridge.situsFromPoint(caret.left(), movement.point(caret)).bind(function (guess) {
-        return guess.start().fold(Option.none, function (element, offset) {
-          return Rectangles.getEntireBox(bridge, element, offset).bind(function (guessBox) {
-            return movement.adjuster(bridge, element, guessBox, original, caret).fold(Option.none, function (newCaret) {
-              return adjustTil(bridge, movement, original, newCaret, numRetries - 1);
-            });
-          }).orThunk(function () {
-            return Option.some(caret);
-          });
-        }, Option.none);
-      });
-    };
-    var ieTryDown = function (bridge, caret) {
-      return bridge.situsFromPoint(caret.left(), caret.bottom() + JUMP_SIZE);
-    };
-    var ieTryUp = function (bridge, caret) {
-      return bridge.situsFromPoint(caret.left(), caret.top() - JUMP_SIZE);
-    };
-    var checkScroll = function (movement, adjusted, bridge) {
-      if (movement.point(adjusted) > bridge.getInnerHeight())
-        return Option.some(movement.point(adjusted) - bridge.getInnerHeight());
-      else if (movement.point(adjusted) < 0)
-        return Option.some(-movement.point(adjusted));
-      else
-        return Option.none();
-    };
-    var retry = function (movement, bridge, caret) {
-      var moved = movement.move(caret, JUMP_SIZE);
-      var adjusted = adjustTil(bridge, movement, caret, moved, NUM_RETRIES).getOr(moved);
-      return checkScroll(movement, adjusted, bridge).fold(function () {
-        return bridge.situsFromPoint(adjusted.left(), movement.point(adjusted));
-      }, function (delta) {
-        bridge.scrollBy(0, delta);
-        return bridge.situsFromPoint(adjusted.left(), movement.point(adjusted) - delta);
-      });
-    };
-    var Retries = {
-      tryUp: curry(retry, upMovement),
-      tryDown: curry(retry, downMovement),
-      ieTryUp: ieTryUp,
-      ieTryDown: ieTryDown,
-      getJumpSize: constant(JUMP_SIZE)
+    var ancestor$2 = function (scope, predicate, isRoot) {
+      return ancestor(scope, predicate, isRoot).isSome();
     };
 
-    var adt$3 = Adt.generate([
-      { 'none': ['message'] },
-      { 'success': [] },
-      { 'failedUp': ['cell'] },
-      { 'failedDown': ['cell'] }
+    var adt$5 = Adt.generate([
+      { none: ['message'] },
+      { success: [] },
+      { failedUp: ['cell'] },
+      { failedDown: ['cell'] }
     ]);
     var isOverlapping = function (bridge, before, after) {
       var beforeBounds = bridge.getRect(before);
       var afterBounds = bridge.getRect(after);
       return afterBounds.right > beforeBounds.left && afterBounds.left < beforeBounds.right;
     };
+    var isRow = function (elem) {
+      return closest$1(elem, 'tr');
+    };
     var verify = function (bridge, before, beforeOffset, after, afterOffset, failure, isRoot) {
       return closest$1(after, 'td,th', isRoot).bind(function (afterCell) {
         return closest$1(before, 'td,th', isRoot).map(function (beforeCell) {
           if (!eq(afterCell, beforeCell)) {
-            return DomParent.sharedOne(isRow, [
+            return sharedOne$1(isRow, [
               afterCell,
               beforeCell
             ]).fold(function () {
-              return isOverlapping(bridge, beforeCell, afterCell) ? adt$3.success() : failure(beforeCell);
-            }, function (sharedRow) {
+              return isOverlapping(bridge, beforeCell, afterCell) ? adt$5.success() : failure(beforeCell);
+            }, function (_sharedRow) {
               return failure(beforeCell);
             });
           } else {
-            return eq(after, afterCell) && getEnd(afterCell) === afterOffset ? failure(beforeCell) : adt$3.none('in same cell');
+            return eq(after, afterCell) && getEnd(afterCell) === afterOffset ? failure(beforeCell) : adt$5.none('in same cell');
           }
         });
-      }).getOr(adt$3.none('default'));
-    };
-    var isRow = function (elem) {
-      return closest$1(elem, 'tr');
+      }).getOr(adt$5.none('default'));
     };
     var cata$2 = function (subject, onNone, onSuccess, onFailedUp, onFailedDown) {
       return subject.fold(onNone, onSuccess, onFailedUp, onFailedDown);
     };
-    var BeforeAfter = {
+    var BeforeAfter = __assign(__assign({}, adt$5), {
       verify: verify,
-      cata: cata$2,
-      adt: adt$3
+      cata: cata$2
+    });
+
+    var inParent = function (parent, children, element, index) {
+      return {
+        parent: constant(parent),
+        children: constant(children),
+        element: constant(element),
+        index: constant(index)
+      };
     };
-
-    var point = Immutable('element', 'offset');
-    var delta = Immutable('element', 'deltaOffset');
-    var range$3 = Immutable('element', 'start', 'finish');
-    var points = Immutable('begin', 'end');
-    var text = Immutable('element', 'text');
-
-    var inAncestor = Immutable('ancestor', 'descendants', 'element', 'index');
-    var inParent = Immutable('parent', 'children', 'element', 'index');
     var indexInParent = function (element) {
       return parent(element).bind(function (parent) {
         var children$1 = children(parent);
-        return indexOf$1(children$1, element).map(function (index) {
+        return indexOf(children$1, element).map(function (index) {
           return inParent(parent, children$1, element, index);
         });
       });
     };
-    var indexOf$1 = function (elements, element) {
+    var indexOf = function (elements, element) {
       return findIndex(elements, curry(eq, element));
     };
 
@@ -8653,7 +7577,7 @@ var table = (function (domGlobals) {
       });
     };
     var process = function (analysis) {
-      return BeforeAfter.cata(analysis, function (message) {
+      return BeforeAfter.cata(analysis, function (_message) {
         return Option.none();
       }, function () {
         return Option.none();
@@ -8663,27 +7587,204 @@ var table = (function (domGlobals) {
         return Option.some(point(cell, getEnd(cell)));
       });
     };
-    var BrTags = {
-      tryBr: tryBr,
-      process: process
+
+    var moveDown = function (caret, amount) {
+      return {
+        left: caret.left,
+        top: caret.top + amount,
+        right: caret.right,
+        bottom: caret.bottom + amount
+      };
+    };
+    var moveUp = function (caret, amount) {
+      return {
+        left: caret.left,
+        top: caret.top - amount,
+        right: caret.right,
+        bottom: caret.bottom - amount
+      };
+    };
+    var translate = function (caret, xDelta, yDelta) {
+      return {
+        left: caret.left + xDelta,
+        top: caret.top + yDelta,
+        right: caret.right + xDelta,
+        bottom: caret.bottom + yDelta
+      };
+    };
+    var getTop$1 = function (caret) {
+      return caret.top;
+    };
+    var getBottom = function (caret) {
+      return caret.bottom;
+    };
+
+    var getPartialBox = function (bridge, element, offset) {
+      if (offset >= 0 && offset < getEnd(element)) {
+        return bridge.getRangedRect(element, offset, element, offset + 1);
+      } else if (offset > 0) {
+        return bridge.getRangedRect(element, offset - 1, element, offset);
+      }
+      return Option.none();
+    };
+    var toCaret = function (rect) {
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom
+      };
+    };
+    var getElemBox = function (bridge, element) {
+      return Option.some(bridge.getRect(element));
+    };
+    var getBoxAt = function (bridge, element, offset) {
+      if (isElement(element)) {
+        return getElemBox(bridge, element).map(toCaret);
+      } else if (isText(element)) {
+        return getPartialBox(bridge, element, offset).map(toCaret);
+      } else {
+        return Option.none();
+      }
+    };
+    var getEntireBox = function (bridge, element) {
+      if (isElement(element)) {
+        return getElemBox(bridge, element).map(toCaret);
+      } else if (isText(element)) {
+        return bridge.getRangedRect(element, 0, element, getEnd(element)).map(toCaret);
+      } else {
+        return Option.none();
+      }
+    };
+
+    var JUMP_SIZE = 5;
+    var NUM_RETRIES = 100;
+    var adt$6 = Adt.generate([
+      { none: [] },
+      { retry: ['caret'] }
+    ]);
+    var isOutside = function (caret, box) {
+      return caret.left < box.left || Math.abs(box.right - caret.left) < 1 || caret.left > box.right;
+    };
+    var inOutsideBlock = function (bridge, element, caret) {
+      return closest(element, isBlock$1).fold(constant(false), function (cell) {
+        return getEntireBox(bridge, cell).exists(function (box) {
+          return isOutside(caret, box);
+        });
+      });
+    };
+    var adjustDown = function (bridge, element, guessBox, original, caret) {
+      var lowerCaret = moveDown(caret, JUMP_SIZE);
+      if (Math.abs(guessBox.bottom - original.bottom) < 1) {
+        return adt$6.retry(lowerCaret);
+      } else if (guessBox.top > caret.bottom) {
+        return adt$6.retry(lowerCaret);
+      } else if (guessBox.top === caret.bottom) {
+        return adt$6.retry(moveDown(caret, 1));
+      } else {
+        return inOutsideBlock(bridge, element, caret) ? adt$6.retry(translate(lowerCaret, JUMP_SIZE, 0)) : adt$6.none();
+      }
+    };
+    var adjustUp = function (bridge, element, guessBox, original, caret) {
+      var higherCaret = moveUp(caret, JUMP_SIZE);
+      if (Math.abs(guessBox.top - original.top) < 1) {
+        return adt$6.retry(higherCaret);
+      } else if (guessBox.bottom < caret.top) {
+        return adt$6.retry(higherCaret);
+      } else if (guessBox.bottom === caret.top) {
+        return adt$6.retry(moveUp(caret, 1));
+      } else {
+        return inOutsideBlock(bridge, element, caret) ? adt$6.retry(translate(higherCaret, JUMP_SIZE, 0)) : adt$6.none();
+      }
+    };
+    var upMovement = {
+      point: getTop$1,
+      adjuster: adjustUp,
+      move: moveUp,
+      gather: before$4
+    };
+    var downMovement = {
+      point: getBottom,
+      adjuster: adjustDown,
+      move: moveDown,
+      gather: after$5
+    };
+    var isAtTable = function (bridge, x, y) {
+      return bridge.elementFromPoint(x, y).filter(function (elm) {
+        return name(elm) === 'table';
+      }).isSome();
+    };
+    var adjustForTable = function (bridge, movement, original, caret, numRetries) {
+      return adjustTil(bridge, movement, original, movement.move(caret, JUMP_SIZE), numRetries);
+    };
+    var adjustTil = function (bridge, movement, original, caret, numRetries) {
+      if (numRetries === 0) {
+        return Option.some(caret);
+      }
+      if (isAtTable(bridge, caret.left, movement.point(caret))) {
+        return adjustForTable(bridge, movement, original, caret, numRetries - 1);
+      }
+      return bridge.situsFromPoint(caret.left, movement.point(caret)).bind(function (guess) {
+        return guess.start().fold(Option.none, function (element) {
+          return getEntireBox(bridge, element).bind(function (guessBox) {
+            return movement.adjuster(bridge, element, guessBox, original, caret).fold(Option.none, function (newCaret) {
+              return adjustTil(bridge, movement, original, newCaret, numRetries - 1);
+            });
+          }).orThunk(function () {
+            return Option.some(caret);
+          });
+        }, Option.none);
+      });
+    };
+    var ieTryDown = function (bridge, caret) {
+      return bridge.situsFromPoint(caret.left, caret.bottom + JUMP_SIZE);
+    };
+    var ieTryUp = function (bridge, caret) {
+      return bridge.situsFromPoint(caret.left, caret.top - JUMP_SIZE);
+    };
+    var checkScroll = function (movement, adjusted, bridge) {
+      if (movement.point(adjusted) > bridge.getInnerHeight()) {
+        return Option.some(movement.point(adjusted) - bridge.getInnerHeight());
+      } else if (movement.point(adjusted) < 0) {
+        return Option.some(-movement.point(adjusted));
+      } else {
+        return Option.none();
+      }
+    };
+    var retry = function (movement, bridge, caret) {
+      var moved = movement.move(caret, JUMP_SIZE);
+      var adjusted = adjustTil(bridge, movement, caret, moved, NUM_RETRIES).getOr(moved);
+      return checkScroll(movement, adjusted, bridge).fold(function () {
+        return bridge.situsFromPoint(adjusted.left, movement.point(adjusted));
+      }, function (delta) {
+        bridge.scrollBy(0, delta);
+        return bridge.situsFromPoint(adjusted.left, movement.point(adjusted) - delta);
+      });
+    };
+    var Retries = {
+      tryUp: curry(retry, upMovement),
+      tryDown: curry(retry, downMovement),
+      ieTryUp: ieTryUp,
+      ieTryDown: ieTryDown,
+      getJumpSize: constant(JUMP_SIZE)
     };
 
     var MAX_RETRIES = 20;
-    var platform$1 = PlatformDetection$1.detect();
     var findSpot = function (bridge, isRoot, direction) {
       return bridge.getSelection().bind(function (sel) {
-        return BrTags.tryBr(isRoot, sel.finish(), sel.foffset(), direction).fold(function () {
+        return tryBr(isRoot, sel.finish(), sel.foffset(), direction).fold(function () {
           return Option.some(point(sel.finish(), sel.foffset()));
         }, function (brNeighbour) {
           var range = bridge.fromSitus(brNeighbour);
           var analysis = BeforeAfter.verify(bridge, sel.finish(), sel.foffset(), range.finish(), range.foffset(), direction.failure, isRoot);
-          return BrTags.process(analysis);
+          return process(analysis);
         });
       });
     };
-    var scan = function (bridge, isRoot, element, offset, direction, numRetries) {
-      if (numRetries === 0)
+    var scan$1 = function (bridge, isRoot, element, offset, direction, numRetries) {
+      if (numRetries === 0) {
         return Option.none();
+      }
       return tryCursor(bridge, isRoot, element, offset, direction).bind(function (situs) {
         var range = bridge.fromSitus(situs);
         var analysis = BeforeAfter.verify(bridge, element, offset, range.finish(), range.foffset(), direction.failure, isRoot);
@@ -8692,48 +7793,46 @@ var table = (function (domGlobals) {
         }, function () {
           return Option.some(situs);
         }, function (cell) {
-          if (eq(element, cell) && offset === 0)
-            return tryAgain(bridge, element, offset, Carets.moveUp, direction);
-          else
-            return scan(bridge, isRoot, cell, 0, direction, numRetries - 1);
+          if (eq(element, cell) && offset === 0) {
+            return tryAgain(bridge, element, offset, moveUp, direction);
+          } else {
+            return scan$1(bridge, isRoot, cell, 0, direction, numRetries - 1);
+          }
         }, function (cell) {
-          if (eq(element, cell) && offset === getEnd(cell))
-            return tryAgain(bridge, element, offset, Carets.moveDown, direction);
-          else
-            return scan(bridge, isRoot, cell, getEnd(cell), direction, numRetries - 1);
+          if (eq(element, cell) && offset === getEnd(cell)) {
+            return tryAgain(bridge, element, offset, moveDown, direction);
+          } else {
+            return scan$1(bridge, isRoot, cell, getEnd(cell), direction, numRetries - 1);
+          }
         });
       });
     };
     var tryAgain = function (bridge, element, offset, move, direction) {
-      return Rectangles.getBoxAt(bridge, element, offset).bind(function (box) {
+      return getBoxAt(bridge, element, offset).bind(function (box) {
         return tryAt(bridge, direction, move(box, Retries.getJumpSize()));
       });
     };
     var tryAt = function (bridge, direction, box) {
-      if (platform$1.browser.isChrome() || platform$1.browser.isSafari() || platform$1.browser.isFirefox() || platform$1.browser.isEdge())
+      var browser = detect$3().browser;
+      if (browser.isChrome() || browser.isSafari() || browser.isFirefox() || browser.isEdge()) {
         return direction.otherRetry(bridge, box);
-      else if (platform$1.browser.isIE())
+      } else if (browser.isIE()) {
         return direction.ieRetry(bridge, box);
-      else
+      } else {
         return Option.none();
+      }
     };
     var tryCursor = function (bridge, isRoot, element, offset, direction) {
-      return Rectangles.getBoxAt(bridge, element, offset).bind(function (box) {
+      return getBoxAt(bridge, element, offset).bind(function (box) {
         return tryAt(bridge, direction, box);
       });
     };
     var handle$2 = function (bridge, isRoot, direction) {
       return findSpot(bridge, isRoot, direction).bind(function (spot) {
-        return scan(bridge, isRoot, spot.element(), spot.offset(), direction, MAX_RETRIES).map(bridge.fromSitus);
+        return scan$1(bridge, isRoot, spot.element(), spot.offset(), direction, MAX_RETRIES).map(bridge.fromSitus);
       });
     };
-    var TableKeys = { handle: handle$2 };
 
-    var ancestor$2 = function (scope, predicate, isRoot) {
-      return ancestor(scope, predicate, isRoot).isSome();
-    };
-
-    var detection = PlatformDetection$1.detect();
     var inSameTable = function (elem, table) {
       return ancestor$2(elem, function (e) {
         return parent(e).exists(function (p) {
@@ -8744,9 +7843,10 @@ var table = (function (domGlobals) {
     var simulate = function (bridge, isRoot, direction, initial, anchor) {
       return closest$1(initial, 'td,th', isRoot).bind(function (start) {
         return closest$1(start, 'table', isRoot).bind(function (table) {
-          if (!inSameTable(anchor, table))
+          if (!inSameTable(anchor, table)) {
             return Option.none();
-          return TableKeys.handle(bridge, isRoot, direction).bind(function (range) {
+          }
+          return handle$2(bridge, isRoot, direction).bind(function (range) {
             return closest$1(range.finish(), 'td,th', isRoot).map(function (finish) {
               return {
                 start: constant(start),
@@ -8759,13 +7859,13 @@ var table = (function (domGlobals) {
       });
     };
     var navigate = function (bridge, isRoot, direction, initial, anchor, precheck) {
-      if (detection.browser.isIE()) {
+      if (detect$3().browser.isIE()) {
         return Option.none();
       } else {
         return precheck(initial, isRoot).orThunk(function () {
           return simulate(bridge, isRoot, direction, initial, anchor).map(function (info) {
             var range = info.range();
-            return Responses.response(Option.some(Util$1.makeSitus(range.start(), range.soffset(), range.finish(), range.foffset())), true);
+            return Response.create(Option.some(makeSitus(range.start(), range.soffset(), range.finish(), range.foffset())), true);
           });
         });
       }
@@ -8779,7 +7879,7 @@ var table = (function (domGlobals) {
               return last$1(element).isSome();
             }, isRoot).map(function (last) {
               var lastOffset = getEnd(last);
-              return Responses.response(Option.some(Util$1.makeSitus(last, lastOffset, last, lastOffset)), true);
+              return Response.create(Option.some(makeSitus(last, lastOffset, last, lastOffset)), true);
             });
           } else {
             return Option.none();
@@ -8793,9 +7893,9 @@ var table = (function (domGlobals) {
           var rows = descendants$1(table, 'tr');
           if (eq(startRow, rows[rows.length - 1])) {
             return seekRight$1(table, function (element) {
-              return first$1(element).isSome();
+              return first(element).isSome();
             }, isRoot).map(function (first) {
-              return Responses.response(Option.some(Util$1.makeSitus(first, 0, first, 0)), true);
+              return Response.create(Option.some(makeSitus(first, 0, first, 0)), true);
             });
           } else {
             return Option.none();
@@ -8805,14 +7905,8 @@ var table = (function (domGlobals) {
     };
     var select = function (bridge, container, isRoot, direction, initial, anchor, selectRange) {
       return simulate(bridge, isRoot, direction, initial, anchor).bind(function (info) {
-        return KeySelection.detect(container, isRoot, info.start(), info.finish(), selectRange);
+        return detect$5(container, isRoot, info.start(), info.finish(), selectRange);
       });
-    };
-    var VerticalMovement = {
-      navigate: navigate,
-      select: select,
-      firstUpCheck: firstUpCheck,
-      lastDownCheck: lastDownCheck
     };
 
     var findCell = function (target, isRoot) {
@@ -8829,19 +7923,19 @@ var table = (function (domGlobals) {
       };
       var mouseover = function (event) {
         cursor.each(function (start) {
-          annotations.clear(container);
+          annotations.clearBeforeUpdate(container);
           findCell(event.target(), isRoot).each(function (finish) {
-            CellSelection.identify(start, finish, isRoot).each(function (cellSel) {
-              var boxes = cellSel.boxes().getOr([]);
+            identify(start, finish, isRoot).each(function (cellSel) {
+              var boxes = cellSel.boxes.getOr([]);
               if (boxes.length > 1 || boxes.length === 1 && !eq(start, finish)) {
-                annotations.selectRange(container, boxes, cellSel.start(), cellSel.finish());
+                annotations.selectRange(container, boxes, cellSel.start, cellSel.finish);
                 bridge.selectContents(finish);
               }
             });
           });
         });
       };
-      var mouseup = function () {
+      var mouseup = function (_event) {
         cursor.each(clearState);
       };
       return {
@@ -8851,26 +7945,154 @@ var table = (function (domGlobals) {
       };
     }
 
-    var KeyDirection = {
-      down: {
-        traverse: nextSibling,
-        gather: after$5,
-        relative: Situ.before,
-        otherRetry: Retries.tryDown,
-        ieRetry: Retries.ieTryDown,
-        failure: BeforeAfter.adt.failedDown
-      },
-      up: {
-        traverse: prevSibling,
-        gather: before$4,
-        relative: Situ.before,
-        otherRetry: Retries.tryUp,
-        ieRetry: Retries.ieTryUp,
-        failure: BeforeAfter.adt.failedUp
-      }
+    var down = {
+      traverse: nextSibling,
+      gather: after$5,
+      relative: Situ.before,
+      otherRetry: Retries.tryDown,
+      ieRetry: Retries.ieTryDown,
+      failure: BeforeAfter.failedDown
+    };
+    var up = {
+      traverse: prevSibling,
+      gather: before$4,
+      relative: Situ.before,
+      otherRetry: Retries.tryUp,
+      ieRetry: Retries.ieTryUp,
+      failure: BeforeAfter.failedUp
     };
 
-    var rc = Immutable('rows', 'cols');
+    var isKey = function (key) {
+      return function (keycode) {
+        return keycode === key;
+      };
+    };
+    var isUp = isKey(38);
+    var isDown = isKey(40);
+    var isNavigation = function (keycode) {
+      return keycode >= 37 && keycode <= 40;
+    };
+    var ltr$3 = {
+      isBackward: isKey(37),
+      isForward: isKey(39)
+    };
+    var rtl$3 = {
+      isBackward: isKey(39),
+      isForward: isKey(37)
+    };
+
+    var toRaw = function (sr) {
+      return {
+        left: sr.left(),
+        top: sr.top(),
+        right: sr.right(),
+        bottom: sr.bottom(),
+        width: sr.width(),
+        height: sr.height()
+      };
+    };
+    var Rect = { toRaw: toRaw };
+
+    var get$b = function (_DOC) {
+      var doc = _DOC !== undefined ? _DOC.dom() : domGlobals.document;
+      var x = doc.body.scrollLeft || doc.documentElement.scrollLeft;
+      var y = doc.body.scrollTop || doc.documentElement.scrollTop;
+      return Position(x, y);
+    };
+    var by = function (x, y, _DOC) {
+      var doc = _DOC !== undefined ? _DOC.dom() : domGlobals.document;
+      var win = doc.defaultView;
+      win.scrollBy(x, y);
+    };
+
+    var WindowBridge = function (win) {
+      var elementFromPoint = function (x, y) {
+        return Element.fromPoint(Element.fromDom(win.document), x, y);
+      };
+      var getRect = function (element) {
+        return element.dom().getBoundingClientRect();
+      };
+      var getRangedRect = function (start, soffset, finish, foffset) {
+        var sel = Selection.exact(start, soffset, finish, foffset);
+        return getFirstRect$1(win, sel).map(Rect.toRaw);
+      };
+      var getSelection = function () {
+        return get$a(win).map(function (exactAdt) {
+          return convertToRange(win, exactAdt);
+        });
+      };
+      var fromSitus = function (situs) {
+        var relative = Selection.relative(situs.start(), situs.finish());
+        return convertToRange(win, relative);
+      };
+      var situsFromPoint = function (x, y) {
+        return getAtPoint(win, x, y).map(function (exact) {
+          return Situs.create(exact.start(), exact.soffset(), exact.finish(), exact.foffset());
+        });
+      };
+      var clearSelection = function () {
+        clear(win);
+      };
+      var collapseSelection = function (toStart) {
+        if (toStart === void 0) {
+          toStart = false;
+        }
+        get$a(win).each(function (sel) {
+          return sel.fold(function (rng) {
+            return rng.collapse(toStart);
+          }, function (startSitu, finishSitu) {
+            var situ = toStart ? startSitu : finishSitu;
+            setRelative(win, situ, situ);
+          }, function (start, soffset, finish, foffset) {
+            var node = toStart ? start : finish;
+            var offset = toStart ? soffset : foffset;
+            setExact(win, node, offset, node, offset);
+          });
+        });
+      };
+      var selectContents = function (element) {
+        setToElement(win, element);
+      };
+      var setSelection = function (sel) {
+        setExact(win, sel.start(), sel.soffset(), sel.finish(), sel.foffset());
+      };
+      var setRelativeSelection = function (start, finish) {
+        setRelative(win, start, finish);
+      };
+      var getInnerHeight = function () {
+        return win.innerHeight;
+      };
+      var getScrollY = function () {
+        var pos = get$b(Element.fromDom(win.document));
+        return pos.top();
+      };
+      var scrollBy = function (x, y) {
+        by(x, y, Element.fromDom(win.document));
+      };
+      return {
+        elementFromPoint: elementFromPoint,
+        getRect: getRect,
+        getRangedRect: getRangedRect,
+        getSelection: getSelection,
+        fromSitus: fromSitus,
+        situsFromPoint: situsFromPoint,
+        clearSelection: clearSelection,
+        collapseSelection: collapseSelection,
+        setSelection: setSelection,
+        setRelativeSelection: setRelativeSelection,
+        selectContents: selectContents,
+        getInnerHeight: getInnerHeight,
+        getScrollY: getScrollY,
+        scrollBy: scrollBy
+      };
+    };
+
+    var rc = function (rows, cols) {
+      return {
+        rows: rows,
+        cols: cols
+      };
+    };
     var mouse = function (win, container, isRoot, annotations) {
       var bridge = WindowBridge(win);
       var handlers = MouseSelection(bridge, container, isRoot, annotations);
@@ -8887,69 +8109,74 @@ var table = (function (domGlobals) {
         return Option.none();
       };
       var keydown = function (event, start, soffset, finish, foffset, direction) {
-        var keycode = event.raw().which;
-        var shiftKey = event.raw().shiftKey === true;
-        var handler = CellSelection.retrieve(container, annotations.selectedSelector()).fold(function () {
-          if (SelectionKeys.isDown(keycode) && shiftKey) {
-            return curry(VerticalMovement.select, bridge, container, isRoot, KeyDirection.down, finish, start, annotations.selectRange);
-          } else if (SelectionKeys.isUp(keycode) && shiftKey) {
-            return curry(VerticalMovement.select, bridge, container, isRoot, KeyDirection.up, finish, start, annotations.selectRange);
-          } else if (SelectionKeys.isDown(keycode)) {
-            return curry(VerticalMovement.navigate, bridge, isRoot, KeyDirection.down, finish, start, VerticalMovement.lastDownCheck);
-          } else if (SelectionKeys.isUp(keycode)) {
-            return curry(VerticalMovement.navigate, bridge, isRoot, KeyDirection.up, finish, start, VerticalMovement.firstUpCheck);
+        var realEvent = event.raw();
+        var keycode = realEvent.which;
+        var shiftKey = realEvent.shiftKey === true;
+        var handler = retrieve(container, annotations.selectedSelector).fold(function () {
+          if (isDown(keycode) && shiftKey) {
+            return curry(select, bridge, container, isRoot, down, finish, start, annotations.selectRange);
+          } else if (isUp(keycode) && shiftKey) {
+            return curry(select, bridge, container, isRoot, up, finish, start, annotations.selectRange);
+          } else if (isDown(keycode)) {
+            return curry(navigate, bridge, isRoot, down, finish, start, lastDownCheck);
+          } else if (isUp(keycode)) {
+            return curry(navigate, bridge, isRoot, up, finish, start, firstUpCheck);
           } else {
             return Option.none;
           }
         }, function (selected) {
-          var update = function (attempts) {
+          var update$1 = function (attempts) {
             return function () {
               var navigation = findMap(attempts, function (delta) {
-                return KeySelection.update(delta.rows(), delta.cols(), container, selected, annotations);
+                return update(delta.rows, delta.cols, container, selected, annotations);
               });
               return navigation.fold(function () {
-                return CellSelection.getEdges(container, annotations.firstSelectedSelector(), annotations.lastSelectedSelector()).map(function (edges) {
-                  var relative = SelectionKeys.isDown(keycode) || direction.isForward(keycode) ? Situ.after : Situ.before;
+                return getEdges(container, annotations.firstSelectedSelector, annotations.lastSelectedSelector).map(function (edges) {
+                  var relative = isDown(keycode) || direction.isForward(keycode) ? Situ.after : Situ.before;
                   bridge.setRelativeSelection(Situ.on(edges.first(), 0), relative(edges.table()));
                   annotations.clear(container);
-                  return Responses.response(Option.none(), true);
+                  return Response.create(Option.none(), true);
                 });
               }, function (_) {
-                return Option.some(Responses.response(Option.none(), true));
+                return Option.some(Response.create(Option.none(), true));
               });
             };
           };
-          if (SelectionKeys.isDown(keycode) && shiftKey)
-            return update([rc(+1, 0)]);
-          else if (SelectionKeys.isUp(keycode) && shiftKey)
-            return update([rc(-1, 0)]);
-          else if (direction.isBackward(keycode) && shiftKey)
-            return update([
+          if (isDown(keycode) && shiftKey) {
+            return update$1([rc(+1, 0)]);
+          } else if (isUp(keycode) && shiftKey) {
+            return update$1([rc(-1, 0)]);
+          } else if (direction.isBackward(keycode) && shiftKey) {
+            return update$1([
               rc(0, -1),
               rc(-1, 0)
             ]);
-          else if (direction.isForward(keycode) && shiftKey)
-            return update([
+          } else if (direction.isForward(keycode) && shiftKey) {
+            return update$1([
               rc(0, +1),
               rc(+1, 0)
             ]);
-          else if (SelectionKeys.isNavigation(keycode) && shiftKey === false)
+          } else if (isNavigation(keycode) && shiftKey === false) {
             return clearToNavigate;
-          else
+          } else {
             return Option.none;
+          }
         });
         return handler();
       };
       var keyup = function (event, start, soffset, finish, foffset) {
-        return CellSelection.retrieve(container, annotations.selectedSelector()).fold(function () {
-          var keycode = event.raw().which;
-          var shiftKey = event.raw().shiftKey === true;
-          if (shiftKey === false)
+        return retrieve(container, annotations.selectedSelector).fold(function () {
+          var realEvent = event.raw();
+          var keycode = realEvent.which;
+          var shiftKey = realEvent.shiftKey === true;
+          if (shiftKey === false) {
             return Option.none();
-          if (SelectionKeys.isNavigation(keycode))
-            return KeySelection.sync(container, isRoot, start, soffset, finish, foffset, annotations.selectRange);
-          else
+          }
+          if (isNavigation(keycode)) {
+            return sync(container, isRoot, start, soffset, finish, foffset, annotations.selectRange);
+          } else {
             return Option.none();
+          }
         }, Option.none);
       };
       return {
@@ -8957,9 +8184,17 @@ var table = (function (domGlobals) {
         keyup: keyup
       };
     };
-    var InputHandlers = {
-      mouse: mouse,
-      keyboard: keyboard
+    var external = function (win, container, isRoot, annotations) {
+      var bridge = WindowBridge(win);
+      return function (start, finish) {
+        annotations.clearBeforeUpdate(container);
+        identify(start, finish, isRoot).each(function (cellSel) {
+          var boxes = cellSel.boxes.getOr([]);
+          annotations.selectRange(container, boxes, cellSel.start, cellSel.finish);
+          bridge.selectContents(finish);
+          bridge.collapseSelection();
+        });
+      };
     };
 
     var remove$7 = function (element, classes) {
@@ -8980,23 +8215,24 @@ var table = (function (domGlobals) {
     };
 
     var byClass = function (ephemera) {
-      var addSelectionClass = addClass(ephemera.selected());
+      var addSelectionClass = addClass(ephemera.selected);
       var removeSelectionClasses = removeClasses([
-        ephemera.selected(),
-        ephemera.lastSelected(),
-        ephemera.firstSelected()
+        ephemera.selected,
+        ephemera.lastSelected,
+        ephemera.firstSelected
       ]);
       var clear = function (container) {
-        var sels = descendants$1(container, ephemera.selectedSelector());
+        var sels = descendants$1(container, ephemera.selectedSelector);
         each(sels, removeSelectionClasses);
       };
       var selectRange = function (container, cells, start, finish) {
         clear(container);
         each(cells, addSelectionClass);
-        add$2(start, ephemera.firstSelected());
-        add$2(finish, ephemera.lastSelected());
+        add$2(start, ephemera.firstSelected);
+        add$2(finish, ephemera.lastSelected);
       };
       return {
+        clearBeforeUpdate: clear,
         clear: clear,
         selectRange: selectRange,
         selectedSelector: ephemera.selectedSelector,
@@ -9004,26 +8240,32 @@ var table = (function (domGlobals) {
         lastSelectedSelector: ephemera.lastSelectedSelector
       };
     };
-    var byAttr = function (ephemera) {
+    var byAttr = function (ephemera, onSelection, onClear) {
       var removeSelectionAttributes = function (element) {
-        remove(element, ephemera.selected());
-        remove(element, ephemera.firstSelected());
-        remove(element, ephemera.lastSelected());
+        remove(element, ephemera.selected);
+        remove(element, ephemera.firstSelected);
+        remove(element, ephemera.lastSelected);
       };
       var addSelectionAttribute = function (element) {
-        set(element, ephemera.selected(), '1');
+        set(element, ephemera.selected, '1');
       };
       var clear = function (container) {
-        var sels = descendants$1(container, ephemera.selectedSelector());
+        clearBeforeUpdate(container);
+        onClear();
+      };
+      var clearBeforeUpdate = function (container) {
+        var sels = descendants$1(container, ephemera.selectedSelector);
         each(sels, removeSelectionAttributes);
       };
       var selectRange = function (container, cells, start, finish) {
         clear(container);
         each(cells, addSelectionAttribute);
-        set(start, ephemera.firstSelected(), '1');
-        set(finish, ephemera.lastSelected(), '1');
+        set(start, ephemera.firstSelected, '1');
+        set(finish, ephemera.lastSelected, '1');
+        onSelection(cells, start, finish);
       };
       return {
+        clearBeforeUpdate: clearBeforeUpdate,
         clear: clear,
         selectRange: selectRange,
         selectedSelector: ephemera.selectedSelector,
@@ -9036,20 +8278,63 @@ var table = (function (domGlobals) {
       byAttr: byAttr
     };
 
+    var getUpOrLeftCells = function (grid, selectedCells, generators) {
+      var upGrid = grid.slice(0, selectedCells[selectedCells.length - 1].row() + 1);
+      var upDetails = toDetailList(upGrid, generators);
+      return bind(upDetails, function (detail) {
+        var slicedCells = detail.cells().slice(0, selectedCells[selectedCells.length - 1].column() + 1);
+        return map(slicedCells, function (cell) {
+          return cell.element();
+        });
+      });
+    };
+    var getDownOrRightCells = function (grid, selectedCells, generators) {
+      var downGrid = grid.slice(selectedCells[0].row() + selectedCells[0].rowspan() - 1, grid.length);
+      var downDetails = toDetailList(downGrid, generators);
+      return bind(downDetails, function (detail) {
+        var slicedCells = detail.cells().slice(selectedCells[0].column() + selectedCells[0].colspan() - 1, +detail.cells().length);
+        return map(slicedCells, function (cell) {
+          return cell.element();
+        });
+      });
+    };
+    var getOtherCells = function (table, target, generators) {
+      var list = fromTable(table);
+      var house = Warehouse.generate(list);
+      var details = onCells(house, target);
+      return details.map(function (selectedCells) {
+        var grid = toGrid(house, generators, false);
+        var upOrLeftCells = getUpOrLeftCells(grid, selectedCells, generators);
+        var downOrRightCells = getDownOrRightCells(grid, selectedCells, generators);
+        return {
+          upOrLeftCells: upOrLeftCells,
+          downOrRightCells: downOrRightCells
+        };
+      });
+    };
+
     var hasInternalTarget = function (e) {
       return has$2(Element.fromDom(e.target), 'ephox-snooker-resizer-bar') === false;
     };
-    function CellSelection$1 (editor, lazyResize) {
-      var handlerStruct = MixedBag([
-        'mousedown',
-        'mouseover',
-        'mouseup',
-        'keyup',
-        'keydown'
-      ], []);
+    function CellSelection (editor, lazyResize, selectionTargets) {
       var handlers = Option.none();
-      var annotations = SelectionAnnotation.byAttr(Ephemera);
-      editor.on('init', function (e) {
+      var cloneFormats = getCloneElements(editor);
+      var onSelection = function (cells, start, finish) {
+        selectionTargets.targets().each(function (targets) {
+          var tableOpt = table(start);
+          tableOpt.each(function (table) {
+            var doc = Element.fromDom(editor.getDoc());
+            var generators = cellOperations(noop, doc, cloneFormats);
+            var otherCells = getOtherCells(table, targets, generators);
+            fireTableSelectionChange(editor, cells, start, finish, otherCells);
+          });
+        });
+      };
+      var onClear = function () {
+        fireTableSelectionClear(editor);
+      };
+      var annotations = SelectionAnnotation.byAttr(Ephemera, onSelection, onClear);
+      editor.on('init', function (_e) {
         var win = editor.getWin();
         var body = getBody$1(editor);
         var isRoot = getIsRoot(editor);
@@ -9057,7 +8342,7 @@ var table = (function (domGlobals) {
           var sel = editor.selection;
           var start = Element.fromDom(sel.getStart());
           var end = Element.fromDom(sel.getEnd());
-          var shared = DomParent.sharedOne(TableLookup.table, [
+          var shared = sharedOne$1(table, [
             start,
             end
           ]);
@@ -9065,11 +8350,15 @@ var table = (function (domGlobals) {
             annotations.clear(body);
           }, noop);
         };
-        var mouseHandlers = InputHandlers.mouse(win, body, isRoot, annotations);
-        var keyHandlers = InputHandlers.keyboard(win, body, isRoot, annotations);
+        var mouseHandlers = mouse(win, body, isRoot, annotations);
+        var keyHandlers = keyboard(win, body, isRoot, annotations);
+        var external$1 = external(win, body, isRoot, annotations);
         var hasShiftKey = function (event) {
           return event.raw().shiftKey === true;
         };
+        editor.on('TableSelectorChange', function (e) {
+          external$1(e.start, e.finish);
+        });
         var handleResponse = function (event, response) {
           if (!hasShiftKey(event)) {
             return;
@@ -9078,14 +8367,14 @@ var table = (function (domGlobals) {
             event.kill();
           }
           response.selection().each(function (ns) {
-            var relative$1 = relative(ns.start(), ns.finish());
-            var rng = asLtrRange(win, relative$1);
+            var relative = Selection.relative(ns.start(), ns.finish());
+            var rng = asLtrRange(win, relative);
             editor.selection.setRng(rng);
           });
         };
         var keyup = function (event) {
-          var wrappedEvent = wrapEvent(event);
-          if (wrappedEvent.raw().shiftKey && SelectionKeys.isNavigation(wrappedEvent.raw().which)) {
+          var wrappedEvent = fromRawEvent$1(event);
+          if (wrappedEvent.raw().shiftKey && isNavigation(wrappedEvent.raw().which)) {
             var rng = editor.selection.getRng();
             var start = Element.fromDom(rng.startContainer);
             var end = Element.fromDom(rng.endContainer);
@@ -9095,7 +8384,7 @@ var table = (function (domGlobals) {
           }
         };
         var keydown = function (event) {
-          var wrappedEvent = wrapEvent(event);
+          var wrappedEvent = fromRawEvent$1(event);
           lazyResize().each(function (resize) {
             resize.hideBars();
           });
@@ -9103,35 +8392,13 @@ var table = (function (domGlobals) {
           var startContainer = Element.fromDom(editor.selection.getStart());
           var start = Element.fromDom(rng.startContainer);
           var end = Element.fromDom(rng.endContainer);
-          var direction = Direction.directionAt(startContainer).isRtl() ? SelectionKeys.rtl : SelectionKeys.ltr;
+          var direction = directionAt(startContainer).isRtl() ? rtl$3 : ltr$3;
           keyHandlers.keydown(wrappedEvent, start, rng.startOffset, end, rng.endOffset, direction).each(function (response) {
             handleResponse(wrappedEvent, response);
           });
           lazyResize().each(function (resize) {
             resize.showBars();
           });
-        };
-        var isMouseEvent = function (event) {
-          return event.hasOwnProperty('x') && event.hasOwnProperty('y');
-        };
-        var wrapEvent = function (event) {
-          var target = Element.fromDom(event.target);
-          var stop = function () {
-            event.stopPropagation();
-          };
-          var prevent = function () {
-            event.preventDefault();
-          };
-          var kill = compose(prevent, stop);
-          return {
-            target: constant(target),
-            x: constant(isMouseEvent(event) ? event.x : null),
-            y: constant(isMouseEvent(event) ? event.y : null),
-            stop: stop,
-            prevent: prevent,
-            kill: kill,
-            raw: constant(event)
-          };
         };
         var isLeftMouse = function (raw) {
           return raw.button === 0;
@@ -9140,39 +8407,62 @@ var table = (function (domGlobals) {
           if (raw.buttons === undefined) {
             return true;
           }
+          if (global$2.browser.isEdge() && raw.buttons === 0) {
+            return true;
+          }
           return (raw.buttons & 1) !== 0;
         };
         var mouseDown = function (e) {
           if (isLeftMouse(e) && hasInternalTarget(e)) {
-            mouseHandlers.mousedown(wrapEvent(e));
+            mouseHandlers.mousedown(fromRawEvent$1(e));
           }
         };
         var mouseOver = function (e) {
           if (isLeftButtonPressed(e) && hasInternalTarget(e)) {
-            mouseHandlers.mouseover(wrapEvent(e));
+            mouseHandlers.mouseover(fromRawEvent$1(e));
           }
         };
         var mouseUp = function (e) {
           if (isLeftMouse(e) && hasInternalTarget(e)) {
-            mouseHandlers.mouseup(wrapEvent(e));
+            mouseHandlers.mouseup(fromRawEvent$1(e));
           }
         };
+        var getDoubleTap = function () {
+          var lastTarget = Cell(Element.fromDom(body));
+          var lastTimeStamp = Cell(0);
+          var touchEnd = function (t) {
+            var target = Element.fromDom(t.target);
+            if (name(target) === 'td' || name(target) === 'th') {
+              var lT = lastTarget.get();
+              var lTS = lastTimeStamp.get();
+              if (eq(lT, target) && t.timeStamp - lTS < 300) {
+                t.preventDefault();
+                external$1(target, target);
+              }
+            }
+            lastTarget.set(target);
+            lastTimeStamp.set(t.timeStamp);
+          };
+          return { touchEnd: touchEnd };
+        };
+        var doubleTap = getDoubleTap();
         editor.on('mousedown', mouseDown);
         editor.on('mouseover', mouseOver);
         editor.on('mouseup', mouseUp);
+        editor.on('touchend', doubleTap.touchEnd);
         editor.on('keyup', keyup);
         editor.on('keydown', keydown);
         editor.on('NodeChange', syncSelection);
-        handlers = Option.some(handlerStruct({
+        handlers = Option.some({
           mousedown: mouseDown,
           mouseover: mouseOver,
           mouseup: mouseUp,
           keyup: keyup,
           keydown: keydown
-        }));
+        });
       });
       var destroy = function () {
-        handlers.each(function (handlers) {
+        handlers.each(function (_handlers) {
         });
       };
       return {
@@ -9184,30 +8474,30 @@ var table = (function (domGlobals) {
     var Selections = function (editor) {
       var get = function () {
         var body = getBody$1(editor);
-        return TableSelection.retrieve(body, Ephemera.selectedSelector()).fold(function () {
+        return retrieve$1(body, selectedSelector).fold(function () {
           if (editor.selection.getStart() === undefined) {
-            return SelectionTypes.none();
+            return none$1();
           } else {
-            return SelectionTypes.single(editor.selection);
+            return single(editor.selection);
           }
         }, function (cells) {
-          return SelectionTypes.multiple(cells);
+          return multiple(cells);
         });
       };
       return { get: get };
     };
 
-    var SelectionTargets = function (editor, selections) {
+    var getSelectionTargets = function (editor, selections) {
       var targets = Cell(Option.none());
       var changeHandlers = Cell([]);
       var findTargets = function () {
         return getSelectionStartCellOrCaption(editor).bind(function (cellOrCaption) {
-          var table = TableLookup.table(cellOrCaption);
-          return table.map(function (table) {
+          var table$1 = table(cellOrCaption);
+          return table$1.map(function (table) {
             if (name(cellOrCaption) === 'caption') {
-              return TableTargets.notCell(cellOrCaption);
+              return notCell(cellOrCaption);
             } else {
-              return TableTargets.forMenu(selections, table, cellOrCaption);
+              return forMenu(selections, table, cellOrCaption);
             }
           });
         });
@@ -9254,7 +8544,7 @@ var table = (function (domGlobals) {
           return targets.unmergable().isNone();
         });
       };
-      editor.on('NodeChange', resetTargets);
+      editor.on('NodeChange TableSelectorChange', resetTargets);
       return {
         onSetupTable: onSetupTable,
         onSetupCellOrRow: onSetupCellOrRow,
@@ -9272,7 +8562,7 @@ var table = (function (domGlobals) {
         tooltip: 'Table',
         icon: 'table',
         fetch: function (callback) {
-          return callback('inserttable tableprops deletetable | cell row column');
+          return callback('inserttable | cell row column | advtablesort | tableprops deletetable');
         }
       });
       var cmd = function (command) {
@@ -9396,10 +8686,6 @@ var table = (function (domGlobals) {
         });
       }
     };
-    var Buttons = {
-      addButtons: addButtons,
-      addToolbars: addToolbars
-    };
 
     var addMenuItems = function (editor, selectionTargets) {
       var cmd = function (command) {
@@ -9410,7 +8696,7 @@ var table = (function (domGlobals) {
       var insertTableAction = function (_a) {
         var numRows = _a.numRows, numColumns = _a.numColumns;
         editor.undoManager.transact(function () {
-          InsertTable.insert(editor, numColumns, numRows);
+          insert$1(editor, numColumns, numRows);
         });
         editor.addVisual();
       };
@@ -9425,123 +8711,126 @@ var table = (function (domGlobals) {
         onSetup: selectionTargets.onSetupTable,
         onAction: cmd('mceTableDelete')
       };
+      var rowItems = [
+        {
+          type: 'menuitem',
+          text: 'Insert row before',
+          icon: 'table-insert-row-above',
+          onAction: cmd('mceTableInsertRowBefore'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Insert row after',
+          icon: 'table-insert-row-after',
+          onAction: cmd('mceTableInsertRowAfter'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Delete row',
+          icon: 'table-delete-row',
+          onAction: cmd('mceTableDeleteRow'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Row properties',
+          icon: 'table-row-properties',
+          onAction: cmd('mceTableRowProps'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        { type: 'separator' },
+        {
+          type: 'menuitem',
+          text: 'Cut row',
+          onAction: cmd('mceTableCutRow'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Copy row',
+          onAction: cmd('mceTableCopyRow'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Paste row before',
+          onAction: cmd('mceTablePasteRowBefore'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Paste row after',
+          onAction: cmd('mceTablePasteRowAfter'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        }
+      ];
       var row = {
         type: 'nestedmenuitem',
         text: 'Row',
         getSubmenuItems: function () {
-          return [
-            {
-              type: 'menuitem',
-              text: 'Insert row before',
-              icon: 'table-insert-row-above',
-              onAction: cmd('mceTableInsertRowBefore'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Insert row after',
-              icon: 'table-insert-row-after',
-              onAction: cmd('mceTableInsertRowAfter'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Delete row',
-              icon: 'table-delete-row',
-              onAction: cmd('mceTableDeleteRow'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Row properties',
-              icon: 'table-row-properties',
-              onAction: cmd('mceTableRowProps'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            { type: 'separator' },
-            {
-              type: 'menuitem',
-              text: 'Cut row',
-              onAction: cmd('mceTableCutRow'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Copy row',
-              onAction: cmd('mceTableCopyRow'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Paste row before',
-              onAction: cmd('mceTablePasteRowBefore'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Paste row after',
-              onAction: cmd('mceTablePasteRowAfter'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            }
-          ];
+          return rowItems;
         }
       };
+      var columnItems = [
+        {
+          type: 'menuitem',
+          text: 'Insert column before',
+          icon: 'table-insert-column-before',
+          onAction: cmd('mceTableInsertColBefore'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Insert column after',
+          icon: 'table-insert-column-after',
+          onAction: cmd('mceTableInsertColAfter'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Delete column',
+          icon: 'table-delete-column',
+          onAction: cmd('mceTableDeleteCol'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        }
+      ];
       var column = {
         type: 'nestedmenuitem',
         text: 'Column',
         getSubmenuItems: function () {
-          return [
-            {
-              type: 'menuitem',
-              text: 'Insert column before',
-              icon: 'table-insert-column-before',
-              onAction: cmd('mceTableInsertColBefore'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Insert column after',
-              icon: 'table-insert-column-after',
-              onAction: cmd('mceTableInsertColAfter'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Delete column',
-              icon: 'table-delete-column',
-              onAction: cmd('mceTableDeleteCol'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            }
-          ];
+          return columnItems;
         }
       };
+      var cellItems = [
+        {
+          type: 'menuitem',
+          text: 'Cell properties',
+          icon: 'table-cell-properties',
+          onAction: cmd('mceTableCellProps'),
+          onSetup: selectionTargets.onSetupCellOrRow
+        },
+        {
+          type: 'menuitem',
+          text: 'Merge cells',
+          icon: 'table-merge-cells',
+          onAction: cmd('mceTableMergeCells'),
+          onSetup: selectionTargets.onSetupMergeable
+        },
+        {
+          type: 'menuitem',
+          text: 'Split cell',
+          icon: 'table-split-cells',
+          onAction: cmd('mceTableSplitCells'),
+          onSetup: selectionTargets.onSetupUnmergeable
+        }
+      ];
       var cell = {
         type: 'nestedmenuitem',
         text: 'Cell',
         getSubmenuItems: function () {
-          return [
-            {
-              type: 'menuitem',
-              text: 'Cell properties',
-              icon: 'table-cell-properties',
-              onAction: cmd('mceTableCellProps'),
-              onSetup: selectionTargets.onSetupCellOrRow
-            },
-            {
-              type: 'menuitem',
-              text: 'Merge cells',
-              icon: 'table-merge-cells',
-              onAction: cmd('mceTableMergeCells'),
-              onSetup: selectionTargets.onSetupMergeable
-            },
-            {
-              type: 'menuitem',
-              text: 'Split cell',
-              icon: 'table-split-cells',
-              onAction: cmd('mceTableSplitCells'),
-              onSetup: selectionTargets.onSetupUnmergeable
-            }
-          ];
+          return cellItems;
         }
       };
       if (hasTableGrid(editor) === false) {
@@ -9582,13 +8871,12 @@ var table = (function (domGlobals) {
             if (name(targets.element()) === 'caption') {
               return 'tableprops deletetable';
             } else {
-              return 'cell row column | tableprops deletetable';
+              return 'cell row column | advtablesort | tableprops deletetable';
             }
           });
         }
       });
     };
-    var MenuItems = { addMenuItems: addMenuItems };
 
     var getClipboardRows = function (clipboardRows) {
       return clipboardRows.get().fold(function () {
@@ -9603,52 +8891,53 @@ var table = (function (domGlobals) {
       var sugarRows = map(rows, Element.fromDom);
       clipboardRows.set(Option.from(sugarRows));
     };
-    var getApi = function (editor, clipboardRows) {
+    var getApi = function (editor, clipboardRows, resizeHandler, selectionTargets) {
       return {
         insertTable: function (columns, rows) {
-          return InsertTable.insert(editor, columns, rows);
+          return insert$1(editor, columns, rows);
         },
         setClipboardRows: function (rows) {
           return setClipboardRows(rows, clipboardRows);
         },
         getClipboardRows: function () {
           return getClipboardRows(clipboardRows);
-        }
+        },
+        resizeHandler: resizeHandler,
+        selectionTargets: selectionTargets
       };
     };
 
     function Plugin(editor) {
-      var resizeHandler = ResizeHandler(editor);
-      var cellSelection = CellSelection$1(editor, resizeHandler.lazyResize);
-      var actions = TableActions(editor, resizeHandler.lazyWire);
       var selections = Selections(editor);
-      var selectionTargets = SelectionTargets(editor, selections);
+      var selectionTargets = getSelectionTargets(editor, selections);
+      var resizeHandler = getResizeHandler(editor);
+      var cellSelection = CellSelection(editor, resizeHandler.lazyResize, selectionTargets);
+      var actions = TableActions(editor, resizeHandler.lazyWire);
       var clipboardRows = Cell(Option.none());
-      Commands.registerCommands(editor, actions, cellSelection, selections, clipboardRows);
-      Clipboard.registerEvents(editor, selections, actions, cellSelection);
-      MenuItems.addMenuItems(editor, selectionTargets);
-      Buttons.addButtons(editor, selectionTargets);
-      Buttons.addToolbars(editor);
+      registerCommands(editor, actions, cellSelection, selections, clipboardRows);
+      registerEvents(editor, selections, actions, cellSelection);
+      addMenuItems(editor, selectionTargets);
+      addButtons(editor, selectionTargets);
+      addToolbars(editor);
       editor.on('PreInit', function () {
-        editor.serializer.addTempAttr(Ephemera.firstSelected());
-        editor.serializer.addTempAttr(Ephemera.lastSelected());
+        editor.serializer.addTempAttr(firstSelected);
+        editor.serializer.addTempAttr(lastSelected);
       });
       if (hasTabNavigation(editor)) {
         editor.on('keydown', function (e) {
-          TabContext.handle(e, editor, actions, resizeHandler.lazyWire);
+          handle$1(e, editor, actions, resizeHandler.lazyWire);
         });
       }
       editor.on('remove', function () {
         resizeHandler.destroy();
         cellSelection.destroy();
       });
-      return getApi(editor, clipboardRows);
+      return getApi(editor, clipboardRows, resizeHandler, selectionTargets);
     }
-    global.add('table', Plugin);
     function Plugin$1 () {
+      global.add('table', Plugin);
     }
 
-    return Plugin$1;
+    Plugin$1();
 
 }(window));
-})();

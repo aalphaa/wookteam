@@ -4,10 +4,9 @@
  * For LGPL see License.txt in the project root for license information.
  * For commercial licenses see https://www.tiny.cloud/
  *
- * Version: 5.0.7 (2019-06-05)
+ * Version: 5.3.0 (2020-05-21)
  */
-(function () {
-var charmap = (function (domGlobals) {
+(function (domGlobals) {
     'use strict';
 
     var global = tinymce.util.Tools.resolve('tinymce.PluginManager');
@@ -15,13 +14,11 @@ var charmap = (function (domGlobals) {
     var fireInsertCustomChar = function (editor, chr) {
       return editor.fire('insertCustomChar', { chr: chr });
     };
-    var Events = { fireInsertCustomChar: fireInsertCustomChar };
 
     var insertChar = function (editor, chr) {
-      var evtChr = Events.fireInsertCustomChar(editor, chr).chr;
+      var evtChr = fireInsertCustomChar(editor, chr).chr;
       editor.execCommand('mceInsertContent', false, evtChr);
     };
-    var Actions = { insertChar: insertChar };
 
     var global$1 = tinymce.util.Tools.resolve('tinymce.util.Tools');
 
@@ -31,11 +28,9 @@ var charmap = (function (domGlobals) {
     var getCharMapAppend = function (editor) {
       return editor.settings.charmap_append;
     };
-    var Settings = {
-      getCharMap: getCharMap,
-      getCharMapAppend: getCharMapAppend
-    };
 
+    var noop = function () {
+    };
     var constant = function (value) {
       return function () {
         return value;
@@ -44,8 +39,6 @@ var charmap = (function (domGlobals) {
     var never = constant(false);
     var always = constant(true);
 
-    var never$1 = never;
-    var always$1 = always;
     var none = function () {
       return NONE;
     };
@@ -59,37 +52,27 @@ var charmap = (function (domGlobals) {
       var id = function (n) {
         return n;
       };
-      var noop = function () {
-      };
-      var nul = function () {
-        return null;
-      };
-      var undef = function () {
-        return undefined;
-      };
       var me = {
-        fold: function (n, s) {
+        fold: function (n, _s) {
           return n();
         },
-        is: never$1,
-        isSome: never$1,
-        isNone: always$1,
+        is: never,
+        isSome: never,
+        isNone: always,
         getOr: id,
         getOrThunk: call,
         getOrDie: function (msg) {
           throw new Error(msg || 'error: getOrDie called on none.');
         },
-        getOrNull: nul,
-        getOrUndefined: undef,
+        getOrNull: constant(null),
+        getOrUndefined: constant(undefined),
         or: id,
         orThunk: call,
         map: none,
-        ap: none,
         each: noop,
         bind: none,
-        flatten: none,
-        exists: never$1,
-        forall: always$1,
+        exists: never,
+        forall: always,
         filter: none,
         equals: eq,
         equals_: eq,
@@ -98,19 +81,12 @@ var charmap = (function (domGlobals) {
         },
         toString: constant('none()')
       };
-      if (Object.freeze)
-        Object.freeze(me);
       return me;
     }();
     var some = function (a) {
-      var constant_a = function () {
-        return a;
-      };
+      var constant_a = constant(a);
       var self = function () {
         return me;
-      };
-      var map = function (f) {
-        return some(f(a));
       };
       var bind = function (f) {
         return f(a);
@@ -122,8 +98,8 @@ var charmap = (function (domGlobals) {
         is: function (v) {
           return a === v;
         },
-        isSome: always$1,
-        isNone: never$1,
+        isSome: always,
+        isNone: never,
         getOr: constant_a,
         getOrThunk: constant_a,
         getOrDie: constant_a,
@@ -131,35 +107,31 @@ var charmap = (function (domGlobals) {
         getOrUndefined: constant_a,
         or: self,
         orThunk: self,
-        map: map,
-        ap: function (optfab) {
-          return optfab.fold(none, function (fab) {
-            return some(fab(a));
-          });
+        map: function (f) {
+          return some(f(a));
         },
         each: function (f) {
           f(a);
         },
         bind: bind,
-        flatten: constant_a,
         exists: bind,
         forall: bind,
         filter: function (f) {
           return f(a) ? me : NONE;
-        },
-        equals: function (o) {
-          return o.is(a);
-        },
-        equals_: function (o, elementEq) {
-          return o.fold(never$1, function (b) {
-            return elementEq(a, b);
-          });
         },
         toArray: function () {
           return [a];
         },
         toString: function () {
           return 'some(' + a + ')';
+        },
+        equals: function (o) {
+          return o.is(a);
+        },
+        equals_: function (o, elementEq) {
+          return o.fold(never, function (b) {
+            return elementEq(a, b);
+          });
         }
       };
       return me;
@@ -174,66 +146,69 @@ var charmap = (function (domGlobals) {
     };
 
     var typeOf = function (x) {
-      if (x === null)
-        return 'null';
       var t = typeof x;
-      if (t === 'object' && Array.prototype.isPrototypeOf(x))
+      if (x === null) {
+        return 'null';
+      } else if (t === 'object' && (Array.prototype.isPrototypeOf(x) || x.constructor && x.constructor.name === 'Array')) {
         return 'array';
-      if (t === 'object' && String.prototype.isPrototypeOf(x))
+      } else if (t === 'object' && (String.prototype.isPrototypeOf(x) || x.constructor && x.constructor.name === 'String')) {
         return 'string';
-      return t;
+      } else {
+        return t;
+      }
     };
     var isType = function (type) {
       return function (value) {
         return typeOf(value) === type;
       };
     };
-    var isFunction = isType('function');
+    var isArray = isType('array');
 
-    var slice = Array.prototype.slice;
+    var nativePush = Array.prototype.push;
     var map = function (xs, f) {
       var len = xs.length;
       var r = new Array(len);
       for (var i = 0; i < len; i++) {
         var x = xs[i];
-        r[i] = f(x, i, xs);
+        r[i] = f(x, i);
       }
       return r;
     };
     var each = function (xs, f) {
       for (var i = 0, len = xs.length; i < len; i++) {
         var x = xs[i];
-        f(x, i, xs);
+        f(x, i);
       }
     };
-    var find = function (xs, pred) {
+    var findUntil = function (xs, pred, until) {
       for (var i = 0, len = xs.length; i < len; i++) {
         var x = xs[i];
-        if (pred(x, i, xs)) {
+        if (pred(x, i)) {
           return Option.some(x);
+        } else if (until(x, i)) {
+          break;
         }
       }
       return Option.none();
     };
-    var push = Array.prototype.push;
+    var find = function (xs, pred) {
+      return findUntil(xs, pred, never);
+    };
     var flatten = function (xs) {
       var r = [];
       for (var i = 0, len = xs.length; i < len; ++i) {
-        if (!Array.prototype.isPrototypeOf(xs[i]))
+        if (!isArray(xs[i])) {
           throw new Error('Arr.flatten item ' + i + ' was not an array, input: ' + xs);
-        push.apply(r, xs[i]);
+        }
+        nativePush.apply(r, xs[i]);
       }
       return r;
     };
     var bind = function (xs, f) {
-      var output = map(xs, f);
-      return flatten(output);
-    };
-    var from$1 = isFunction(Array.from) ? Array.from : function (x) {
-      return slice.call(x);
+      return flatten(map(xs, f));
     };
 
-    var isArray = global$1.isArray;
+    var isArray$1 = global$1.isArray;
     var UserDefined = 'User Defined';
     var getDefaultCharMap = function () {
       return [
@@ -1428,11 +1403,11 @@ var charmap = (function (domGlobals) {
     };
     var charmapFilter = function (charmap) {
       return global$1.grep(charmap, function (item) {
-        return isArray(item) && item.length === 2;
+        return isArray$1(item) && item.length === 2;
       });
     };
     var getCharsFromSetting = function (settingValue) {
-      if (isArray(settingValue)) {
+      if (isArray$1(settingValue)) {
         return [].concat(charmapFilter(settingValue));
       }
       if (typeof settingValue === 'function') {
@@ -1441,14 +1416,14 @@ var charmap = (function (domGlobals) {
       return [];
     };
     var extendCharMap = function (editor, charmap) {
-      var userCharMap = Settings.getCharMap(editor);
+      var userCharMap = getCharMap(editor);
       if (userCharMap) {
         charmap = [{
             name: UserDefined,
             characters: getCharsFromSetting(userCharMap)
           }];
       }
-      var userCharMapAppend = Settings.getCharMapAppend(editor);
+      var userCharMapAppend = getCharMapAppend(editor);
       if (userCharMapAppend) {
         var userDefinedGroup = global$1.grep(charmap, function (cg) {
           return cg.name === UserDefined;
@@ -1473,21 +1448,19 @@ var charmap = (function (domGlobals) {
           })
         }].concat(groups) : groups;
     };
-    var CharMap = { getCharMap: getCharMap$1 };
 
     var get = function (editor) {
       var getCharMap = function () {
-        return CharMap.getCharMap(editor);
+        return getCharMap$1(editor);
       };
-      var insertChar = function (chr) {
-        Actions.insertChar(editor, chr);
+      var insertChar$1 = function (chr) {
+        insertChar(editor, chr);
       };
       return {
         getCharMap: getCharMap,
-        insertChar: insertChar
+        insertChar: insertChar$1
       };
     };
-    var Api = { get: get };
 
     var Cell = function (initial) {
       var value = initial;
@@ -1497,13 +1470,9 @@ var charmap = (function (domGlobals) {
       var set = function (v) {
         value = v;
       };
-      var clone = function () {
-        return Cell(get());
-      };
       return {
         get: get,
-        set: set,
-        clone: clone
+        set: set
       };
     };
 
@@ -1520,8 +1489,9 @@ var charmap = (function (domGlobals) {
         for (var _i = 0; _i < arguments.length; _i++) {
           args[_i] = arguments[_i];
         }
-        if (timer !== null)
+        if (timer !== null) {
           domGlobals.clearTimeout(timer);
+        }
         timer = domGlobals.setTimeout(function () {
           fn.apply(null, args);
           timer = null;
@@ -1533,12 +1503,43 @@ var charmap = (function (domGlobals) {
       };
     };
 
+    var nativeFromCodePoint = String.fromCodePoint;
     var contains = function (str, substr) {
       return str.indexOf(substr) !== -1;
     };
+    var fromCodePoint = function () {
+      var codePoints = [];
+      for (var _i = 0; _i < arguments.length; _i++) {
+        codePoints[_i] = arguments[_i];
+      }
+      if (nativeFromCodePoint) {
+        return nativeFromCodePoint.apply(void 0, codePoints);
+      } else {
+        var codeUnits = [];
+        var codeLen = 0;
+        var result = '';
+        for (var index = 0, len = codePoints.length; index !== len; ++index) {
+          var codePoint = +codePoints[index];
+          if (!(codePoint < 1114111 && codePoint >>> 0 === codePoint)) {
+            throw RangeError('Invalid code point: ' + codePoint);
+          }
+          if (codePoint <= 65535) {
+            codeLen = codeUnits.push(codePoint);
+          } else {
+            codePoint -= 65536;
+            codeLen = codeUnits.push((codePoint >> 10) + 55296, codePoint % 1024 + 56320);
+          }
+          if (codeLen >= 16383) {
+            result += String.fromCharCode.apply(null, codeUnits);
+            codeUnits.length = 0;
+          }
+        }
+        return result + String.fromCharCode.apply(null, codeUnits);
+      }
+    };
 
     var charMatches = function (charCode, name, lowerCasePattern) {
-      if (contains(String.fromCharCode(charCode).toLowerCase(), lowerCasePattern)) {
+      if (contains(fromCodePoint(charCode).toLowerCase(), lowerCasePattern)) {
         return true;
       } else {
         return contains(name.toLowerCase(), lowerCasePattern) || contains(name.toLowerCase().replace(/\s+/g, ''), lowerCasePattern);
@@ -1555,12 +1556,11 @@ var charmap = (function (domGlobals) {
       return map(matches, function (m) {
         return {
           text: m[1],
-          value: String.fromCharCode(m[0]),
-          icon: String.fromCharCode(m[0])
+          value: fromCodePoint(m[0]),
+          icon: fromCodePoint(m[0])
         };
       });
     };
-    var Scan = { scan: scan };
 
     var patternName = 'pattern';
     var open = function (editor, charMap) {
@@ -1603,7 +1603,7 @@ var charmap = (function (domGlobals) {
         find(charMap, function (group) {
           return group.name === currentTab.get();
         }).each(function (f) {
-          var items = Scan.scan(f, pattern);
+          var items = scan(f, pattern);
           dialogApi.setData({ results: items });
         });
       };
@@ -1615,7 +1615,7 @@ var charmap = (function (domGlobals) {
       var body = charMap.length === 1 ? makePanel() : makeTabPanel();
       var initialData = {
         pattern: '',
-        results: Scan.scan(charMap[0], '')
+        results: scan(charMap[0], '')
       };
       var bridgeSpec = {
         title: 'Special Character',
@@ -1630,7 +1630,7 @@ var charmap = (function (domGlobals) {
         initialData: initialData,
         onAction: function (api, details) {
           if (details.name === 'results') {
-            Actions.insertChar(editor, details.value);
+            insertChar(editor, details.value);
             api.close();
           }
         },
@@ -1644,16 +1644,15 @@ var charmap = (function (domGlobals) {
           }
         }
       };
-      editor.windowManager.open(bridgeSpec);
+      var dialogApi = editor.windowManager.open(bridgeSpec);
+      dialogApi.focus(patternName);
     };
-    var Dialog = { open: open };
 
     var register = function (editor, charMap) {
       editor.addCommand('mceShowCharmap', function () {
-        Dialog.open(editor, charMap);
+        open(editor, charMap);
       });
     };
-    var Commands = { register: register };
 
     var global$2 = tinymce.util.Tools.resolve('tinymce.util.Promise');
 
@@ -1662,9 +1661,9 @@ var charmap = (function (domGlobals) {
         ch: ':',
         columns: 'auto',
         minChars: 2,
-        fetch: function (pattern, maxResults) {
-          return new global$2(function (resolve, reject) {
-            resolve(Scan.scan(all, pattern));
+        fetch: function (pattern, _maxResults) {
+          return new global$2(function (resolve, _reject) {
+            resolve(scan(all, pattern));
           });
         },
         onAction: function (autocompleteApi, rng, value) {
@@ -1691,19 +1690,17 @@ var charmap = (function (domGlobals) {
         }
       });
     };
-    var Buttons = { register: register$1 };
 
-    global.add('charmap', function (editor) {
-      var charMap = CharMap.getCharMap(editor);
-      Commands.register(editor, charMap);
-      Buttons.register(editor);
-      init(editor, charMap[0]);
-      return Api.get(editor);
-    });
     function Plugin () {
+      global.add('charmap', function (editor) {
+        var charMap = getCharMap$1(editor);
+        register(editor, charMap);
+        register$1(editor);
+        init(editor, charMap[0]);
+        return get(editor);
+      });
     }
 
-    return Plugin;
+    Plugin();
 
 }(window));
-})();

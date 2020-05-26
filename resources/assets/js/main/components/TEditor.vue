@@ -140,13 +140,9 @@
                     ];
                 }
             },
-            toolbar1: {
+            toolbar: {
                 type: String,
                 default: ' undo redo | styleselect | uploadImages | bold italic underline forecolor backcolor | alignleft aligncenter alignright | bullist numlist outdent indent | link image emoticons media codesample | preview screenload',
-            },
-            toolbar2: {
-                type: String,
-                default: '',
             },
             other_options: {
                 type: Object,
@@ -227,8 +223,7 @@
                 return {
                     selector: (isFull ? '#T_' : '#') + this.id,
                     language: "zh_CN",
-                    toolbar1: this.toolbar1,
-                    toolbar2: this.toolbar2,
+                    toolbar: this.toolbar,
                     plugins: this.plugins,
                     menu: {
                         view: {
@@ -255,6 +250,7 @@
                     height: isFull ? '100%' : ($A.rightExists(this.height, '%') ? this.height : ($A.runNum(this.height) || 360)),
                     resize: !isFull,
                     convert_urls:false,
+                    toolbar_mode: 'sliding',
                     toolbar_drawer: 'floating',
                     setup: (editor) => {
                         editor.ui.registry.addMenuButton('uploadImages', {

@@ -59,9 +59,11 @@
 code[class*="language-"],
 pre[class*="language-"] {
   color: black;
+  background: none;
   text-shadow: 0 1px white;
   font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: 0.875rem;
+  font-size: 1em;
+  text-align: left;
   white-space: pre;
   word-spacing: normal;
   word-break: normal;
@@ -101,13 +103,13 @@ pre[class*="language-"] {
 }
 :not(pre) > code[class*="language-"],
 pre[class*="language-"] {
-  background: transparent !important;
-  border: 1px solid #ccc;
+  background: #f5f2f0;
 }
 /* Inline code */
 :not(pre) > code[class*="language-"] {
   padding: 0.1em;
   border-radius: 0.3em;
+  white-space: normal;
 }
 .token.comment,
 .token.prolog,
@@ -143,7 +145,7 @@ pre[class*="language-"] {
 .token.url,
 .language-css .token.string,
 .style .token.string {
-  color: #a67f59;
+  color: #9a6e3a;
   background: hsla(0, 0%, 100%, 0.5);
 }
 .token.atrule,
@@ -151,7 +153,8 @@ pre[class*="language-"] {
 .token.keyword {
   color: #07a;
 }
-.token.function {
+.token.function,
+.token.class-name {
   color: #DD4A68;
 }
 .token.regex,
@@ -169,16 +172,6 @@ pre[class*="language-"] {
 .token.entity {
   cursor: help;
 }
-:not([dir=rtl]) code[class*="language-"],
-:not([dir=rtl]) pre[class*="language-"] {
-  direction: ltr;
-  text-align: left;
-}
-[dir=rtl] code[class*="language-"],
-[dir=rtl] pre[class*="language-"] {
-  direction: rtl;
-  text-align: right;
-}
 /* stylelint-enable */
 .mce-content-body {
   overflow-wrap: break-word;
@@ -186,7 +179,7 @@ pre[class*="language-"] {
 }
 .mce-content-body .mce-visual-caret {
   background-color: black;
-  background-color: currentcolor;
+  background-color: currentColor;
   position: absolute;
 }
 .mce-content-body .mce-visual-caret-hidden {
@@ -201,7 +194,7 @@ pre[class*="language-"] {
   top: 0;
 }
 .mce-content-body .mce-offscreen-selection {
-  left: -9999999999px;
+  left: -2000000px;
   max-width: 1000000px;
   position: absolute;
 }
@@ -286,23 +279,16 @@ pre[class*="language-"] {
   position: relative;
   width: 100%;
 }
-.tiny-pageembed--21by9::before,
-.tiny-pageembed--16by9::before,
-.tiny-pageembed--4by3::before,
-.tiny-pageembed--1by1::before {
-  content: "";
-  display: block;
-}
-.tiny-pageembed--21by9::before {
+.tiny-pageembed--21by9 {
   padding-top: 42.857143%;
 }
-.tiny-pageembed--16by9::before {
+.tiny-pageembed--16by9 {
   padding-top: 56.25%;
 }
-.tiny-pageembed--4by3::before {
+.tiny-pageembed--4by3 {
   padding-top: 75%;
 }
-.tiny-pageembed--1by1::before {
+.tiny-pageembed--1by1 {
   padding-top: 100%;
 }
 .tiny-pageembed--21by9 iframe,
@@ -315,6 +301,20 @@ pre[class*="language-"] {
   position: absolute;
   top: 0;
   width: 100%;
+}
+.mce-content-body[data-mce-placeholder] {
+  position: relative;
+}
+.mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
+  color: rgba(34, 47, 62, 0.7);
+  content: attr(data-mce-placeholder);
+  position: absolute;
+}
+.mce-content-body:not([dir=rtl])[data-mce-placeholder]:not(.mce-visualblocks)::before {
+  left: 1px;
+}
+.mce-content-body[dir=rtl][data-mce-placeholder]:not(.mce-visualblocks)::before {
+  right: 1px;
 }
 .mce-content-body div.mce-resizehandle {
   background-color: #4099ff;
@@ -364,11 +364,88 @@ pre[class*="language-"] {
   white-space: nowrap;
   z-index: 10001;
 }
+.tox-rtc-user-selection {
+  position: relative;
+}
+.tox-rtc-user-cursor {
+  bottom: 0;
+  cursor: default;
+  position: absolute;
+  top: 0;
+  width: 2px;
+}
+.tox-rtc-user-cursor::before {
+  background-color: inherit;
+  border-radius: 50%;
+  content: '';
+  display: block;
+  height: 8px;
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 8px;
+}
+.tox-rtc-user-cursor:hover::after {
+  background-color: inherit;
+  border-radius: 100px;
+  box-sizing: border-box;
+  color: #fff;
+  content: attr(data-user);
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  left: -5px;
+  min-height: 8px;
+  min-width: 8px;
+  padding: 0 12px;
+  position: absolute;
+  top: -11px;
+  white-space: nowrap;
+  z-index: 1000;
+}
+.tox-rtc-user-selection--1 .tox-rtc-user-cursor {
+  background-color: #2dc26b;
+}
+.tox-rtc-user-selection--2 .tox-rtc-user-cursor {
+  background-color: #e03e2d;
+}
+.tox-rtc-user-selection--3 .tox-rtc-user-cursor {
+  background-color: #f1c40f;
+}
+.tox-rtc-user-selection--4 .tox-rtc-user-cursor {
+  background-color: #3598db;
+}
+.tox-rtc-user-selection--5 .tox-rtc-user-cursor {
+  background-color: #b96ad9;
+}
+.tox-rtc-user-selection--6 .tox-rtc-user-cursor {
+  background-color: #e67e23;
+}
+.tox-rtc-user-selection--7 .tox-rtc-user-cursor {
+  background-color: #aaa69d;
+}
+.tox-rtc-user-selection--8 .tox-rtc-user-cursor {
+  background-color: #f368e0;
+}
+.tox-rtc-remote-image {
+  background: #eaeaea url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2236%22%20height%3D%2212%22%20viewBox%3D%220%200%2036%2012%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%3Ccircle%20cx%3D%226%22%20cy%3D%226%22%20r%3D%223%22%20fill%3D%22rgba(0%2C%200%2C%200%2C%20.2)%22%3E%0A%20%20%20%20%3Canimate%20attributeName%3D%22r%22%20values%3D%223%3B5%3B3%22%20calcMode%3D%22linear%22%20dur%3D%221s%22%20repeatCount%3D%22indefinite%22%20%2F%3E%0A%20%20%3C%2Fcircle%3E%0A%20%20%3Ccircle%20cx%3D%2218%22%20cy%3D%226%22%20r%3D%223%22%20fill%3D%22rgba(0%2C%200%2C%200%2C%20.2)%22%3E%0A%20%20%20%20%3Canimate%20attributeName%3D%22r%22%20values%3D%223%3B5%3B3%22%20calcMode%3D%22linear%22%20begin%3D%22.33s%22%20dur%3D%221s%22%20repeatCount%3D%22indefinite%22%20%2F%3E%0A%20%20%3C%2Fcircle%3E%0A%20%20%3Ccircle%20cx%3D%2230%22%20cy%3D%226%22%20r%3D%223%22%20fill%3D%22rgba(0%2C%200%2C%200%2C%20.2)%22%3E%0A%20%20%20%20%3Canimate%20attributeName%3D%22r%22%20values%3D%223%3B5%3B3%22%20calcMode%3D%22linear%22%20begin%3D%22.66s%22%20dur%3D%221s%22%20repeatCount%3D%22indefinite%22%20%2F%3E%0A%20%20%3C%2Fcircle%3E%0A%3C%2Fsvg%3E%0A") no-repeat center center;
+  border: 1px solid #ccc;
+  min-height: 240px;
+  min-width: 320px;
+}
 .mce-match-marker {
   background: #aaa;
   color: #fff;
 }
 .mce-match-marker-selected {
+  background: #39f;
+  color: #fff;
+}
+.mce-match-marker-selected::-moz-selection {
+  background: #39f;
+  color: #fff;
+}
+.mce-match-marker-selected::selection {
   background: #39f;
   color: #fff;
 }
@@ -429,6 +506,10 @@ pre[class*="language-"] {
 .ephox-snooker-resizer-bar {
   background-color: #b4d7ff;
   opacity: 0;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 .ephox-snooker-resizer-cols {
   cursor: col-resize;
@@ -440,7 +521,7 @@ pre[class*="language-"] {
   opacity: 1;
 }
 .mce-spellchecker-word {
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D'4'%20height%3D'4'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%3E%3Cpath%20stroke%3D'%23ff0000'%20fill%3D'none'%20stroke-linecap%3D'round'%20stroke-opacity%3D'.5'%20d%3D'M0%203L2%201%204%203'%2F%3E%3C%2Fsvg%3E%0A");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D'4'%20height%3D'4'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%3E%3Cpath%20stroke%3D'%23ff0000'%20fill%3D'none'%20stroke-linecap%3D'round'%20stroke-opacity%3D'.75'%20d%3D'M0%203L2%201%204%203'%2F%3E%3C%2Fsvg%3E%0A");
   background-position: 0 calc(100% + 1px);
   background-repeat: repeat-x;
   background-size: auto 6px;
@@ -448,7 +529,7 @@ pre[class*="language-"] {
   height: 2rem;
 }
 .mce-spellchecker-grammar {
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D'4'%20height%3D'4'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%3E%3Cpath%20stroke%3D'%23008800'%20fill%3D'none'%20stroke-linecap%3D'round'%20d%3D'M0%203L2%201%204%203'%2F%3E%3C%2Fsvg%3E%0A");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D'4'%20height%3D'4'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%3E%3Cpath%20stroke%3D'%2300A835'%20fill%3D'none'%20stroke-linecap%3D'round'%20d%3D'M0%203L2%201%204%203'%2F%3E%3C%2Fsvg%3E%0A");
   background-position: 0 calc(100% + 1px);
   background-repeat: repeat-x;
   background-size: auto 6px;
@@ -605,18 +686,4 @@ pre[class*="language-"] {
 }
 .mce-shy::after {
   content: '-';
-}
-.tox-toolbar-dock-fadeout {
-  opacity: 0;
-  visibility: hidden;
-}
-.tox-toolbar-dock-fadein {
-  opacity: 1;
-  visibility: visible;
-}
-.tox-toolbar-dock-transition {
-  transition: visibility 0s linear 0.3s, opacity 0.3s ease;
-}
-.tox-toolbar-dock-transition.tox-toolbar-dock-fadein {
-  transition-delay: 0s;
 }

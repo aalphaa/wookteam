@@ -4,10 +4,9 @@
  * For LGPL see License.txt in the project root for license information.
  * For commercial licenses see https://www.tiny.cloud/
  *
- * Version: 5.0.7 (2019-06-05)
+ * Version: 5.3.0 (2020-05-21)
  */
-(function () {
-var emoticons = (function (domGlobals) {
+(function (domGlobals) {
     'use strict';
 
     var global = tinymce.util.Tools.resolve('tinymce.PluginManager');
@@ -19,19 +18,9 @@ var emoticons = (function (domGlobals) {
         return value;
       };
     };
-    var identity = function (x) {
-      return x;
-    };
-    var die = function (msg) {
-      return function () {
-        throw new Error(msg);
-      };
-    };
     var never = constant(false);
     var always = constant(true);
 
-    var never$1 = never;
-    var always$1 = always;
     var none = function () {
       return NONE;
     };
@@ -45,37 +34,27 @@ var emoticons = (function (domGlobals) {
       var id = function (n) {
         return n;
       };
-      var noop = function () {
-      };
-      var nul = function () {
-        return null;
-      };
-      var undef = function () {
-        return undefined;
-      };
       var me = {
-        fold: function (n, s) {
+        fold: function (n, _s) {
           return n();
         },
-        is: never$1,
-        isSome: never$1,
-        isNone: always$1,
+        is: never,
+        isSome: never,
+        isNone: always,
         getOr: id,
         getOrThunk: call,
         getOrDie: function (msg) {
           throw new Error(msg || 'error: getOrDie called on none.');
         },
-        getOrNull: nul,
-        getOrUndefined: undef,
+        getOrNull: constant(null),
+        getOrUndefined: constant(undefined),
         or: id,
         orThunk: call,
         map: none,
-        ap: none,
         each: noop,
         bind: none,
-        flatten: none,
-        exists: never$1,
-        forall: always$1,
+        exists: never,
+        forall: always,
         filter: none,
         equals: eq,
         equals_: eq,
@@ -84,19 +63,12 @@ var emoticons = (function (domGlobals) {
         },
         toString: constant('none()')
       };
-      if (Object.freeze)
-        Object.freeze(me);
       return me;
     }();
     var some = function (a) {
-      var constant_a = function () {
-        return a;
-      };
+      var constant_a = constant(a);
       var self = function () {
         return me;
-      };
-      var map = function (f) {
-        return some(f(a));
       };
       var bind = function (f) {
         return f(a);
@@ -108,8 +80,8 @@ var emoticons = (function (domGlobals) {
         is: function (v) {
           return a === v;
         },
-        isSome: always$1,
-        isNone: never$1,
+        isSome: always,
+        isNone: never,
         getOr: constant_a,
         getOrThunk: constant_a,
         getOrDie: constant_a,
@@ -117,35 +89,31 @@ var emoticons = (function (domGlobals) {
         getOrUndefined: constant_a,
         or: self,
         orThunk: self,
-        map: map,
-        ap: function (optfab) {
-          return optfab.fold(none, function (fab) {
-            return some(fab(a));
-          });
+        map: function (f) {
+          return some(f(a));
         },
         each: function (f) {
           f(a);
         },
         bind: bind,
-        flatten: constant_a,
         exists: bind,
         forall: bind,
         filter: function (f) {
           return f(a) ? me : NONE;
-        },
-        equals: function (o) {
-          return o.is(a);
-        },
-        equals_: function (o, elementEq) {
-          return o.fold(never$1, function (b) {
-            return elementEq(a, b);
-          });
         },
         toArray: function () {
           return [a];
         },
         toString: function () {
           return 'some(' + a + ')';
+        },
+        equals: function (o) {
+          return o.is(a);
+        },
+        equals_: function (o, elementEq) {
+          return o.fold(never, function (b) {
+            return elementEq(a, b);
+          });
         }
       };
       return me;
@@ -159,47 +127,23 @@ var emoticons = (function (domGlobals) {
       from: from
     };
 
-    var typeOf = function (x) {
-      if (x === null)
-        return 'null';
-      var t = typeof x;
-      if (t === 'object' && Array.prototype.isPrototypeOf(x))
-        return 'array';
-      if (t === 'object' && String.prototype.isPrototypeOf(x))
-        return 'string';
-      return t;
-    };
-    var isType = function (type) {
-      return function (value) {
-        return typeOf(value) === type;
-      };
-    };
-    var isFunction = isType('function');
-
-    var slice = Array.prototype.slice;
     var exists = function (xs, pred) {
-      return findIndex(xs, pred).isSome();
+      for (var i = 0, len = xs.length; i < len; i++) {
+        var x = xs[i];
+        if (pred(x, i)) {
+          return true;
+        }
+      }
+      return false;
     };
     var map = function (xs, f) {
       var len = xs.length;
       var r = new Array(len);
       for (var i = 0; i < len; i++) {
         var x = xs[i];
-        r[i] = f(x, i, xs);
+        r[i] = f(x, i);
       }
       return r;
-    };
-    var findIndex = function (xs, pred) {
-      for (var i = 0, len = xs.length; i < len; i++) {
-        var x = xs[i];
-        if (pred(x, i, xs)) {
-          return Option.some(i);
-        }
-      }
-      return Option.none();
-    };
-    var from$1 = isFunction(Array.from) ? Array.from : function (x) {
-      return slice.call(x);
     };
 
     var contains = function (str, substr) {
@@ -263,13 +207,9 @@ var emoticons = (function (domGlobals) {
       var set = function (v) {
         value = v;
       };
-      var clone = function () {
-        return Cell(get());
-      };
       return {
         get: get,
-        set: set,
-        clone: clone
+        set: set
       };
     };
 
@@ -286,8 +226,9 @@ var emoticons = (function (domGlobals) {
         for (var _i = 0; _i < arguments.length; _i++) {
           args[_i] = arguments[_i];
         }
-        if (timer !== null)
+        if (timer !== null) {
           domGlobals.clearTimeout(timer);
+        }
         timer = domGlobals.setTimeout(function () {
           fn.apply(null, args);
           timer = null;
@@ -303,185 +244,91 @@ var emoticons = (function (domGlobals) {
       editor.insertContent(ch);
     };
 
-    var Global = typeof domGlobals.window !== 'undefined' ? domGlobals.window : Function('return this;')();
-
-    var keys = Object.keys;
-    var hasOwnProperty = Object.hasOwnProperty;
-    var each = function (obj, f) {
-      var props = keys(obj);
-      for (var k = 0, len = props.length; k < len; k++) {
-        var i = props[k];
-        var x = obj[i];
-        f(x, i, obj);
-      }
-    };
-    var map$1 = function (obj, f) {
-      return tupleMap(obj, function (x, i, obj) {
-        return {
-          k: i,
-          v: f(x, i, obj)
-        };
-      });
-    };
-    var tupleMap = function (obj, f) {
-      var r = {};
-      each(obj, function (x, i) {
-        var tuple = f(x, i, obj);
-        r[tuple.k] = tuple.v;
-      });
-      return r;
-    };
-    var has = function (obj, key) {
-      return hasOwnProperty.call(obj, key);
+    var __assign = function () {
+      __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+          s = arguments[i];
+          for (var p in s)
+            if (Object.prototype.hasOwnProperty.call(s, p))
+              t[p] = s[p];
+        }
+        return t;
+      };
+      return __assign.apply(this, arguments);
     };
 
-    var value = function (o) {
-      var is = function (v) {
-        return o === v;
-      };
-      var or = function (opt) {
-        return value(o);
-      };
-      var orThunk = function (f) {
-        return value(o);
-      };
-      var map = function (f) {
-        return value(f(o));
-      };
-      var mapError = function (f) {
-        return value(o);
-      };
-      var each = function (f) {
-        f(o);
-      };
-      var bind = function (f) {
-        return f(o);
-      };
-      var fold = function (_, onValue) {
-        return onValue(o);
-      };
-      var exists = function (f) {
-        return f(o);
-      };
-      var forall = function (f) {
-        return f(o);
-      };
-      var toOption = function () {
-        return Option.some(o);
-      };
-      return {
-        is: is,
-        isValue: always,
-        isError: never,
-        getOr: constant(o),
-        getOrThunk: constant(o),
-        getOrDie: constant(o),
-        or: or,
-        orThunk: orThunk,
-        fold: fold,
-        map: map,
-        mapError: mapError,
-        each: each,
-        bind: bind,
-        exists: exists,
-        forall: forall,
-        toOption: toOption
-      };
-    };
-    var error = function (message) {
-      var getOrThunk = function (f) {
-        return f();
-      };
-      var getOrDie = function () {
-        return die(String(message))();
-      };
-      var or = function (opt) {
-        return opt;
-      };
-      var orThunk = function (f) {
-        return f();
-      };
-      var map = function (f) {
-        return error(message);
-      };
-      var mapError = function (f) {
-        return error(f(message));
-      };
-      var bind = function (f) {
-        return error(message);
-      };
-      var fold = function (onError, _) {
-        return onError(message);
-      };
-      return {
-        is: never,
-        isValue: never,
-        isError: always,
-        getOr: identity,
-        getOrThunk: getOrThunk,
-        getOrDie: getOrDie,
-        or: or,
-        orThunk: orThunk,
-        fold: fold,
-        map: map,
-        mapError: mapError,
-        each: noop,
-        bind: bind,
-        exists: never,
-        forall: always,
-        toOption: Option.none
-      };
-    };
-    var fromOption = function (opt, err) {
-      return opt.fold(function () {
-        return error(err);
-      }, value);
-    };
-    var Result = {
-      value: value,
-      error: error,
-      fromOption: fromOption
-    };
-
-    var hasOwnProperty$1 = Object.prototype.hasOwnProperty;
+    var hasOwnProperty = Object.prototype.hasOwnProperty;
     var shallow = function (old, nu) {
       return nu;
     };
     var baseMerge = function (merger) {
       return function () {
         var objects = new Array(arguments.length);
-        for (var i = 0; i < objects.length; i++)
+        for (var i = 0; i < objects.length; i++) {
           objects[i] = arguments[i];
-        if (objects.length === 0)
+        }
+        if (objects.length === 0) {
           throw new Error('Can\'t merge zero objects');
+        }
         var ret = {};
         for (var j = 0; j < objects.length; j++) {
           var curObject = objects[j];
-          for (var key in curObject)
-            if (hasOwnProperty$1.call(curObject, key)) {
+          for (var key in curObject) {
+            if (hasOwnProperty.call(curObject, key)) {
               ret[key] = merger(ret[key], curObject[key]);
             }
+          }
         }
         return ret;
       };
     };
     var merge = baseMerge(shallow);
 
-    var global$1 = tinymce.util.Tools.resolve('tinymce.dom.ScriptLoader');
+    var keys = Object.keys;
+    var hasOwnProperty$1 = Object.hasOwnProperty;
+    var each = function (obj, f) {
+      var props = keys(obj);
+      for (var k = 0, len = props.length; k < len; k++) {
+        var i = props[k];
+        var x = obj[i];
+        f(x, i);
+      }
+    };
+    var map$1 = function (obj, f) {
+      return tupleMap(obj, function (x, i) {
+        return {
+          k: i,
+          v: f(x, i)
+        };
+      });
+    };
+    var tupleMap = function (obj, f) {
+      var r = {};
+      each(obj, function (x, i) {
+        var tuple = f(x, i);
+        r[tuple.k] = tuple.v;
+      });
+      return r;
+    };
+    var has = function (obj, key) {
+      return hasOwnProperty$1.call(obj, key);
+    };
 
-    var global$2 = tinymce.util.Tools.resolve('tinymce.util.Promise');
+    var global$1 = tinymce.util.Tools.resolve('tinymce.Resource');
 
-    var global$3 = tinymce.util.Tools.resolve('tinymce.util.Delay');
+    var global$2 = tinymce.util.Tools.resolve('tinymce.util.Delay');
 
+    var global$3 = tinymce.util.Tools.resolve('tinymce.util.Promise');
+
+    var DEFAULT_ID = 'tinymce.plugins.emoticons';
     var getEmoticonDatabaseUrl = function (editor, pluginUrl) {
       return editor.getParam('emoticons_database_url', pluginUrl + '/js/emojis' + editor.suffix + '.js');
     };
+    var getEmoticonDatabaseId = function (editor) {
+      return editor.getParam('emoticons_database_id', DEFAULT_ID, 'string');
+    };
     var getAppendedEmoticons = function (editor) {
       return editor.getParam('emoticons_append', {}, 'object');
-    };
-    var Settings = {
-      getEmoticonDatabaseUrl: getEmoticonDatabaseUrl,
-      getAppendedEmoticons: getAppendedEmoticons
     };
 
     var ALL_CATEGORY = 'All';
@@ -496,29 +343,19 @@ var emoticons = (function (domGlobals) {
       flags: 'Flags',
       user: 'User Defined'
     };
-    var GLOBAL_NAME = 'emoticons_plugin_database';
-    var extractGlobal = function (url) {
-      if (Global.tinymce[GLOBAL_NAME]) {
-        var result = Result.value(Global.tinymce[GLOBAL_NAME]);
-        delete Global.tinymce[GLOBAL_NAME];
-        return result;
-      } else {
-        return Result.error('URL ' + url + ' did not contain the expected format for emoticons');
-      }
-    };
     var translateCategory = function (categories, name) {
       return has(categories, name) ? categories[name] : name;
     };
     var getUserDefinedEmoticons = function (editor) {
-      var userDefinedEmoticons = Settings.getAppendedEmoticons(editor);
+      var userDefinedEmoticons = getAppendedEmoticons(editor);
       return map$1(userDefinedEmoticons, function (value) {
-        return merge({
+        return __assign({
           keywords: [],
           category: 'user'
         }, value);
       });
     };
-    var initDatabase = function (editor, databaseUrl) {
+    var initDatabase = function (editor, databaseUrl, databaseId) {
       var categories = Cell(Option.none());
       var all = Cell(Option.none());
       var processEmojis = function (emojis) {
@@ -539,16 +376,13 @@ var emoticons = (function (domGlobals) {
         all.set(Option.some(everything));
       };
       editor.on('init', function () {
-        global$1.ScriptLoader.loadScript(databaseUrl, function () {
-          extractGlobal(databaseUrl).fold(function (err) {
-            domGlobals.console.log(err);
-            categories.set(Option.some({}));
-            all.set(Option.some([]));
-          }, function (emojis) {
-            var userEmojis = getUserDefinedEmoticons(editor);
-            processEmojis(merge(emojis, userEmojis));
-          });
-        }, function () {
+        global$1.load(databaseId, databaseUrl).then(function (emojis) {
+          var userEmojis = getUserDefinedEmoticons(editor);
+          processEmojis(merge(emojis, userEmojis));
+        }, function (err) {
+          domGlobals.console.log('Failed to load emoticons: ' + err);
+          categories.set(Option.some({}));
+          all.set(Option.some([]));
         });
       });
       var listCategory = function (category) {
@@ -567,23 +401,23 @@ var emoticons = (function (domGlobals) {
       };
       var waitForLoad = function () {
         if (hasLoaded()) {
-          return global$2.resolve(true);
+          return global$3.resolve(true);
         } else {
-          return new global$2(function (resolve, reject) {
-            var numRetries = 3;
-            var interval = global$3.setInterval(function () {
+          return new global$3(function (resolve, reject) {
+            var numRetries = 15;
+            var interval = global$2.setInterval(function () {
               if (hasLoaded()) {
-                global$3.clearInterval(interval);
+                global$2.clearInterval(interval);
                 resolve(true);
               } else {
                 numRetries--;
                 if (numRetries < 0) {
                   domGlobals.console.log('Could not load emojis from url: ' + databaseUrl);
-                  global$3.clearInterval(interval);
+                  global$2.clearInterval(interval);
                   reject(false);
                 }
               }
-            }, 500);
+            }, 100);
           });
         }
       };
@@ -671,7 +505,7 @@ var emoticons = (function (domGlobals) {
           updateFilter.throttle(dialogApi);
           dialogApi.focus(patternName);
           dialogApi.unblock();
-        }).catch(function (err) {
+        }).catch(function (_err) {
           dialogApi.redial({
             title: 'Emoticons',
             body: {
@@ -698,11 +532,10 @@ var emoticons = (function (domGlobals) {
         });
       }
     };
-    var Dialog = { open: open };
 
     var register = function (editor, database) {
       var onAction = function () {
-        return Dialog.open(editor, database);
+        return open(editor, database);
       };
       editor.ui.registry.addButton('emoticons', {
         tooltip: 'Emoticons',
@@ -715,18 +548,17 @@ var emoticons = (function (domGlobals) {
         onAction: onAction
       });
     };
-    var Buttons = { register: register };
 
-    global.add('emoticons', function (editor, pluginUrl) {
-      var databaseUrl = Settings.getEmoticonDatabaseUrl(editor, pluginUrl);
-      var database = initDatabase(editor, databaseUrl);
-      Buttons.register(editor, database);
-      init(editor, database);
-    });
     function Plugin () {
+      global.add('emoticons', function (editor, pluginUrl) {
+        var databaseUrl = getEmoticonDatabaseUrl(editor, pluginUrl);
+        var databaseId = getEmoticonDatabaseId(editor);
+        var database = initDatabase(editor, databaseUrl, databaseId);
+        register(editor, database);
+        init(editor, database);
+      });
     }
 
-    return Plugin;
+    Plugin();
 
 }(window));
-})();

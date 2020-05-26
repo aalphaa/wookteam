@@ -4,10 +4,9 @@
  * For LGPL see License.txt in the project root for license information.
  * For commercial licenses see https://www.tiny.cloud/
  *
- * Version: 5.0.7 (2019-06-05)
+ * Version: 5.3.0 (2020-05-21)
  */
-(function () {
-var searchreplace = (function () {
+(function (domGlobals) {
     'use strict';
 
     var Cell = function (initial) {
@@ -18,211 +17,651 @@ var searchreplace = (function () {
       var set = function (v) {
         value = v;
       };
-      var clone = function () {
-        return Cell(get());
-      };
       return {
         get: get,
-        set: set,
-        clone: clone
+        set: set
       };
     };
 
     var global = tinymce.util.Tools.resolve('tinymce.PluginManager');
 
+    var __assign = function () {
+      __assign = Object.assign || function __assign(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+          s = arguments[i];
+          for (var p in s)
+            if (Object.prototype.hasOwnProperty.call(s, p))
+              t[p] = s[p];
+        }
+        return t;
+      };
+      return __assign.apply(this, arguments);
+    };
+
+    var noop = function () {
+    };
+    var constant = function (value) {
+      return function () {
+        return value;
+      };
+    };
+    var never = constant(false);
+    var always = constant(true);
+
+    var punctuationStr = '[!-#%-*,-\\/:;?@\\[-\\]_{}\xA1\xAB\xB7\xBB\xBF;\xB7\u055A-\u055F\u0589\u058A\u05BE\u05C0\u05C3\u05C6\u05F3\u05F4\u0609\u060A\u060C\u060D\u061B\u061E\u061F\u066A-\u066D\u06D4\u0700-\u070D\u07F7-\u07F9\u0830-\u083E\u085E\u0964\u0965\u0970\u0DF4\u0E4F\u0E5A\u0E5B\u0F04-\u0F12\u0F3A-\u0F3D\u0F85\u0FD0-\u0FD4\u0FD9\u0FDA\u104A-\u104F\u10FB\u1361-\u1368\u1400\u166D\u166E\u169B\u169C\u16EB-\u16ED\u1735\u1736\u17D4-\u17D6\u17D8-\u17DA\u1800-\u180A\u1944\u1945\u1A1E\u1A1F\u1AA0-\u1AA6\u1AA8-\u1AAD\u1B5A-\u1B60\u1BFC-\u1BFF\u1C3B-\u1C3F\u1C7E\u1C7F\u1CD3\u2010-\u2027\u2030-\u2043\u2045-\u2051\u2053-\u205E\u207D\u207E\u208D\u208E\u3008\u3009\u2768-\u2775\u27C5\u27C6\u27E6-\u27EF\u2983-\u2998\u29D8-\u29DB\u29FC\u29FD\u2CF9-\u2CFC\u2CFE\u2CFF\u2D70\u2E00-\u2E2E\u2E30\u2E31\u3001-\u3003\u3008-\u3011\u3014-\u301F\u3030\u303D\u30A0\u30FB\uA4FE\uA4FF\uA60D-\uA60F\uA673\uA67E\uA6F2-\uA6F7\uA874-\uA877\uA8CE\uA8CF\uA8F8-\uA8FA\uA92E\uA92F\uA95F\uA9C1-\uA9CD\uA9DE\uA9DF\uAA5C-\uAA5F\uAADE\uAADF\uABEB\uFD3E\uFD3F\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE61\uFE63\uFE68\uFE6A\uFE6B\uFF01-\uFF03\uFF05-\uFF0A\uFF0C-\uFF0F\uFF1A\uFF1B\uFF1F\uFF20\uFF3B-\uFF3D\uff3f\uFF5B\uFF5D\uFF5F-\uFF65]';
+
+    var punctuation = constant(punctuationStr);
+
+    var none = function () {
+      return NONE;
+    };
+    var NONE = function () {
+      var eq = function (o) {
+        return o.isNone();
+      };
+      var call = function (thunk) {
+        return thunk();
+      };
+      var id = function (n) {
+        return n;
+      };
+      var me = {
+        fold: function (n, _s) {
+          return n();
+        },
+        is: never,
+        isSome: never,
+        isNone: always,
+        getOr: id,
+        getOrThunk: call,
+        getOrDie: function (msg) {
+          throw new Error(msg || 'error: getOrDie called on none.');
+        },
+        getOrNull: constant(null),
+        getOrUndefined: constant(undefined),
+        or: id,
+        orThunk: call,
+        map: none,
+        each: noop,
+        bind: none,
+        exists: never,
+        forall: always,
+        filter: none,
+        equals: eq,
+        equals_: eq,
+        toArray: function () {
+          return [];
+        },
+        toString: constant('none()')
+      };
+      return me;
+    }();
+    var some = function (a) {
+      var constant_a = constant(a);
+      var self = function () {
+        return me;
+      };
+      var bind = function (f) {
+        return f(a);
+      };
+      var me = {
+        fold: function (n, s) {
+          return s(a);
+        },
+        is: function (v) {
+          return a === v;
+        },
+        isSome: always,
+        isNone: never,
+        getOr: constant_a,
+        getOrThunk: constant_a,
+        getOrDie: constant_a,
+        getOrNull: constant_a,
+        getOrUndefined: constant_a,
+        or: self,
+        orThunk: self,
+        map: function (f) {
+          return some(f(a));
+        },
+        each: function (f) {
+          f(a);
+        },
+        bind: bind,
+        exists: bind,
+        forall: bind,
+        filter: function (f) {
+          return f(a) ? me : NONE;
+        },
+        toArray: function () {
+          return [a];
+        },
+        toString: function () {
+          return 'some(' + a + ')';
+        },
+        equals: function (o) {
+          return o.is(a);
+        },
+        equals_: function (o, elementEq) {
+          return o.fold(never, function (b) {
+            return elementEq(a, b);
+          });
+        }
+      };
+      return me;
+    };
+    var from = function (value) {
+      return value === null || value === undefined ? NONE : some(value);
+    };
+    var Option = {
+      some: some,
+      none: none,
+      from: from
+    };
+
+    var punctuation$1 = punctuation;
+
     var global$1 = tinymce.util.Tools.resolve('tinymce.util.Tools');
 
-    function isContentEditableFalse(node) {
-      return node && node.nodeType === 1 && node.contentEditable === 'false';
+    var typeOf = function (x) {
+      var t = typeof x;
+      if (x === null) {
+        return 'null';
+      } else if (t === 'object' && (Array.prototype.isPrototypeOf(x) || x.constructor && x.constructor.name === 'Array')) {
+        return 'array';
+      } else if (t === 'object' && (String.prototype.isPrototypeOf(x) || x.constructor && x.constructor.name === 'String')) {
+        return 'string';
+      } else {
+        return t;
+      }
+    };
+    var isType = function (type) {
+      return function (value) {
+        return typeOf(value) === type;
+      };
+    };
+    var isSimpleType = function (type) {
+      return function (value) {
+        return typeof value === type;
+      };
+    };
+    var isString = isType('string');
+    var isArray = isType('array');
+    var isBoolean = isSimpleType('boolean');
+    var isNumber = isSimpleType('number');
+
+    var nativeSlice = Array.prototype.slice;
+    var nativePush = Array.prototype.push;
+    var map = function (xs, f) {
+      var len = xs.length;
+      var r = new Array(len);
+      for (var i = 0; i < len; i++) {
+        var x = xs[i];
+        r[i] = f(x, i);
+      }
+      return r;
+    };
+    var each = function (xs, f) {
+      for (var i = 0, len = xs.length; i < len; i++) {
+        var x = xs[i];
+        f(x, i);
+      }
+    };
+    var eachr = function (xs, f) {
+      for (var i = xs.length - 1; i >= 0; i--) {
+        var x = xs[i];
+        f(x, i);
+      }
+    };
+    var groupBy = function (xs, f) {
+      if (xs.length === 0) {
+        return [];
+      } else {
+        var wasType = f(xs[0]);
+        var r = [];
+        var group = [];
+        for (var i = 0, len = xs.length; i < len; i++) {
+          var x = xs[i];
+          var type = f(x);
+          if (type !== wasType) {
+            r.push(group);
+            group = [];
+          }
+          wasType = type;
+          group.push(x);
+        }
+        if (group.length !== 0) {
+          r.push(group);
+        }
+        return r;
+      }
+    };
+    var foldl = function (xs, f, acc) {
+      each(xs, function (x) {
+        acc = f(acc, x);
+      });
+      return acc;
+    };
+    var flatten = function (xs) {
+      var r = [];
+      for (var i = 0, len = xs.length; i < len; ++i) {
+        if (!isArray(xs[i])) {
+          throw new Error('Arr.flatten item ' + i + ' was not an array, input: ' + xs);
+        }
+        nativePush.apply(r, xs[i]);
+      }
+      return r;
+    };
+    var bind = function (xs, f) {
+      return flatten(map(xs, f));
+    };
+    var sort = function (xs, comparator) {
+      var copy = nativeSlice.call(xs, 0);
+      copy.sort(comparator);
+      return copy;
+    };
+
+    var hasOwnProperty = Object.hasOwnProperty;
+    var has = function (obj, key) {
+      return hasOwnProperty.call(obj, key);
+    };
+
+    var Global = typeof domGlobals.window !== 'undefined' ? domGlobals.window : Function('return this;')();
+
+    var DOCUMENT = 9;
+    var ELEMENT = 1;
+    var TEXT = 3;
+
+    var type = function (element) {
+      return element.dom().nodeType;
+    };
+    var isType$1 = function (t) {
+      return function (element) {
+        return type(element) === t;
+      };
+    };
+    var isText = isType$1(TEXT);
+
+    var rawSet = function (dom, key, value) {
+      if (isString(value) || isBoolean(value) || isNumber(value)) {
+        dom.setAttribute(key, value + '');
+      } else {
+        domGlobals.console.error('Invalid call to Attr.set. Key ', key, ':: Value ', value, ':: Element ', dom);
+        throw new Error('Attribute value was not simple');
+      }
+    };
+    var set = function (element, key, value) {
+      rawSet(element.dom(), key, value);
+    };
+
+    var fromHtml = function (html, scope) {
+      var doc = scope || domGlobals.document;
+      var div = doc.createElement('div');
+      div.innerHTML = html;
+      if (!div.hasChildNodes() || div.childNodes.length > 1) {
+        domGlobals.console.error('HTML does not have a single root node', html);
+        throw new Error('HTML must have a single root node');
+      }
+      return fromDom(div.childNodes[0]);
+    };
+    var fromTag = function (tag, scope) {
+      var doc = scope || domGlobals.document;
+      var node = doc.createElement(tag);
+      return fromDom(node);
+    };
+    var fromText = function (text, scope) {
+      var doc = scope || domGlobals.document;
+      var node = doc.createTextNode(text);
+      return fromDom(node);
+    };
+    var fromDom = function (node) {
+      if (node === null || node === undefined) {
+        throw new Error('Node cannot be null or undefined');
+      }
+      return { dom: constant(node) };
+    };
+    var fromPoint = function (docElm, x, y) {
+      var doc = docElm.dom();
+      return Option.from(doc.elementFromPoint(x, y)).map(fromDom);
+    };
+    var Element = {
+      fromHtml: fromHtml,
+      fromTag: fromTag,
+      fromText: fromText,
+      fromDom: fromDom,
+      fromPoint: fromPoint
+    };
+
+    var compareDocumentPosition = function (a, b, match) {
+      return (a.compareDocumentPosition(b) & match) !== 0;
+    };
+    var documentPositionPreceding = function (a, b) {
+      return compareDocumentPosition(a, b, domGlobals.Node.DOCUMENT_POSITION_PRECEDING);
+    };
+
+    var ELEMENT$1 = ELEMENT;
+    var DOCUMENT$1 = DOCUMENT;
+    var bypassSelector = function (dom) {
+      return dom.nodeType !== ELEMENT$1 && dom.nodeType !== DOCUMENT$1 || dom.childElementCount === 0;
+    };
+    var all = function (selector, scope) {
+      var base = scope === undefined ? domGlobals.document : scope.dom();
+      return bypassSelector(base) ? [] : map(base.querySelectorAll(selector), Element.fromDom);
+    };
+
+    var parent = function (element) {
+      return Option.from(element.dom().parentNode).map(Element.fromDom);
+    };
+    var children = function (element) {
+      return map(element.dom().childNodes, Element.fromDom);
+    };
+    var spot = function (element, offset) {
+      return {
+        element: constant(element),
+        offset: constant(offset)
+      };
+    };
+    var leaf = function (element, offset) {
+      var cs = children(element);
+      return cs.length > 0 && offset < cs.length ? spot(cs[offset], 0) : spot(element, offset);
+    };
+
+    var before = function (marker, element) {
+      var parent$1 = parent(marker);
+      parent$1.each(function (v) {
+        v.dom().insertBefore(element.dom(), marker.dom());
+      });
+    };
+    var append = function (parent, element) {
+      parent.dom().appendChild(element.dom());
+    };
+    var wrap = function (element, wrapper) {
+      before(element, wrapper);
+      append(wrapper, element);
+    };
+
+    function NodeValue (is, name) {
+      var get = function (element) {
+        if (!is(element)) {
+          throw new Error('Can only get ' + name + ' value of a ' + name + ' node');
+        }
+        return getOption(element).getOr('');
+      };
+      var getOption = function (element) {
+        return is(element) ? Option.from(element.dom().nodeValue) : Option.none();
+      };
+      var set = function (element, value) {
+        if (!is(element)) {
+          throw new Error('Can only set raw ' + name + ' value of a ' + name + ' node');
+        }
+        element.dom().nodeValue = value;
+      };
+      return {
+        get: get,
+        getOption: getOption,
+        set: set
+      };
     }
-    function findAndReplaceDOMText(regex, node, replacementNode, captureGroup, schema) {
-      var m;
-      var matches = [];
-      var text, count = 0, doc;
-      var blockElementsMap, hiddenTextElementsMap, shortEndedElementsMap;
-      doc = node.ownerDocument;
-      blockElementsMap = schema.getBlockElements();
-      hiddenTextElementsMap = schema.getWhiteSpaceElements();
-      shortEndedElementsMap = schema.getShortEndedElements();
-      function getMatchIndexes(m, captureGroup) {
-        captureGroup = captureGroup || 0;
-        if (!m[0]) {
-          throw new Error('findAndReplaceDOMText cannot handle zero-length matches');
-        }
-        var index = m.index;
-        if (captureGroup > 0) {
-          var cg = m[captureGroup];
-          if (!cg) {
-            throw new Error('Invalid capture group');
+
+    var api = NodeValue(isText, 'text');
+    var get = function (element) {
+      return api.get(element);
+    };
+
+    var descendants = function (scope, selector) {
+      return all(selector, scope);
+    };
+
+    var global$2 = tinymce.util.Tools.resolve('tinymce.dom.TreeWalker');
+
+    var isSimpleBoundary = function (dom, node) {
+      return dom.isBlock(node) || has(dom.schema.getShortEndedElements(), node.nodeName);
+    };
+    var isContentEditableFalse = function (dom, node) {
+      return dom.getContentEditable(node) === 'false';
+    };
+    var isContentEditableTrueInCef = function (dom, node) {
+      return dom.getContentEditable(node) === 'true' && dom.getContentEditableParent(node.parentNode) === 'false';
+    };
+    var isHidden = function (dom, node) {
+      return !dom.isBlock(node) && has(dom.schema.getWhiteSpaceElements(), node.nodeName);
+    };
+    var isBoundary = function (dom, node) {
+      return isSimpleBoundary(dom, node) || isContentEditableFalse(dom, node) || isHidden(dom, node) || isContentEditableTrueInCef(dom, node);
+    };
+    var isText$1 = function (node) {
+      return node.nodeType === 3;
+    };
+    var nuSection = function () {
+      return {
+        sOffset: 0,
+        fOffset: 0,
+        elements: []
+      };
+    };
+    var toLeaf = function (node, offset) {
+      return leaf(Element.fromDom(node), offset);
+    };
+    var walk = function (dom, walkerFn, startNode, callbacks, endNode, skipStart) {
+      if (skipStart === void 0) {
+        skipStart = true;
+      }
+      var next = skipStart ? walkerFn(false) : startNode;
+      while (next) {
+        var isCefNode = isContentEditableFalse(dom, next);
+        if (isCefNode || isHidden(dom, next)) {
+          var stopWalking = isCefNode ? callbacks.cef(next) : callbacks.boundary(next);
+          if (stopWalking) {
+            break;
+          } else {
+            next = walkerFn(true);
+            continue;
           }
-          index += m[0].indexOf(cg);
-          m[0] = cg;
-        }
-        return [
-          index,
-          index + m[0].length,
-          [m[0]]
-        ];
-      }
-      function getText(node) {
-        var txt;
-        if (node.nodeType === 3) {
-          return node.data;
-        }
-        if (hiddenTextElementsMap[node.nodeName] && !blockElementsMap[node.nodeName]) {
-          return '';
-        }
-        txt = '';
-        if (isContentEditableFalse(node)) {
-          return '\n';
-        }
-        if (blockElementsMap[node.nodeName] || shortEndedElementsMap[node.nodeName]) {
-          txt += '\n';
-        }
-        if (node = node.firstChild) {
-          do {
-            txt += getText(node);
-          } while (node = node.nextSibling);
-        }
-        return txt;
-      }
-      function stepThroughMatches(node, matches, replaceFn) {
-        var startNode, endNode, startNodeIndex, endNodeIndex, innerNodes = [], atIndex = 0, curNode = node, matchLocation = matches.shift(), matchIndex = 0;
-        out:
-          while (true) {
-            if (blockElementsMap[curNode.nodeName] || shortEndedElementsMap[curNode.nodeName] || isContentEditableFalse(curNode)) {
-              atIndex++;
-            }
-            if (curNode.nodeType === 3) {
-              if (!endNode && curNode.length + atIndex >= matchLocation[1]) {
-                endNode = curNode;
-                endNodeIndex = matchLocation[1] - atIndex;
-              } else if (startNode) {
-                innerNodes.push(curNode);
-              }
-              if (!startNode && curNode.length + atIndex > matchLocation[0]) {
-                startNode = curNode;
-                startNodeIndex = matchLocation[0] - atIndex;
-              }
-              atIndex += curNode.length;
-            }
-            if (startNode && endNode) {
-              curNode = replaceFn({
-                startNode: startNode,
-                startNodeIndex: startNodeIndex,
-                endNode: endNode,
-                endNodeIndex: endNodeIndex,
-                innerNodes: innerNodes,
-                match: matchLocation[2],
-                matchIndex: matchIndex
-              });
-              atIndex -= endNode.length - endNodeIndex;
-              startNode = null;
-              endNode = null;
-              innerNodes = [];
-              matchLocation = matches.shift();
-              matchIndex++;
-              if (!matchLocation) {
-                break;
-              }
-            } else if ((!hiddenTextElementsMap[curNode.nodeName] || blockElementsMap[curNode.nodeName]) && curNode.firstChild) {
-              if (!isContentEditableFalse(curNode)) {
-                curNode = curNode.firstChild;
-                continue;
-              }
-            } else if (curNode.nextSibling) {
-              curNode = curNode.nextSibling;
-              continue;
-            }
-            while (true) {
-              if (curNode.nextSibling) {
-                curNode = curNode.nextSibling;
-                break;
-              } else if (curNode.parentNode !== node) {
-                curNode = curNode.parentNode;
-              } else {
-                break out;
-              }
-            }
+        } else if (isSimpleBoundary(dom, next)) {
+          if (callbacks.boundary(next)) {
+            break;
           }
-      }
-      function genReplacer(nodeName) {
-        var makeReplacementNode;
-        if (typeof nodeName !== 'function') {
-          var stencilNode_1 = nodeName.nodeType ? nodeName : doc.createElement(nodeName);
-          makeReplacementNode = function (fill, matchIndex) {
-            var clone = stencilNode_1.cloneNode(false);
-            clone.setAttribute('data-mce-index', matchIndex);
-            if (fill) {
-              clone.appendChild(doc.createTextNode(fill));
-            }
-            return clone;
-          };
+        } else if (isText$1(next)) {
+          callbacks.text(next);
+        }
+        if (next === endNode) {
+          break;
         } else {
-          makeReplacementNode = nodeName;
+          next = walkerFn(false);
         }
-        return function (range) {
-          var before;
-          var after;
-          var parentNode;
-          var startNode = range.startNode;
-          var endNode = range.endNode;
-          var matchIndex = range.matchIndex;
-          if (startNode === endNode) {
-            var node_1 = startNode;
-            parentNode = node_1.parentNode;
-            if (range.startNodeIndex > 0) {
-              before = doc.createTextNode(node_1.data.substring(0, range.startNodeIndex));
-              parentNode.insertBefore(before, node_1);
-            }
-            var el = makeReplacementNode(range.match[0], matchIndex);
-            parentNode.insertBefore(el, node_1);
-            if (range.endNodeIndex < node_1.length) {
-              after = doc.createTextNode(node_1.data.substring(range.endNodeIndex));
-              parentNode.insertBefore(after, node_1);
-            }
-            node_1.parentNode.removeChild(node_1);
-            return el;
-          }
-          before = doc.createTextNode(startNode.data.substring(0, range.startNodeIndex));
-          after = doc.createTextNode(endNode.data.substring(range.endNodeIndex));
-          var elA = makeReplacementNode(startNode.data.substring(range.startNodeIndex), matchIndex);
-          for (var i = 0, l = range.innerNodes.length; i < l; ++i) {
-            var innerNode = range.innerNodes[i];
-            var innerEl = makeReplacementNode(innerNode.data, matchIndex);
-            innerNode.parentNode.replaceChild(innerEl, innerNode);
-          }
-          var elB = makeReplacementNode(endNode.data.substring(0, range.endNodeIndex), matchIndex);
-          parentNode = startNode.parentNode;
-          parentNode.insertBefore(before, startNode);
-          parentNode.insertBefore(elA, startNode);
-          parentNode.removeChild(startNode);
-          parentNode = endNode.parentNode;
-          parentNode.insertBefore(elB, endNode);
-          parentNode.insertBefore(after, endNode);
-          parentNode.removeChild(endNode);
-          return elB;
-        };
       }
-      text = getText(node);
-      if (!text) {
+    };
+    var collectTextToBoundary = function (dom, section, node, rootNode, forwards) {
+      if (isBoundary(dom, node)) {
         return;
       }
-      if (regex.global) {
-        while (m = regex.exec(text)) {
-          matches.push(getMatchIndexes(m, captureGroup));
+      var rootBlock = dom.getParent(rootNode, dom.isBlock);
+      var walker = new global$2(node, rootBlock);
+      var walkerFn = forwards ? walker.next : walker.prev;
+      walk(dom, walkerFn, node, {
+        boundary: always,
+        cef: always,
+        text: function (next) {
+          if (forwards) {
+            section.fOffset += next.length;
+          } else {
+            section.sOffset += next.length;
+          }
+          section.elements.push(Element.fromDom(next));
         }
-      } else {
-        m = text.match(regex);
-        matches.push(getMatchIndexes(m, captureGroup));
+      });
+    };
+    var collect = function (dom, rootNode, startNode, endNode, callbacks, skipStart) {
+      if (skipStart === void 0) {
+        skipStart = true;
       }
-      if (matches.length) {
-        count = matches.length;
-        stepThroughMatches(node, matches, genReplacer(replacementNode));
+      var walker = new global$2(startNode, rootNode);
+      var sections = [];
+      var current = nuSection();
+      collectTextToBoundary(dom, current, startNode, rootNode, false);
+      var finishSection = function () {
+        if (current.elements.length > 0) {
+          sections.push(current);
+          current = nuSection();
+        }
+        return false;
+      };
+      walk(dom, walker.next, startNode, {
+        boundary: finishSection,
+        cef: function (node) {
+          finishSection();
+          if (callbacks) {
+            sections.push.apply(sections, callbacks.cef(node));
+          }
+          return false;
+        },
+        text: function (next) {
+          current.elements.push(Element.fromDom(next));
+          if (callbacks) {
+            callbacks.text(next, current);
+          }
+        }
+      }, endNode, skipStart);
+      if (endNode) {
+        collectTextToBoundary(dom, current, endNode, rootNode, true);
       }
-      return count;
-    }
-    var FindReplaceText = { findAndReplaceDOMText: findAndReplaceDOMText };
+      finishSection();
+      return sections;
+    };
+    var collectRangeSections = function (dom, rng) {
+      var start = toLeaf(rng.startContainer, rng.startOffset);
+      var startNode = start.element().dom();
+      var end = toLeaf(rng.endContainer, rng.endOffset);
+      var endNode = end.element().dom();
+      return collect(dom, rng.commonAncestorContainer, startNode, endNode, {
+        text: function (node, section) {
+          if (node === endNode) {
+            section.fOffset += node.length - end.offset();
+          } else if (node === startNode) {
+            section.sOffset += start.offset();
+          }
+        },
+        cef: function (node) {
+          var sections = bind(descendants(Element.fromDom(node), '*[contenteditable=true]'), function (e) {
+            var ceTrueNode = e.dom();
+            return collect(dom, ceTrueNode, ceTrueNode);
+          });
+          return sort(sections, function (a, b) {
+            return documentPositionPreceding(a.elements[0].dom(), b.elements[0].dom()) ? 1 : -1;
+          });
+        }
+      }, false);
+    };
+    var fromRng = function (dom, rng) {
+      return rng.collapsed ? [] : collectRangeSections(dom, rng);
+    };
+    var fromNode = function (dom, node) {
+      var rng = dom.createRng();
+      rng.selectNode(node);
+      return fromRng(dom, rng);
+    };
+    var fromNodes = function (dom, nodes) {
+      return bind(nodes, function (node) {
+        return fromNode(dom, node);
+      });
+    };
+
+    var find = function (text, pattern, start, finish) {
+      if (start === void 0) {
+        start = 0;
+      }
+      if (finish === void 0) {
+        finish = text.length;
+      }
+      var regex = pattern.regex;
+      regex.lastIndex = start;
+      var results = [];
+      var match;
+      while (match = regex.exec(text)) {
+        var matchedText = match[pattern.matchIndex];
+        var matchStart = match.index + match[0].indexOf(matchedText);
+        var matchFinish = matchStart + matchedText.length;
+        if (matchFinish > finish) {
+          break;
+        }
+        results.push({
+          start: matchStart,
+          finish: matchFinish
+        });
+        regex.lastIndex = matchFinish;
+      }
+      return results;
+    };
+    var extract = function (elements, matches) {
+      var nodePositions = foldl(elements, function (acc, element) {
+        var content = get(element);
+        var start = acc.last;
+        var finish = start + content.length;
+        var positions = bind(matches, function (match, matchIdx) {
+          if (match.start < finish && match.finish > start) {
+            return [{
+                element: element,
+                start: Math.max(start, match.start) - start,
+                finish: Math.min(finish, match.finish) - start,
+                matchId: matchIdx
+              }];
+          } else {
+            return [];
+          }
+        });
+        return {
+          results: acc.results.concat(positions),
+          last: finish
+        };
+      }, {
+        results: [],
+        last: 0
+      }).results;
+      return groupBy(nodePositions, function (position) {
+        return position.matchId;
+      });
+    };
+
+    var find$1 = function (pattern, sections) {
+      return bind(sections, function (section) {
+        var elements = section.elements;
+        var content = map(elements, get).join('');
+        var positions = find(content, pattern, section.sOffset, content.length - section.fOffset);
+        return extract(elements, positions);
+      });
+    };
+    var mark = function (matches, replacementNode) {
+      eachr(matches, function (match, idx) {
+        eachr(match, function (pos) {
+          var wrapper = Element.fromDom(replacementNode.cloneNode(false));
+          set(wrapper, 'data-mce-index', idx);
+          var textNode = pos.element.dom();
+          if (textNode.length === pos.finish && pos.start === 0) {
+            wrap(pos.element, wrapper);
+          } else {
+            if (textNode.length !== pos.finish) {
+              textNode.splitText(pos.finish);
+            }
+            var matchNode = textNode.splitText(pos.start);
+            wrap(Element.fromDom(matchNode), wrapper);
+          }
+        });
+      });
+    };
+    var findAndMark = function (dom, pattern, node, replacementNode) {
+      var textSections = fromNode(dom, node);
+      var matches = find$1(pattern, textSections);
+      mark(matches, replacementNode);
+      return matches.length;
+    };
+    var findAndMarkInSelection = function (dom, pattern, selection, replacementNode) {
+      var bookmark = selection.getBookmark();
+      var nodes = dom.select('td[data-mce-selected],th[data-mce-selected]');
+      var textSections = nodes.length > 0 ? fromNodes(dom, nodes) : fromRng(dom, selection.getRng());
+      var matches = find$1(pattern, textSections);
+      mark(matches, replacementNode);
+      selection.moveToBookmark(bookmark);
+      return matches.length;
+    };
 
     var getElmIndex = function (elm) {
       var value = elm.getAttribute('data-mce-index');
@@ -231,13 +670,17 @@ var searchreplace = (function () {
       }
       return value;
     };
-    var markAllMatches = function (editor, currentIndexState, regex) {
+    var markAllMatches = function (editor, currentSearchState, pattern, inSelection) {
       var node, marker;
       marker = editor.dom.create('span', { 'data-mce-bogus': 1 });
       marker.className = 'mce-match-marker';
       node = editor.getBody();
-      done(editor, currentIndexState, false);
-      return FindReplaceText.findAndReplaceDOMText(regex, node, marker, false, editor.schema);
+      done(editor, currentSearchState, false);
+      if (inSelection) {
+        return findAndMarkInSelection(editor.dom, pattern, editor.selection, marker);
+      } else {
+        return findAndMark(editor.dom, pattern, node, marker);
+      }
     };
     var unwrap = function (node) {
       var parentNode = node.parentNode;
@@ -263,16 +706,25 @@ var searchreplace = (function () {
       }
       return spans;
     };
-    var moveSelection = function (editor, currentIndexState, forward) {
-      var testIndex = currentIndexState.get();
+    var moveSelection = function (editor, currentSearchState, forward) {
+      var searchState = currentSearchState.get();
+      var testIndex = searchState.index;
       var dom = editor.dom;
       forward = forward !== false;
       if (forward) {
-        testIndex++;
+        if (testIndex + 1 === searchState.count) {
+          testIndex = 0;
+        } else {
+          testIndex++;
+        }
       } else {
-        testIndex--;
+        if (testIndex - 1 === -1) {
+          testIndex = searchState.count - 1;
+        } else {
+          testIndex--;
+        }
       }
-      dom.removeClass(findSpansByIndex(editor, currentIndexState.get()), 'mce-match-marker-selected');
+      dom.removeClass(findSpansByIndex(editor, searchState.index), 'mce-match-marker-selected');
       var spans = findSpansByIndex(editor, testIndex);
       if (spans.length) {
         dom.addClass(findSpansByIndex(editor, testIndex), 'mce-match-marker-selected');
@@ -288,42 +740,54 @@ var searchreplace = (function () {
         dom.remove(parent);
       }
     };
-    var find = function (editor, currentIndexState, text, matchCase, wholeWord) {
-      text = text.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&');
-      text = text.replace(/\s/g, '[^\\S\\r\\n]');
-      text = wholeWord ? '\\b' + text + '\\b' : text;
-      var count = markAllMatches(editor, currentIndexState, new RegExp(text, matchCase ? 'g' : 'gi'));
+    var escapeSearchText = function (text, wholeWord) {
+      var escapedText = text.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&').replace(/\s/g, '[^\\S\\r\\n]');
+      var wordRegex = '(' + escapedText + ')';
+      return wholeWord ? '(?:^|\\s|' + punctuation$1() + ')' + wordRegex + ('(?=$|\\s|' + punctuation$1() + ')') : wordRegex;
+    };
+    var find$2 = function (editor, currentSearchState, text, matchCase, wholeWord, inSelection) {
+      var escapedText = escapeSearchText(text, wholeWord);
+      var pattern = {
+        regex: new RegExp(escapedText, matchCase ? 'g' : 'gi'),
+        matchIndex: 1
+      };
+      var count = markAllMatches(editor, currentSearchState, pattern, inSelection);
       if (count) {
-        currentIndexState.set(-1);
-        currentIndexState.set(moveSelection(editor, currentIndexState, true));
+        var newIndex = moveSelection(editor, currentSearchState, true);
+        currentSearchState.set({
+          index: newIndex,
+          count: count,
+          text: text,
+          matchCase: matchCase,
+          wholeWord: wholeWord,
+          inSelection: inSelection
+        });
       }
       return count;
     };
-    var next = function (editor, currentIndexState) {
-      var index = moveSelection(editor, currentIndexState, true);
-      if (index !== -1) {
-        currentIndexState.set(index);
-      }
+    var next = function (editor, currentSearchState) {
+      var index = moveSelection(editor, currentSearchState, true);
+      currentSearchState.set(__assign(__assign({}, currentSearchState.get()), { index: index }));
     };
-    var prev = function (editor, currentIndexState) {
-      var index = moveSelection(editor, currentIndexState, false);
-      if (index !== -1) {
-        currentIndexState.set(index);
-      }
+    var prev = function (editor, currentSearchState) {
+      var index = moveSelection(editor, currentSearchState, false);
+      currentSearchState.set(__assign(__assign({}, currentSearchState.get()), { index: index }));
     };
     var isMatchSpan = function (node) {
       var matchIndex = getElmIndex(node);
       return matchIndex !== null && matchIndex.length > 0;
     };
-    var replace = function (editor, currentIndexState, text, forward, all) {
-      var i, nodes, node, matchIndex, currentMatchIndex, nextIndex = currentIndexState.get(), hasMore;
+    var replace = function (editor, currentSearchState, text, forward, all) {
+      var searchState = currentSearchState.get();
+      var currentIndex = searchState.index;
+      var i, nodes, node, matchIndex, currentMatchIndex, nextIndex = currentIndex;
       forward = forward !== false;
       node = editor.getBody();
       nodes = global$1.grep(global$1.toArray(node.getElementsByTagName('span')), isMatchSpan);
       for (i = 0; i < nodes.length; i++) {
         var nodeIndex = getElmIndex(nodes[i]);
         matchIndex = currentMatchIndex = parseInt(nodeIndex, 10);
-        if (all || matchIndex === currentIndexState.get()) {
+        if (all || matchIndex === searchState.index) {
           if (text.length) {
             nodes[i].firstChild.nodeValue = text;
             unwrap(nodes[i]);
@@ -342,27 +806,29 @@ var searchreplace = (function () {
           if (forward) {
             nextIndex--;
           }
-        } else if (currentMatchIndex > currentIndexState.get()) {
-          nodes[i].setAttribute('data-mce-index', currentMatchIndex - 1);
+        } else if (currentMatchIndex > currentIndex) {
+          nodes[i].setAttribute('data-mce-index', String(currentMatchIndex - 1));
         }
       }
-      currentIndexState.set(nextIndex);
+      currentSearchState.set(__assign(__assign({}, searchState), {
+        count: all ? 0 : searchState.count - 1,
+        index: nextIndex
+      }));
       if (forward) {
-        hasMore = hasNext(editor, currentIndexState);
-        next(editor, currentIndexState);
+        next(editor, currentSearchState);
       } else {
-        hasMore = hasPrev(editor, currentIndexState);
-        prev(editor, currentIndexState);
+        prev(editor, currentSearchState);
       }
-      return !all && hasMore;
+      return !all && currentSearchState.get().count > 0;
     };
-    var done = function (editor, currentIndexState, keepEditorSelection) {
+    var done = function (editor, currentSearchState, keepEditorSelection) {
       var i, nodes, startContainer, endContainer;
+      var searchState = currentSearchState.get();
       nodes = global$1.toArray(editor.getBody().getElementsByTagName('span'));
       for (i = 0; i < nodes.length; i++) {
         var nodeIndex = getElmIndex(nodes[i]);
         if (nodeIndex !== null && nodeIndex.length) {
-          if (nodeIndex === currentIndexState.get().toString()) {
+          if (nodeIndex === searchState.index.toString()) {
             if (!startContainer) {
               startContainer = nodes[i].firstChild;
             }
@@ -371,6 +837,11 @@ var searchreplace = (function () {
           unwrap(nodes[i]);
         }
       }
+      currentSearchState.set(__assign(__assign({}, searchState), {
+        index: -1,
+        count: 0,
+        text: ''
+      }));
       if (startContainer && endContainer) {
         var rng = editor.dom.createRng();
         rng.setStart(startContainer, 0);
@@ -381,155 +852,84 @@ var searchreplace = (function () {
         return rng;
       }
     };
-    var hasNext = function (editor, currentIndexState) {
-      return findSpansByIndex(editor, currentIndexState.get() + 1).length > 0;
+    var hasNext = function (editor, currentSearchState) {
+      return currentSearchState.get().count > 1;
     };
-    var hasPrev = function (editor, currentIndexState) {
-      return findSpansByIndex(editor, currentIndexState.get() - 1).length > 0;
-    };
-    var Actions = {
-      done: done,
-      find: find,
-      next: next,
-      prev: prev,
-      replace: replace,
-      hasNext: hasNext,
-      hasPrev: hasPrev
+    var hasPrev = function (editor, currentSearchState) {
+      return currentSearchState.get().count > 1;
     };
 
-    var get = function (editor, currentIndexState) {
-      var done = function (keepEditorSelection) {
-        return Actions.done(editor, currentIndexState, keepEditorSelection);
+    var get$1 = function (editor, currentState) {
+      var done$1 = function (keepEditorSelection) {
+        return done(editor, currentState, keepEditorSelection);
       };
-      var find = function (text, matchCase, wholeWord) {
-        return Actions.find(editor, currentIndexState, text, matchCase, wholeWord);
+      var find = function (text, matchCase, wholeWord, inSelection) {
+        if (inSelection === void 0) {
+          inSelection = false;
+        }
+        return find$2(editor, currentState, text, matchCase, wholeWord, inSelection);
       };
-      var next = function () {
-        return Actions.next(editor, currentIndexState);
+      var next$1 = function () {
+        return next(editor, currentState);
       };
-      var prev = function () {
-        return Actions.prev(editor, currentIndexState);
+      var prev$1 = function () {
+        return prev(editor, currentState);
       };
-      var replace = function (text, forward, all) {
-        return Actions.replace(editor, currentIndexState, text, forward, all);
+      var replace$1 = function (text, forward, all) {
+        return replace(editor, currentState, text, forward, all);
       };
       return {
-        done: done,
+        done: done$1,
         find: find,
-        next: next,
-        prev: prev,
-        replace: replace
+        next: next$1,
+        prev: prev$1,
+        replace: replace$1
       };
-    };
-    var Api = { get: get };
-
-    var constant = function (value) {
-      return function () {
-        return value;
-      };
-    };
-    var never = constant(false);
-    var always = constant(true);
-
-    var never$1 = never;
-    var always$1 = always;
-    var none = function () {
-      return NONE;
-    };
-    var NONE = function () {
-      var eq = function (o) {
-        return o.isNone();
-      };
-      var call = function (thunk) {
-        return thunk();
-      };
-      var id = function (n) {
-        return n;
-      };
-      var noop = function () {
-      };
-      var nul = function () {
-        return null;
-      };
-      var undef = function () {
-        return undefined;
-      };
-      var me = {
-        fold: function (n, s) {
-          return n();
-        },
-        is: never$1,
-        isSome: never$1,
-        isNone: always$1,
-        getOr: id,
-        getOrThunk: call,
-        getOrDie: function (msg) {
-          throw new Error(msg || 'error: getOrDie called on none.');
-        },
-        getOrNull: nul,
-        getOrUndefined: undef,
-        or: id,
-        orThunk: call,
-        map: none,
-        ap: none,
-        each: noop,
-        bind: none,
-        flatten: none,
-        exists: never$1,
-        forall: always$1,
-        filter: none,
-        equals: eq,
-        equals_: eq,
-        toArray: function () {
-          return [];
-        },
-        toString: constant('none()')
-      };
-      if (Object.freeze)
-        Object.freeze(me);
-      return me;
-    }();
-
-    var typeOf = function (x) {
-      if (x === null)
-        return 'null';
-      var t = typeof x;
-      if (t === 'object' && Array.prototype.isPrototypeOf(x))
-        return 'array';
-      if (t === 'object' && String.prototype.isPrototypeOf(x))
-        return 'string';
-      return t;
-    };
-    var isType = function (type) {
-      return function (value) {
-        return typeOf(value) === type;
-      };
-    };
-    var isFunction = isType('function');
-
-    var slice = Array.prototype.slice;
-    var each = function (xs, f) {
-      for (var i = 0, len = xs.length; i < len; i++) {
-        var x = xs[i];
-        f(x, i, xs);
-      }
-    };
-    var from = isFunction(Array.from) ? Array.from : function (x) {
-      return slice.call(x);
     };
 
-    var global$2 = tinymce.util.Tools.resolve('tinymce.util.I18n');
+    var value = function () {
+      var subject = Cell(Option.none());
+      var clear = function () {
+        subject.set(Option.none());
+      };
+      var set = function (s) {
+        subject.set(Option.some(s));
+      };
+      var on = function (f) {
+        subject.get().each(f);
+      };
+      var isSet = function () {
+        return subject.get().isSome();
+      };
+      return {
+        clear: clear,
+        set: set,
+        isSet: isSet,
+        on: on
+      };
+    };
 
-    var open = function (editor, currentIndexState) {
-      var last = {}, selectedText;
+    var global$3 = tinymce.util.Tools.resolve('tinymce.Env');
+
+    var open = function (editor, currentSearchState) {
+      var dialogApi = value();
       editor.undoManager.add();
-      selectedText = global$1.trim(editor.selection.getContent({ format: 'text' }));
+      var selectedText = global$1.trim(editor.selection.getContent({ format: 'text' }));
       function updateButtonStates(api) {
-        var updateNext = Actions.hasNext(editor, currentIndexState) ? api.enable : api.disable;
+        var updateNext = hasNext(editor, currentSearchState) ? api.enable : api.disable;
         updateNext('next');
-        var updatePrev = Actions.hasPrev(editor, currentIndexState) ? api.enable : api.disable;
+        var updatePrev = hasPrev(editor, currentSearchState) ? api.enable : api.disable;
         updatePrev('prev');
       }
+      var updateSearchState = function (api) {
+        var data = api.getData();
+        var current = currentSearchState.get();
+        currentSearchState.set(__assign(__assign({}, current), {
+          matchCase: data.matchcase,
+          wholeWord: data.wholewords,
+          inSelection: data.inselection
+        }));
+      };
       var disableAll = function (api, disable) {
         var buttons = [
           'replace',
@@ -545,193 +945,223 @@ var searchreplace = (function () {
           api.focus('findtext');
         });
       }
-      var doSubmit = function (api) {
-        var data = api.getData();
-        if (!data.findtext.length) {
-          Actions.done(editor, currentIndexState, false);
-          disableAll(api, true);
-          updateButtonStates(api);
-          return;
+      var focusButtonIfRequired = function (api, name) {
+        if (global$3.browser.isSafari() && global$3.deviceType.isTouch() && (name === 'find' || name === 'replace' || name === 'replaceall')) {
+          api.focus(name);
         }
-        if (last.text === data.findtext && last.caseState === data.matchcase && last.wholeWord === data.wholewords) {
-          if (!Actions.hasNext(editor, currentIndexState)) {
-            notFoundAlert(api);
-            return;
-          }
-          Actions.next(editor, currentIndexState);
-          updateButtonStates(api);
-          return;
-        }
-        var count = Actions.find(editor, currentIndexState, data.findtext, data.matchcase, data.wholewords);
-        if (!count) {
-          notFoundAlert(api);
-        }
-        disableAll(api, count === 0);
-        updateButtonStates(api);
-        last = {
-          text: data.findtext,
-          caseState: data.matchcase,
-          wholeWord: data.wholewords
-        };
       };
+      var reset = function (api) {
+        done(editor, currentSearchState, false);
+        disableAll(api, true);
+        updateButtonStates(api);
+      };
+      var doFind = function (api) {
+        var data = api.getData();
+        var last = currentSearchState.get();
+        if (!data.findtext.length) {
+          reset(api);
+          return;
+        }
+        if (last.text === data.findtext && last.matchCase === data.matchcase && last.wholeWord === data.wholewords) {
+          next(editor, currentSearchState);
+        } else {
+          var count = find$2(editor, currentSearchState, data.findtext, data.matchcase, data.wholewords, data.inselection);
+          if (count <= 0) {
+            notFoundAlert(api);
+          }
+          disableAll(api, count === 0);
+        }
+        updateButtonStates(api);
+      };
+      var initialState = currentSearchState.get();
       var initialData = {
         findtext: selectedText,
         replacetext: '',
-        matchcase: false,
-        wholewords: false
+        wholewords: initialState.wholeWord,
+        matchcase: initialState.matchCase,
+        inselection: initialState.inSelection
       };
-      editor.windowManager.open({
+      var spec = {
         title: 'Find and Replace',
         size: 'normal',
         body: {
           type: 'panel',
           items: [
             {
-              type: 'input',
-              name: 'findtext',
-              label: 'Find'
+              type: 'bar',
+              items: [
+                {
+                  type: 'input',
+                  name: 'findtext',
+                  placeholder: 'Find',
+                  maximized: true,
+                  inputMode: 'search'
+                },
+                {
+                  type: 'button',
+                  name: 'prev',
+                  text: 'Previous',
+                  icon: 'action-prev',
+                  disabled: true,
+                  borderless: true
+                },
+                {
+                  type: 'button',
+                  name: 'next',
+                  text: 'Next',
+                  icon: 'action-next',
+                  disabled: true,
+                  borderless: true
+                }
+              ]
             },
             {
               type: 'input',
               name: 'replacetext',
-              label: 'Replace with'
-            },
-            {
-              type: 'grid',
-              columns: 2,
-              items: [
-                {
-                  type: 'checkbox',
-                  name: 'matchcase',
-                  label: 'Match case'
-                },
-                {
-                  type: 'checkbox',
-                  name: 'wholewords',
-                  label: 'Find whole words only'
-                }
-              ]
+              placeholder: 'Replace with',
+              inputMode: 'search'
             }
           ]
         },
         buttons: [
           {
+            type: 'menu',
+            name: 'options',
+            icon: 'preferences',
+            tooltip: 'Preferences',
+            align: 'start',
+            items: [
+              {
+                type: 'togglemenuitem',
+                name: 'matchcase',
+                text: 'Match case'
+              },
+              {
+                type: 'togglemenuitem',
+                name: 'wholewords',
+                text: 'Find whole words only'
+              },
+              {
+                type: 'togglemenuitem',
+                name: 'inselection',
+                text: 'Find in selection'
+              }
+            ]
+          },
+          {
             type: 'custom',
             name: 'find',
             text: 'Find',
-            align: 'start',
             primary: true
           },
           {
             type: 'custom',
             name: 'replace',
             text: 'Replace',
-            align: 'start',
             disabled: true
           },
           {
             type: 'custom',
             name: 'replaceall',
             text: 'Replace All',
-            align: 'start',
-            disabled: true
-          },
-          {
-            type: 'custom',
-            name: 'prev',
-            text: 'Previous',
-            align: 'end',
-            icon: global$2.isRtl() ? 'arrow-right' : 'arrow-left',
-            disabled: true
-          },
-          {
-            type: 'custom',
-            name: 'next',
-            text: 'Next',
-            align: 'end',
-            icon: global$2.isRtl() ? 'arrow-left' : 'arrow-right',
             disabled: true
           }
         ],
         initialData: initialData,
+        onChange: function (api, details) {
+          if (details.name === 'findtext' && currentSearchState.get().count > 0) {
+            reset(api);
+          }
+        },
         onAction: function (api, details) {
           var data = api.getData();
           switch (details.name) {
           case 'find':
-            doSubmit(api);
+            doFind(api);
             break;
           case 'replace':
-            if (!Actions.replace(editor, currentIndexState, data.replacetext)) {
-              disableAll(api, true);
-              currentIndexState.set(-1);
-              last = {};
+            if (!replace(editor, currentSearchState, data.replacetext)) {
+              reset(api);
+            } else {
+              updateButtonStates(api);
             }
             break;
           case 'replaceall':
-            Actions.replace(editor, currentIndexState, data.replacetext, true, true);
-            disableAll(api, true);
-            last = {};
+            replace(editor, currentSearchState, data.replacetext, true, true);
+            reset(api);
             break;
           case 'prev':
-            Actions.prev(editor, currentIndexState);
+            prev(editor, currentSearchState);
             updateButtonStates(api);
             break;
           case 'next':
-            Actions.next(editor, currentIndexState);
+            next(editor, currentSearchState);
             updateButtonStates(api);
             break;
-          default:
+          case 'matchcase':
+          case 'wholewords':
+          case 'inselection':
+            updateSearchState(api);
+            reset(api);
             break;
           }
+          focusButtonIfRequired(api, details.name);
         },
-        onSubmit: doSubmit,
+        onSubmit: function (api) {
+          doFind(api);
+          focusButtonIfRequired(api, 'find');
+        },
         onClose: function () {
           editor.focus();
-          Actions.done(editor, currentIndexState);
+          done(editor, currentSearchState);
           editor.undoManager.add();
         }
-      });
+      };
+      dialogApi.set(editor.windowManager.open(spec, { inline: 'toolbar' }));
     };
-    var Dialog = { open: open };
 
-    var register = function (editor, currentIndexState) {
+    var register = function (editor, currentSearchState) {
       editor.addCommand('SearchReplace', function () {
-        Dialog.open(editor, currentIndexState);
+        open(editor, currentSearchState);
       });
     };
-    var Commands = { register: register };
 
-    var showDialog = function (editor, currentIndexState) {
+    var showDialog = function (editor, currentSearchState) {
       return function () {
-        Dialog.open(editor, currentIndexState);
+        open(editor, currentSearchState);
       };
     };
-    var register$1 = function (editor, currentIndexState) {
+    var register$1 = function (editor, currentSearchState) {
       editor.ui.registry.addMenuItem('searchreplace', {
         text: 'Find and replace...',
         shortcut: 'Meta+F',
-        onAction: showDialog(editor, currentIndexState),
+        onAction: showDialog(editor, currentSearchState),
         icon: 'search'
       });
       editor.ui.registry.addButton('searchreplace', {
         tooltip: 'Find and replace',
-        onAction: showDialog(editor, currentIndexState),
+        onAction: showDialog(editor, currentSearchState),
         icon: 'search'
       });
-      editor.shortcuts.add('Meta+F', '', showDialog(editor, currentIndexState));
+      editor.shortcuts.add('Meta+F', '', showDialog(editor, currentSearchState));
     };
-    var Buttons = { register: register$1 };
 
-    global.add('searchreplace', function (editor) {
-      var currentIndexState = Cell(-1);
-      Commands.register(editor, currentIndexState);
-      Buttons.register(editor, currentIndexState);
-      return Api.get(editor, currentIndexState);
-    });
     function Plugin () {
+      global.add('searchreplace', function (editor) {
+        var currentSearchState = Cell({
+          index: -1,
+          count: 0,
+          text: '',
+          matchCase: false,
+          wholeWord: false,
+          inSelection: false
+        });
+        register(editor, currentSearchState);
+        register$1(editor, currentSearchState);
+        return get$1(editor, currentSearchState);
+      });
     }
 
-    return Plugin;
+    Plugin();
 
-}());
-})();
+}(window));

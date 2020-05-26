@@ -315,7 +315,8 @@
   position: relative;
 }
 .tinymce-mobile-toolstrip .tinymce-mobile-toolbar.tinymce-mobile-context-toolbar .tinymce-mobile-toolbar-group .tinymce-mobile-serialised-dialog .tinymce-mobile-serialised-dialog-chain .tinymce-mobile-serialised-dialog-screen .tinymce-mobile-input-container .tinymce-mobile-input-container-x {
-  align-self: center;
+  -ms-grid-row-align: center;
+      align-self: center;
   background: inherit;
   border: none;
   border-radius: 50%;

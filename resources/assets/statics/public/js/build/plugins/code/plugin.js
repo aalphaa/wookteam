@@ -4,10 +4,9 @@
  * For LGPL see License.txt in the project root for license information.
  * For commercial licenses see https://www.tiny.cloud/
  *
- * Version: 5.0.7 (2019-06-05)
+ * Version: 5.3.0 (2020-05-21)
  */
 (function () {
-var code = (function () {
     'use strict';
 
     var global = tinymce.util.Tools.resolve('tinymce.PluginManager');
@@ -23,13 +22,9 @@ var code = (function () {
     var getContent = function (editor) {
       return editor.getContent({ source_view: true });
     };
-    var Content = {
-      setContent: setContent,
-      getContent: getContent
-    };
 
     var open = function (editor) {
-      var editorContent = Content.getContent(editor);
+      var editorContent = getContent(editor);
       editor.windowManager.open({
         title: 'Source Code',
         size: 'large',
@@ -55,47 +50,43 @@ var code = (function () {
         ],
         initialData: { code: editorContent },
         onSubmit: function (api) {
-          Content.setContent(editor, api.getData().code);
+          setContent(editor, api.getData().code);
           api.close();
         }
       });
     };
-    var Dialog = { open: open };
 
     var register = function (editor) {
       editor.addCommand('mceCodeEditor', function () {
-        Dialog.open(editor);
+        open(editor);
       });
     };
-    var Commands = { register: register };
 
     var register$1 = function (editor) {
       editor.ui.registry.addButton('code', {
         icon: 'sourcecode',
         tooltip: 'Source code',
         onAction: function () {
-          return Dialog.open(editor);
+          return open(editor);
         }
       });
       editor.ui.registry.addMenuItem('code', {
         icon: 'sourcecode',
         text: 'Source code',
         onAction: function () {
-          return Dialog.open(editor);
+          return open(editor);
         }
       });
     };
-    var Buttons = { register: register$1 };
 
-    global.add('code', function (editor) {
-      Commands.register(editor);
-      Buttons.register(editor);
-      return {};
-    });
     function Plugin () {
+      global.add('code', function (editor) {
+        register(editor);
+        register$1(editor);
+        return {};
+      });
     }
 
-    return Plugin;
+    Plugin();
 
 }());
-})();

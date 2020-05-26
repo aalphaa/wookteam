@@ -4,10 +4,9 @@
  * For LGPL see License.txt in the project root for license information.
  * For commercial licenses see https://www.tiny.cloud/
  *
- * Version: 5.0.7 (2019-06-05)
+ * Version: 5.3.0 (2020-05-21)
  */
-(function () {
-var tabfocus = (function (domGlobals) {
+(function (domGlobals) {
     'use strict';
 
     var global = tinymce.util.Tools.resolve('tinymce.PluginManager');
@@ -30,7 +29,6 @@ var tabfocus = (function (domGlobals) {
     var getTabFocus = function (editor) {
       return editor.getParam('tab_focus', getTabFocusElements(editor));
     };
-    var Settings = { getTabFocus: getTabFocus };
 
     var DOM = global$1.DOM;
     var tabCancel = function (e) {
@@ -73,7 +71,7 @@ var tabfocus = (function (domGlobals) {
           }
           return null;
         }
-        v = global$5.explode(Settings.getTabFocus(editor));
+        v = global$5.explode(getTabFocus(editor));
         if (v.length === 1) {
           v[1] = v[0];
           v[0] = ':prev';
@@ -118,15 +116,13 @@ var tabfocus = (function (domGlobals) {
         }
       });
     };
-    var Keyboard = { setup: setup };
 
-    global.add('tabfocus', function (editor) {
-      Keyboard.setup(editor);
-    });
     function Plugin () {
+      global.add('tabfocus', function (editor) {
+        setup(editor);
+      });
     }
 
-    return Plugin;
+    Plugin();
 
 }(window));
-})();
