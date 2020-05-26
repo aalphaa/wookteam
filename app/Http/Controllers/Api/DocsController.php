@@ -122,7 +122,7 @@ class DocsController extends Controller
         }
         DB::table('docs_book')->where('id', $id)->delete();
         DB::table('docs_section')->where('bookid', $id)->delete();
-        //未完成，应该还要删除章节
+        DB::table('docs_content')->where('bookid', $id)->delete();
         return Base::retSuccess('删除成功！');
     }
 
@@ -290,31 +290,73 @@ class DocsController extends Controller
         }
         DB::table('docs_section')->where('parentid', $id)->update([ 'parentid' => $row['parentid'] ]);
         DB::table('docs_section')->where('id', $id)->delete();
-        //未完成，应该还要删除章节
+        DB::table('docs_content')->where('sid', $id)->delete();
         return Base::retSuccess('删除成功！');
     }
 
     /**
      * 获取章节内容
      *
-     * @apiParam {Number} id                章节数据ID
+     * @apiParam {Number|String} id                章节数据ID（或：章节数据ID-历史数据ID）
      */
     public function section__content()
     {
-        $id = intval(Request::input('id'));
+        $id = Request::input('id');
+        $hid = 0;
+        if (Base::strExists($id, '-')) {
+            list($id, $hid) = explode("-", $id);
+        }
+        $id = intval($id);
+        $hid = intval($hid);
         $row = Base::DBC2A(DB::table('docs_section')->where('id', $id)->first());
         if (empty($row)) {
             return Base::retError('文档不存在或已被删除！');
         }
-        $cRow = Base::DBC2A(DB::table('docs_content')->select(['content'])->where('sid', $id)->first());
+        $whereArray = [];
+        if ($hid > 0) {
+            $whereArray[] = ['id', '=', $hid];
+        }
+        $whereArray[] = ['sid', '=', $id];
+        $cRow = Base::DBC2A(DB::table('docs_content')->select(['id AS hid', 'content'])->where($whereArray)->orderByDesc('id')->first());
         if (empty($cRow)) {
-            $cRow = [ 'content' => '' ];
+            $cRow = [ 'hid' => 0, 'content' => '' ];
         }
         return Base::retSuccess('success', array_merge($row, $cRow));
     }
 
     /**
-     * 获取章节内容
+     * 获取章节历史内容
+     *
+     * @apiParam {Number} id                章节数据ID
+     */
+    public function section__history()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $id = intval(Request::input('id'));
+        $row = Base::DBC2A(DB::table('docs_section')->where('id', $id)->first());
+        if (empty($row)) {
+            return Base::retError('文档不存在或已被删除！');
+        }
+        //
+        $lists = Base::DBC2A(DB::table('docs_content')
+            ->where('sid', $id)
+            ->orderByDesc('id')
+            ->take(50)
+            ->get());
+        if (count($lists) <= 1) {
+            return Base::retError('暂无历史数据');
+        }
+        return Base::retSuccess('success', $lists);
+    }
+
+    /**
+     * 保存章节内容
      *
      * @apiParam {Number} id                章节数据ID
      * @apiParam {Object} [D]               Request Payload 提交
@@ -322,13 +364,26 @@ class DocsController extends Controller
      */
     public function section__save()
     {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
         $id = intval(Request::input('id'));
         $row = Base::DBC2A(DB::table('docs_section')->where('id', $id)->first());
         if (empty($row)) {
             return Base::retError('文档不存在或已被删除！');
         }
         $D = Base::getContentsParse('D');
-        DB::table('docs_content')->updateOrInsert(['sid' => $id], ['content' => $D['content']]);
+        DB::table('docs_content')->insert([
+            'bookid' => $row['bookid'],
+            'sid' => $id,
+            'content' => $D['content'],
+            'username' => $user['username'],
+            'indate' => Base::time()
+        ]);
         return Base::retSuccess('保存成功！');
     }
 }

@@ -7,12 +7,12 @@
             <div class="edit-header">
                 <div class="header-menu active" @click="handleClick('back')"><Icon type="md-arrow-back" /></div>
                 <div class="header-menu" @click="handleClick('menu')"><Icon type="md-menu" /></div>
-                <div class="header-menu"><Icon type="md-share" /></div>
-                <div class="header-menu"><Icon type="md-eye" /></div>
-                <div class="header-menu"><Icon type="md-time" /></div>
+                <div class="header-menu" @click="handleClick('share')"><Icon type="md-share" /></div>
+                <div class="header-menu" @click="handleClick('view')"><Icon type="md-eye" /></div>
+                <div class="header-menu" @click="handleClick('history')"><Icon type="md-time" /></div>
                 <div class="header-title">{{docDetail.title}}</div>
                 <div v-if="docDetail.type=='mind'" class="header-hint">选中节点，按enter键添加子节点，tab键添加同级节点</div>
-                <Button :disabled="disabledBtn || loadIng > 0" class="header-button" size="small" type="primary" @click="handleClick('save')">保存</Button>
+                <Button :disabled="(disabledBtn || loadIng > 0) && hid == 0" class="header-button" size="small" type="primary" @click="handleClick('save')">保存</Button>
             </div>
             <div class="docs-body">
                 <t-editor v-if="docDetail.type=='document'" class="body-text" v-model="docContent.content" height="100%"></t-editor>
@@ -21,6 +21,18 @@
                 <flow v-else-if="docDetail.type=='flow'" class="body-flow" v-model="docContent.content"></flow>
             </div>
         </div>
+
+        <Drawer v-model="docDrawerShow" width="450">
+            <Tabs v-if="docDrawerShow" v-model="docDrawerTab">
+                <TabPane :label="$L('目录')" name="menu">
+                    <nested-draggable :lists="sectionLists" :readonly="true" @change="handleSection"></nested-draggable>
+                    <div v-if="sectionLists.length == 0" style="color:#888;padding:32px;text-align:center">{{sectionNoDataText}}</div>
+                </TabPane>
+                <TabPane :label="$L('历史版本')" name="history">
+                    <Table class="tableFill" :columns="historyColumns" :data="historyLists" :no-data-text="historyNoDataText" size="small" stripe></Table>
+                </TabPane>
+            </Tabs>
+        </Drawer>
 
     </div>
 </template>
@@ -159,55 +171,191 @@
     import TEditor from "../../components/TEditor";
     import Sheet from "../../components/docs/sheet/index";
     import Flow from "../../components/docs/flow/index";
+    import NestedDraggable from "../../components/docs/NestedDraggable";
 
     Vue.use(minder)
 
     export default {
-        components: {Flow, Sheet, TEditor},
+        components: {Flow, Sheet, TEditor, NestedDraggable},
         data () {
             return {
                 loadIng: 0,
 
                 sid: 0,
+                hid: 0,
 
                 docDetail: { },
                 docContent: { },
                 bakContent: null,
+
+                docDrawerShow: false,
+                docDrawerTab: '',
+
+                sectionLists: [],
+                sectionNoDataText: "",
+
+                historyColumns: [],
+                historyLists: [],
+                historyNoDataText: "",
             }
+        },
+        created() {
+            this.historyColumns = [{
+                "title": "存档日期",
+                "minWidth": 160,
+                "maxWidth": 200,
+                render: (h, params) => {
+                    return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
+                }
+            }, {
+                "title": "操作员",
+                "key": 'username',
+                "minWidth": 80,
+                "maxWidth": 130,
+            }, {
+                "title": " ",
+                "key": 'action',
+                "width": 80,
+                "align": 'center',
+                render: (h, params) => {
+                    if (this.hid == params.row.id || (this.hid == 0 && params.index == 0)) {
+                        return h('Icon', {
+                            props: { type: 'md-checkmark' },
+                            style: { marginRight: '6px', fontSize: '16px', color: '#FF5722' },
+                        });
+                    }
+                    return h('Button', {
+                        props: {
+                            type: 'text',
+                            size: 'small'
+                        },
+                        style: {
+                            fontSize: '12px'
+                        },
+                        on: {
+                            click: () => {
+                                let data = {sid: this.getSid() + "-" + params.row.id, other: this.$route.params.other}
+                                if (params.index == 0) {
+                                    data.sid = this.getSid();
+                                }
+                                this.goForward({name: 'docs-edit', params: data }, true);
+                                this.refreshSid();
+                                this.docDrawerShow = false;
+                            }
+                        }
+                    }, '还原');
+                }
+            }];
         },
         mounted() {
 
         },
         activated() {
-            this.sid = this.$route.params.sid;
-            if (typeof this.$route.params.other === "object") {
-                this.$set(this.docDetail, 'title', $A.getObject(this.$route.params.other, 'title'))
-            }
+            this.refreshSid();
         },
         deactivated() {
+            this.docDrawerShow = false;
             if ($A.getToken() === false) {
                 this.sid = 0;
             }
         },
         watch: {
             sid(val) {
-                if ($A.runNum(val) <= 0) {
+                if (!val) {
                     this.goBack();
                     return;
                 }
+                this.hid = $A.runNum($A.strExists(val, '-') ? $A.getMiddle(val, "-", null) : 0);
                 this.docDetail = { };
                 this.docContent = { };
                 this.bakContent = null;
                 this.getDetail();
+            },
+
+            docDrawerTab(act) {
+                switch (act) {
+                    case "menu":
+                        if (!this.sectionNoDataText) {
+                            this.sectionNoDataText = "数据加载中.....";
+                            let bookid = this.docDetail.bookid;
+                            $A.aAjax({
+                                url: 'docs/section/lists',
+                                data: {
+                                    bookid: bookid
+                                },
+                                error: () => {
+                                    if (bookid != this.docDetail.bookid) {
+                                        return;
+                                    }
+                                    this.sectionNoDataText = "数据加载失败！";
+                                },
+                                success: (res) => {
+                                    if (bookid != this.docDetail.bookid) {
+                                        return;
+                                    }
+                                    if (res.ret === 1) {
+                                        this.sectionLists = res.data;
+                                        this.sectionNoDataText = "没有相关的数据";
+                                    }else{
+                                        this.sectionLists = [];
+                                        this.sectionNoDataText = res.msg;
+                                    }
+                                }
+                            });
+                        }
+                        break;
+
+                    case "history":
+                        if (!this.historyNoDataText) {
+                            this.historyNoDataText = "数据加载中.....";
+                            let sid = this.getSid();
+                            $A.aAjax({
+                                url: 'docs/section/history',
+                                data: {
+                                    id: sid,
+                                    pagesize: 50
+                                },
+                                error: () => {
+                                    if (sid != this.getSid()) {
+                                        return;
+                                    }
+                                    this.historyNoDataText = "数据加载失败！";
+                                },
+                                success: (res) => {
+                                    if (sid != this.getSid()) {
+                                        return;
+                                    }
+                                    if (res.ret === 1) {
+                                        this.historyLists = res.data;
+                                        this.historyNoDataText = "没有相关的数据";
+                                    }else{
+                                        this.historyLists = [];
+                                        this.historyNoDataText = res.msg;
+                                    }
+                                }
+                            });
+                        }
+                        break;
+                }
             }
         },
         computed: {
             disabledBtn() {
-                let tmpContent = $A.jsonStringify(this.docContent);
-                return this.bakContent == tmpContent;
+                return this.bakContent == $A.jsonStringify(this.docContent);
             }
         },
         methods: {
+            refreshSid() {
+                this.sid = this.$route.params.sid;
+                if (typeof this.$route.params.other === "object") {
+                    this.$set(this.docDetail, 'title', $A.getObject(this.$route.params.other, 'title'))
+                }
+            },
+
+            getSid() {
+                return $A.runNum($A.getMiddle(this.sid, null, '-'));
+            },
+
             getDetail() {
                 this.loadIng++;
                 $A.aAjax({
@@ -235,41 +383,90 @@
                 });
             },
 
-            exportMindData(json) {
-                this.docContent = json;
+            handleSection(act, detail) {
+                if (act === 'open') {
+                    this.goForward({name: 'docs-edit', params: {sid: detail.id, other: detail || {}}}, true);
+                    this.refreshSid();
+                    this.docDrawerShow = false;
+                }
             },
 
             handleClick(act) {
                 switch (act) {
                     case "back":
-                    case "save":
-                        let tmpContent = $A.jsonStringify(this.docContent);
-                        if (this.bakContent != tmpContent) {
-                            this.bakContent = tmpContent;
-                            $A.aAjax({
-                                url: 'docs/section/save?id=' + this.sid,
-                                method: 'post',
-                                data: {
-                                    D: Object.assign(this.docDetail, {content: tmpContent})
-                                },
-                                error: () => {
-                                    alert(this.$L('网络繁忙，保存失败！'));
-                                },
-                                success: (res) => {
-                                    if (res.ret === 1) {
-                                        this.$Message.success(res.msg);
-                                    } else {
-                                        this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
-                                    }
-                                }
-                            });
-                        }
-                        if (act == 'back') {
+                        if (this.bakContent == $A.jsonStringify(this.docContent) && this.hid == 0) {
                             this.goBack();
+                            return;
                         }
+                        this.$Modal.confirm({
+                            title: '温馨提示',
+                            content: '是否放弃修改的内容返回？',
+                            loading: true,
+                            cancelText: '放弃保存',
+                            onCancel: () => {
+                                this.goBack();
+                            },
+                            okText: '保存并返回',
+                            onOk: () => {
+                                this.bakContent = $A.jsonStringify(this.docContent);
+                                $A.aAjax({
+                                    url: 'docs/section/save?id=' + this.getSid(),
+                                    method: 'post',
+                                    data: {
+                                        D: Object.assign(this.docDetail, {content: this.bakContent})
+                                    },
+                                    error: () => {
+                                        this.$Modal.remove();
+                                        alert(this.$L('网络繁忙，请稍后再试！'));
+                                    },
+                                    success: (res) => {
+                                        this.$Modal.remove();
+                                        this.goBack();
+                                        setTimeout(() => {
+                                            if (res.ret === 1) {
+                                                this.$Message.success(res.msg);
+                                                this.historyNoDataText = '';
+                                            } else {
+                                                this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                            }
+                                        }, 350);
+                                    }
+                                });
+                            }
+                        });
+                        break;
+
+                    case "save":
+                        this.bakContent = $A.jsonStringify(this.docContent);
+                        $A.aAjax({
+                            url: 'docs/section/save?id=' + this.getSid(),
+                            method: 'post',
+                            data: {
+                                D: Object.assign(this.docDetail, {content: this.bakContent})
+                            },
+                            error: () => {
+                                alert(this.$L('网络繁忙，保存失败！'));
+                            },
+                            success: (res) => {
+                                if (res.ret === 1) {
+                                    this.$Message.success(res.msg);
+                                    this.historyNoDataText = '';
+                                } else {
+                                    this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                }
+                            }
+                        });
                         break;
 
                     case "menu":
+                    case "history":
+                        this.docDrawerTab = act;
+                        this.docDrawerShow = true
+                        break;
+
+                    case "share":
+                    case "view":
+                        this.$Message.info("敬请期待！");
                         break;
 
                 }

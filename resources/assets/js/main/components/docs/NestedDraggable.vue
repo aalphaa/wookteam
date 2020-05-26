@@ -3,16 +3,16 @@
                :list="lists"
                :group="{ name: 'docs-nested' }"
                :animation="150"
-               :disabled="disabled"
+               :disabled="disabled || readonly"
                @sort="handleClick('sort')">
-        <div v-for="detail in lists" :key="detail.id" class="docs-group">
+        <div v-for="detail in lists" :key="detail.id" class="docs-group" :class="{readonly:readonly}">
             <div class="item">
                 <div class="dashed"></div>
                 <div class="header">
                     <div class="tip"><img :src="detail.icon"/></div>
                     <div class="title" @click="handleClick('open', detail)">{{ detail.title }}</div>
                 </div>
-                <div class="info">
+                <div v-if="!readonly" class="info">
                     <Icon type="md-create" @click="handleClick('edit', detail)"/>
                     <Icon type="md-add" @click="handleClick('add', detail)"/>
                     <Icon type="md-trash" @click="handleClick('delete', detail)"/>
@@ -23,6 +23,7 @@
                 :lists="detail.children"
                 :isChildren="true"
                 :disabled="disabled"
+                :readonly="readonly"
                 @change="handleClick"/>
         </div>
     </draggable>
@@ -30,6 +31,9 @@
 <style lang="scss" scoped>
     .docs-group {
         cursor: move;
+        &.readonly {
+            cursor: default;
+        }
         .docs-group {
             padding-left: 14px;
             background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAABS2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDAgNzkuMTYwNDUxLCAyMDE3LzA1LzA2LTAxOjA4OjIxICAgICAgICAiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIi8+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgo8P3hwYWNrZXQgZW5kPSJyIj8+LUNEtwAAAEtJREFUSIntzzEVwAAMQkFSKfi3FKzQqQ5oJm5h5P3ZXQMYkrgwtk+OPo8kSzo7bGFcC+NaGNfCuBbGtTCuhXEtzB+SHAAGAEm/7wv2LKvDNoBjfgAAAABJRU5ErkJggg==) no-repeat -2px -9px;
@@ -112,6 +116,10 @@
                 default: false,
             },
             disabled: {
+                type: Boolean,
+                default: false,
+            },
+            readonly: {
                 type: Boolean,
                 default: false,
             }
