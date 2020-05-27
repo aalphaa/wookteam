@@ -196,6 +196,8 @@
             return {
                 loadIng: 0,
 
+                userInfo: {},
+
                 bookLists: [],
                 bookListPage: 1,
                 bookListTotal: 0,
@@ -251,8 +253,11 @@
 
         mounted() {
             this.getBookLists(true);
-            $A.getUserInfo((res, isLogin) => {
-                isLogin && this.getBookLists(true);
+            this.userInfo = $A.getUserInfo((res, isLogin) => {
+                if (this.userInfo.id != res.id) {
+                    this.userInfo = res;
+                    isLogin && this.getBookLists(true);
+                }
             }, false);
         },
 

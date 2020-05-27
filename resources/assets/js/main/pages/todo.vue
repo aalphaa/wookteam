@@ -340,6 +340,8 @@
             return {
                 loadIng: 0,
 
+                userInfo: {},
+
                 taskDatas: {
                     "1": {lists: [], hasMorePages: false},
                     "2": {lists: [], hasMorePages: false},
@@ -359,8 +361,11 @@
         },
         mounted() {
             this.refreshTask();
-            $A.getUserInfo((res, isLogin) => {
-                isLogin && this.refreshTask();
+            this.userInfo = $A.getUserInfo((res, isLogin) => {
+                if (this.userInfo.id != res.id) {
+                    this.userInfo = res;
+                    isLogin && this.refreshTask();
+                }
             }, false);
             //
             $A.setOnTaskInfoListener('pages/todo',(act, detail) => {

@@ -175,6 +175,11 @@ class UsersController extends Controller
                 $array['profession'] = $profession;
             }
         }
+        //背景
+        $bgid = intval(Request::input('bgid'));
+        if ($bgid > 0) {
+            $array['bgid'] = $bgid;
+        }
         //
         if ($array) {
             DB::table('users')->where('id', $user['id'])->update($array);

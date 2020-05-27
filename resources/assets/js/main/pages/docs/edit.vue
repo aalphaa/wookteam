@@ -7,8 +7,8 @@
             <div class="edit-header">
                 <div class="header-menu active" @click="handleClick('back')"><Icon type="md-arrow-back" /></div>
                 <div class="header-menu" @click="handleClick('menu')"><Icon type="md-menu" /></div>
-                <div class="header-menu" @click="handleClick('share')"><Icon type="md-share" /></div>
-                <div class="header-menu" @click="handleClick('view')"><Icon type="md-eye" /></div>
+                <!--<div class="header-menu" @click="handleClick('share')"><Icon type="md-share" /></div>
+                <div class="header-menu" @click="handleClick('view')"><Icon type="md-eye" /></div>-->
                 <div class="header-menu" @click="handleClick('history')"><Icon type="md-time" /></div>
                 <div class="header-title">{{docDetail.title}}</div>
                 <div v-if="docDetail.type=='mind'" class="header-hint">选中节点，按enter键添加子节点，tab键添加同级节点</div>
@@ -24,11 +24,11 @@
 
         <Drawer v-model="docDrawerShow" width="450">
             <Tabs v-if="docDrawerShow" v-model="docDrawerTab">
-                <TabPane :label="$L('目录')" name="menu">
-                    <nested-draggable :lists="sectionLists" :readonly="true" @change="handleSection"></nested-draggable>
+                <TabPane :label="$L('知识库目录')" name="menu">
+                    <nested-draggable :lists="sectionLists" :readonly="true" :activeid="sid" @change="handleSection"></nested-draggable>
                     <div v-if="sectionLists.length == 0" style="color:#888;padding:32px;text-align:center">{{sectionNoDataText}}</div>
                 </TabPane>
-                <TabPane :label="$L('历史版本')" name="history">
+                <TabPane :label="$L('文档历史版本')" name="history">
                     <Table class="tableFill" :columns="historyColumns" :data="historyLists" :no-data-text="historyNoDataText" size="small" stripe></Table>
                 </TabPane>
             </Tabs>

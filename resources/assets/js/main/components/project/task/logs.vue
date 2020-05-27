@@ -13,7 +13,7 @@
                                 <div class="log-summary">
                                     <span class="log-creator">{{item.username}}</span>
                                     <span class="log-text-secondary">{{item.detail}}</span>
-                                    <span v-if="item.other.type=='task' && taskid == 0" class="log-text-link">{{item.other.title}}</span>
+                                    <span v-if="item.other.type=='task' && taskid == 0" class="log-text-link" @click="taskDetail(item.other.id)">{{item.other.title}}</span>
                                     <a v-if="item.other.type=='file'" class="log-text-link" target="_blank" :href="fileDownUrl(item.other.id)">{{item.other.name}}</a>
                                     <span class="log-text-info">{{item.timeData.ymd}} {{item.timeData.segment}} {{item.timeData.hi}}</span></div>
                             </TimelineItem>
@@ -101,6 +101,7 @@
                     }
                     .log-text-link {
                         color: #048be0;
+                        cursor: pointer;
                     }
                     .log-text-info {
                         color: rgba(0,0,0,.36);

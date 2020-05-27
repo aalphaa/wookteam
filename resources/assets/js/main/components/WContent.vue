@@ -1,5 +1,5 @@
 <template>
-    <div class="w-content">
+    <div class="w-content" :style="`background-image:${getBgUrl(bgid)}`">
         <slot/>
     </div>
 </template>
@@ -15,7 +15,6 @@
         background-repeat: no-repeat;
         background-position: center;
         background-color: #EEEEEE;
-        background-image: url("../../../statics/images/bg1.jpg");
         background-size: cover;
 
         .w-container {
@@ -26,5 +25,28 @@
 <script>
     export default {
         name: 'WContent',
+        data() {
+            return {
+                bgid: -1,
+
+                userInfo: {}
+            }
+        },
+        mounted() {
+            this.userInfo = $A.getUserInfo((res) => {
+                this.userInfo = res;
+                this.bgid = this.userInfo.bgid;
+            }, false);
+            this.bgid = this.userInfo.bgid;
+        },
+        methods: {
+            getBgUrl(id, thumb) {
+                if (id < 0) {
+                    return 'none';
+                }
+                id = Math.max(1, parseInt(id));
+                return 'url(' + window.location.origin + '/images/bg/' + (thumb ? 'thumb/' : '') + id + '.jpg' + ')';
+            },
+        }
     }
 </script>

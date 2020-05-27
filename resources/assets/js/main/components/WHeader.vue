@@ -57,7 +57,23 @@
                         </FormItem>
                     </Form>
                 </TabPane>
-                <!--<TabPane :label="$L('偏好设置')" name="setting"></TabPane>-->
+                <TabPane :label="$L('偏好设置')" name="setting">
+                    <Form ref="formSetting" :model="formSetting" :label-width="100">
+                        <FormItem :label="$L('系统皮肤')" prop="bgid">
+                            <ul class="setting-bg">
+                                <li v-for="i in [1,2,3,4,5,6,7,8,9,10,11,12]"
+                                    :key="i"
+                                    :style="`background-image:${getBgUrl(i, true)}`"
+                                    :class="{active:formSetting.bgid==i}"
+                                    @click="formSetting.bgid=i"></li>
+                            </ul>
+                        </FormItem>
+                        <FormItem>
+                            <Button :loading="loadIng > 0" type="primary" @click="handleSubmit('formSetting')">{{$L('提交')}}</Button>
+                            <Button :loading="loadIng > 0" @click="handleReset('formSetting')" style="margin-left: 8px">{{$L('重置')}}</Button>
+                        </FormItem>
+                    </Form>
+                </TabPane>
                 <TabPane :label="$L('账号密码')" name="account">
                     <Form ref="formPass" :model="formPass" :rules="rulePass" :label-width="100">
                         <FormItem :label="$L('旧密码')" prop="oldpass">
@@ -158,6 +174,32 @@
             }
         }
     }
+    .setting-bg {
+        margin-top: 6px;
+        margin-bottom: -24px;
+        &:after,
+        &:before {
+            display: table;
+            content: "";
+        }
+        li {
+            margin: 0 16px 16px 0;
+            width: 160px;
+            height: 124px;
+            display: inline-block;
+            cursor: pointer;
+            border: solid 2px #fff;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            transition: all 0.2s;
+            &.active,
+            &:hover {
+                border-color: #0396f2;
+                transform: scale(1.02);
+            }
+        }
+    }
 </style>
 <script>
     import ImgUpload from "./ImgUpload";
@@ -189,7 +231,11 @@
                     newpass: '',
                     checkpass: '',
                 },
-                rulePass: { }
+                rulePass: { },
+
+                formSetting: {
+                    bgid: 0,
+                },
             }
         },
         created() {
@@ -239,14 +285,23 @@
             };
         },
         mounted() {
+            let resCall = () => {
+                this.$set(this.formDatum, 'userimg', this.userInfo.userimg)
+                this.$set(this.formDatum, 'nickname', this.userInfo.nickname)
+                this.$set(this.formDatum, 'profession', this.userInfo.profession)
+                this.$set(this.formSetting, 'bgid', this.userInfo.bgid)
+            };
             this.userInfo = $A.getUserInfo((res) => {
                 this.userInfo = res;
-                this.$set(this.formDatum, 'userimg', res.userimg)
-                this.$set(this.formDatum, 'nickname', res.nickname)
-                this.$set(this.formDatum, 'profession', res.profession)
+                resCall();
             }, false);
+            resCall();
         },
         methods: {
+            getBgUrl(id, thumb) {
+                id = Math.max(1, parseInt(id));
+                return 'url(' + window.location.origin + '/images/bg/' + (thumb ? 'thumb/' : '') + id + '.jpg' + ')';
+            },
             tabPage(path) {
                 this.goForward({path: '/' + path});
             },
@@ -307,6 +362,25 @@
                                             this.userDrawerShow = false;
                                             this.$refs[name].resetFields();
                                             $A.userLogout();
+                                        } else {
+                                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                                        }
+                                    }
+                                });
+                                break;
+                            }
+                            case "formSetting": {
+                                this.loadIng++;
+                                $A.aAjax({
+                                    url: 'users/editdata',
+                                    data: this.formSetting,
+                                    complete: () => {
+                                        this.loadIng--;
+                                    },
+                                    success: (res) => {
+                                        if (res.ret === 1) {
+                                            $A.getUserInfo(true);
+                                            this.$Message.success(this.$L('修改成功'));
                                         } else {
                                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
                                         }

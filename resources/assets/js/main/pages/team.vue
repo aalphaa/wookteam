@@ -97,6 +97,8 @@
             return {
                 loadIng: 0,
 
+                userInfo: {},
+
                 columns: [],
 
                 lists: [],
@@ -242,8 +244,11 @@
         },
         mounted() {
             this.getLists(true);
-            $A.getUserInfo((res, isLogin) => {
-                isLogin && this.getLists(true);
+            this.userInfo = $A.getUserInfo((res, isLogin) => {
+                if (this.userInfo.id != res.id) {
+                    this.userInfo = res;
+                    isLogin && this.getLists(true);
+                }
             }, false);
         },
         deactivated() {
