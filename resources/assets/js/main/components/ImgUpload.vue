@@ -18,7 +18,7 @@
             </div>
             <div class="add-box-upload">
                 <div class="add-box-item" @click="browsePicture">
-                    <span>浏览<em v-if="type === 'callback'">图片</em></span>
+                    <span>{{$L('浏览')}}<em v-if="type === 'callback'">{{$L('图片')}}</em></span>
                 </div>
                 <div class="add-box-item">
                     <Upload
@@ -36,13 +36,13 @@
                             :on-exceeded-size="handleMaxSize"
                             :before-upload="handleBeforeUpload"
                             :multiple=multiple>
-                        <span>上传<em v-if="type === 'callback'">图片</em></span>
+                        <span>{{$L('上传')}}<em v-if="type === 'callback'">{{$L('图片')}}</em></span>
                     </Upload>
                 </div>
             </div>
         </div>
-        <Modal title="浏览图片空间的图片" v-model="browseVisible" class="img-upload-modal" width="710" :styles="{top: '35px',paddingBottom: '35px'}">
-            <div class="browse-load" v-if="isLoading">加载中...</div>
+        <Modal :title="$L('浏览图片空间的图片')" v-model="browseVisible" class="img-upload-modal" width="710" :styles="{top: '35px',paddingBottom: '35px'}">
+            <div class="browse-load" v-if="isLoading">{{$L('加载中...')}}</div>
             <div class="browse-list" :class="httpType==='input'?'browse-list-disabled':''" ref="browselistbox">
                 <div class="browse-item" v-for="item in browseList" @click="browseItem(item)">
                     <Icon v-if="item.active" class="browse-icon" type="ios-checkmark-circle"></Icon>
@@ -53,18 +53,18 @@
             <div slot="footer" class="img-upload-foot">
                 <div v-if="type !== 'callback' && http && httpType===''" class="img-upload-foot-input" @click="httpType='input'">
                     <Icon type="ios-image" size="22"/>
-                    <div class="img-upload-foot-httptitle">自定义图片地址</div>
+                    <div class="img-upload-foot-httptitle">{{$L('自定义图片地址')}}</div>
                 </div>
                 <div v-if="type !== 'callback' && http && httpType==='input'" class="img-upload-foot-input">
-                    <Input v-model="httpValue" placeholder="以“http://”或“https://”开头" @on-search="httpEnter" search enter-button="确定">
-                        <span slot="prepend" @click="httpType=''" style="cursor:pointer">自定义地址：</span>
+                    <Input v-model="httpValue" :placeholder="$L('以“http://”或“https://”开头')" @on-search="httpEnter" search :enter-button="$L('确定')">
+                        <span slot="prepend" @click="httpType=''" style="cursor:pointer">{{$L('自定义地址')}}: </span>
                     </Input>
                 </div>
-                <Button v-if="httpType===''" @click="browseVisible=false">关闭</Button>
-                <Button v-if="httpType===''" type="primary" @click="handleCallback(true)">完成</Button>
+                <Button v-if="httpType===''" @click="browseVisible=false">{{$L('关闭')}}</Button>
+                <Button v-if="httpType===''" type="primary" @click="handleCallback(true)">{{$L('完成')}}</Button>
             </div>
         </Modal>
-        <Modal title="查看图片" v-model="visible" class="img-upload-modal" draggable>
+        <Modal :title="$L('查看图片')" v-model="visible" class="img-upload-modal" draggable>
             <div style="max-height:480px;overflow:auto;">
                 <a :href="imgVisible" target="_blank"><img :src="imgVisible" v-if="visible" style="max-width:100%;max-height:900px;display:block;margin:0 auto"></a>
             </div>
@@ -414,8 +414,8 @@
                     this.handleCallback(file);
                 }else{
                     this.$Modal.warning({
-                        title: '上传失败',
-                        content: '文件 ' + file.name + ' 上传失败，' + res.msg
+                        title: this.$L('上传失败'),
+                        content: this.$L('文件')+ ' ' + file.name + ' ' + this.$L('上传失败') + ', ' + res.msg
                     });
                     this.$refs.upload.fileList.pop();
                 }
@@ -424,22 +424,22 @@
             handleFormatError (file) {
                 //上传类型错误
                 this.$Modal.warning({
-                    title: '文件格式不正确',
-                    content: '文件 ' + file.name + ' 格式不正确，请上传 jpg、jpeg、gif、png 格式的图片。'
+                    title: this.$L('文件格式不正确'),
+                    content: this.$L('文件') + ' ' + file.name + ' ' + this.$L('格式不正确，请上传') + ' jpg、jpeg、gif、png ' + this.$L('格式的图片')
                 });
             },
             handleMaxSize (file) {
                 //上传大小错误
                 this.$Modal.warning({
-                    title: '超出文件大小限制',
-                    content: '文件 ' + file.name + ' 太大，不能超过 2M。'
+                    title: this.$L('超出文件大小限制'),
+                    content: this.$L('文件') + ' ' + file.name + ' ' + this.$L('太大，不能超过') + ' 2M'
                 });
             },
             handleBeforeUpload () {
                 //上传前判断
                 let check = this.uploadList.length < this.maxNum;
                 if (!check) {
-                    this.$Modal.warning({ title: '温馨提示', content: '最多只能上传 ' + this.maxNum + ' 张图片。' });
+                    this.$Modal.warning({ title: this.$L('温馨提示'), content: this.$L('最多只能上传') + ' ' + this.maxNum + ' ' + this.$L('张图片') });
                 }
                 return check;
             },
@@ -471,7 +471,7 @@
                             this.browsePictureFor(res.data['files']);
                         }else if (res.ret === -2) {
                             this.browseVisible = false;
-                            this.$Modal.warning({ title: '温馨提示', content: res.msg });
+                            this.$Modal.warning({ title: this.$L('温馨提示'), content: res.msg });
                         }
                     }
                 });
@@ -515,7 +515,7 @@
                         }
                         let check = this.uploadList.length < this.maxNum;
                         if (!check) {
-                            this.$Modal.warning({ title: '温馨提示', content: '最多只能选择 ' + this.maxNum + ' 张图片。' });
+                            this.$Modal.warning({ title: this.$L('温馨提示'), content: this.$L('最多只能选择') + ' ' + this.maxNum + ' ' + this.$L('张图片') });
                             return;
                         }
                         item.active = true;

@@ -4,13 +4,13 @@
             <textarea ref="myTextarea" :id="id">{{ content }}</textarea>
             <Spin fix v-if="spinShow">
                 <Icon type="ios-loading" size=18 class="teditor-spin-icon-load"></Icon>
-                <div>加载组件中...</div>
+                <div>{{$L('加载组件中...')}}</div>
             </Spin>
             <img-upload ref="myUpload" class="teditor-upload" type="callback" @on-callback="editorImage" num="50" style="margin-top:5px;height:26px;"></img-upload>
         </div>
         <Modal v-model="transfer" class="teditor-transfer" @on-visible-change="transferChange" footer-hide fullscreen transfer>
             <div slot="close">
-                <Button type="primary" size="small">完成</Button>
+                <Button type="primary" size="small">{{$L('完成')}}</Button>
             </div>
             <div class="teditor-transfer-body">
                 <textarea :id="'T_' + id">{{ content }}</textarea>
@@ -254,18 +254,18 @@
                     toolbar_drawer: 'floating',
                     setup: (editor) => {
                         editor.ui.registry.addMenuButton('uploadImages', {
-                            text: '图片',
-                            tooltip: '上传/浏览 图片',
+                            text: this.$L('图片'),
+                            tooltip: this.$L('上传/浏览 图片'),
                             fetch: (callback) => {
                                 let items = [{
                                     type: 'menuitem',
-                                    text: '上传图片',
+                                    text: this.$L('上传图片'),
                                     onAction: () => {
                                         this.$refs.myUpload.handleClick();
                                     }
                                 }, {
                                     type: 'menuitem',
-                                    text: '浏览图片',
+                                    text: this.$L('浏览图片'),
                                     onAction: () => {
                                         this.$refs.myUpload.browsePicture();
                                     }
@@ -274,13 +274,13 @@
                             }
                         });
                         editor.ui.registry.addMenuItem('uploadImages', {
-                            text: '上传图片',
+                            text: this.$L('上传图片'),
                             onAction: () => {
                                 this.$refs.myUpload.handleClick();
                             }
                         });
                         editor.ui.registry.addMenuItem('browseImages', {
-                            text: '浏览图片',
+                            text: this.$L('浏览图片'),
                             onAction: () => {
                                 this.$refs.myUpload.browsePicture();
                             }
@@ -288,13 +288,13 @@
                         if (isFull) {
                             editor.ui.registry.addButton('screenload', {
                                 icon: 'fullscreen',
-                                tooltip: '退出全屏',
+                                tooltip: this.$L('退出全屏'),
                                 onAction: () => {
                                     this.closeFull();
                                 }
                             });
                             editor.ui.registry.addMenuItem('screenload', {
-                                text: '退出全屏',
+                                text: this.$L('退出全屏'),
                                 onAction: () => {
                                     this.closeFull();
                                 }
@@ -311,7 +311,7 @@
                         }else{
                             editor.ui.registry.addButton('screenload', {
                                 icon: 'fullscreen',
-                                tooltip: '全屏',
+                                tooltip: this.$L('全屏'),
                                 onAction: () => {
                                     this.content = editor.getContent();
                                     this.transfer = true;
@@ -319,7 +319,7 @@
                                 }
                             });
                             editor.ui.registry.addMenuItem('screenload', {
-                                text: '全屏',
+                                text: this.$L('全屏'),
                                 onAction: () => {
                                     this.content = editor.getContent();
                                     this.transfer = true;

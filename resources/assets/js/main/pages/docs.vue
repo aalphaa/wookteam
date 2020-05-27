@@ -11,7 +11,7 @@
                     <div class="page-nav-left">
                         <span class="hover" @click="[addBookId=0,addBookShow=true]"><i class="ft icon">&#xE740;</i> {{$L('新建知识库')}}</span>
                         <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
-                        <div v-else class="page-nav-refresh"><em @click="">刷新</em></div>
+                        <div v-else class="page-nav-refresh"><em @click="getBookLists(true)">{{$L('刷新')}}</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -22,7 +22,7 @@
             <div class="docs-main">
                 <div class="docs-body">
                     <div class="docs-menu">
-                        <h3>我的知识库</h3>
+                        <h3>{{$L('我的知识库')}}</h3>
                         <ul>
                             <li v-for="book in bookLists" :class="{active:book.id==selectBookData.id}" @click="[selectBookData=book,getSectionLists(true)]">
                                 <div class="docs-title">{{book.title}}</div>
@@ -36,10 +36,10 @@
                             <div class="docs-header">
                                 <div class="docs-h1">{{selectBookData.title}}</div>
                                 <div class="docs-setting">
-                                    <Button @click="[addSectionId=0,addSectionShow=true]">新增章节</Button>
-                                    <Button @click="[addBookId=selectBookData.id,addBookShow=true]">修改标题</Button>
-                                    <!--<Button>权限设置</Button>-->
-                                    <Button type="warning" ghost @click="onBookDelete(selectBookData.id)">删除</Button>
+                                    <Button @click="[addSectionId=0,addSectionShow=true]">{{$L('新增章节')}}</Button>
+                                    <Button @click="[addBookId=selectBookData.id,addBookShow=true]">{{$L('修改标题')}}</Button>
+                                    <!--<Button>{{$L('权限设置')}}</Button>-->
+                                    <Button type="warning" ghost @click="onBookDelete(selectBookData.id)">{{$L('删除')}}</Button>
                                 </div>
                             </div>
                             <div class="docs-section">
@@ -201,7 +201,7 @@
                 bookLists: [],
                 bookListPage: 1,
                 bookListTotal: 0,
-                bookNoDataText: "数据加载中.....",
+                bookNoDataText: "",
 
                 addBookId: 0,
                 addBookShow: false,
@@ -212,7 +212,7 @@
                 selectBookData: {},
 
                 sectionLists: [],
-                sectionNoDataText: "数据加载中.....",
+                sectionNoDataText: "",
 
                 addSectionId: 0,
                 addSectionShow: false,
@@ -221,19 +221,23 @@
                     type: 'document',
                 },
                 ruleSectionAdd: {},
-                sectionTypeLists: [
-                    {value: 'document', text: "文本"},
-                    {value: 'mind', text: "脑图"},
-                    {value: 'sheet', text: "表格"},
-                    {value: 'flow', text: "流程图"},
-                    {value: 'folder', text: "目录"},
-                ],
+                sectionTypeLists: [],
 
                 sortDisabled: false,
             }
         },
 
         created() {
+            this.bookNoDataText = this.$L("数据加载中.....");
+            this.bookNoDataText = this.$L("数据加载中.....");
+            this.sectionNoDataText = this.$L("数据加载中.....");
+            this.sectionTypeLists = [
+                {value: 'document', text: this.$L("文本")},
+                {value: 'mind', text: this.$L("脑图")},
+                {value: 'sheet', text: this.$L("表格")},
+                {value: 'flow', text: this.$L("流程图")},
+                {value: 'folder', text: this.$L("目录")},
+            ];
             this.ruleBookAdd = {
                 title: [
                     { required: true, message: this.$L('请填写知识库名称！'), trigger: 'change' },
@@ -311,7 +315,7 @@
                     this.bookListPage = 1;
                 }
                 this.loadIng++;
-                this.bookNoDataText = "数据加载中.....";
+                this.bookNoDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'docs/book/lists',
                     data: {
@@ -322,13 +326,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.bookNoDataText = "数据加载失败！";
+                        this.bookNoDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.bookLists = res.data.lists;
                             this.bookListTotal = res.data.total;
-                            this.bookNoDataText = "没有相关的数据";
+                            this.bookNoDataText = this.$L("没有相关的数据");
                             if (typeof this.selectBookData.id === "undefined") {
                                 this.selectBookData = this.bookLists[0];
                                 this.getSectionLists();
@@ -381,8 +385,8 @@
 
             onBookDelete(bookId) {
                 this.$Modal.confirm({
-                    title: '删除知识库',
-                    content: '你确定要删除此知识库吗？',
+                    title: this.$L('删除知识库'),
+                    content: this.$L('你确定要删除此知识库吗？'),
                     loading: true,
                     onOk: () => {
                         $A.aAjax({
@@ -424,7 +428,7 @@
                 }
                 let bookid = this.selectBookData.id;
                 this.loadIng++;
-                this.sectionNoDataText = "数据加载中.....";
+                this.sectionNoDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'docs/section/lists',
                     data: {
@@ -437,7 +441,7 @@
                         if (bookid != this.selectBookData.id) {
                             return;
                         }
-                        this.sectionNoDataText = "数据加载失败！";
+                        this.sectionNoDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (bookid != this.selectBookData.id) {
@@ -445,7 +449,7 @@
                         }
                         if (res.ret === 1) {
                             this.sectionLists = res.data;
-                            this.sectionNoDataText = "没有相关的数据";
+                            this.sectionNoDataText = this.$L("没有相关的数据");
                         }else{
                             this.sectionLists = [];
                             this.sectionNoDataText = res.msg;
@@ -489,8 +493,8 @@
 
             onSectionDelete(sectionId) {
                 this.$Modal.confirm({
-                    title: '删除文档',
-                    content: '你确定要删除此文档吗？',
+                    title: this.$L('删除文档'),
+                    content: this.$L('你确定要删除此文档吗？'),
                     loading: true,
                     onOk: () => {
                         $A.aAjax({

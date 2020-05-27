@@ -6,8 +6,8 @@ export default {
 
         outProject(projectid, successCallback) {
             this.$Modal.confirm({
-                title: '退出项目',
-                content: '你确定要退出此项目吗？',
+                title: this.$L('退出项目'),
+                content: this.$L('你确定要退出此项目吗？'),
                 loading: true,
                 onOk: () => {
                     $A.aAjax({
@@ -59,8 +59,8 @@ export default {
 
         deleteProject(projectid, successCallback) {
             this.$Modal.confirm({
-                title: '删除项目',
-                content: '你确定要删除此项目吗？',
+                title: this.$L('删除项目'),
+                content: this.$L('你确定要删除此项目吗？'),
                 loading: true,
                 onOk: () => {
                     $A.aAjax({

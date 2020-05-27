@@ -1,7 +1,7 @@
 <template>
     <div class="task-input-box">
         <div v-if="!addText" class="input-placeholder">
-            <Icon type="md-create" size="18"/>&nbsp;{{addFocus?`输入任务，回车即可保存`:placeholder}}
+            <Icon type="md-create" size="18"/>&nbsp;{{addFocus?`${$L('输入任务，回车即可保存')}`:placeholder}}
         </div>
         <div class="input-enter">
             <Input
@@ -16,13 +16,13 @@
                 :maxlength="255"
                 @on-keydown="addKeydown"/>
             <div v-if="!!addText" class="input-enter-module">
-                <Tooltip content="重要且紧急" placement="bottom" transfer><div @click="addLevel=1" class="enter-module-icon p1"><Icon v-if="addLevel=='1'" type="md-checkmark" /></div></Tooltip>
-                <Tooltip content="重要不紧急" placement="bottom" transfer><div @click="addLevel=2" class="enter-module-icon p2"><Icon v-if="addLevel=='2'" type="md-checkmark" /></div></Tooltip>
-                <Tooltip content="紧急不重要" placement="bottom" transfer><div @click="addLevel=3" class="enter-module-icon p3"><Icon v-if="addLevel=='3'" type="md-checkmark" /></div></Tooltip>
-                <Tooltip content="不重要不紧急" placement="bottom" transfer><div @click="addLevel=4" class="enter-module-icon p4"><Icon v-if="addLevel=='4'" type="md-checkmark" /></div></Tooltip>
+                <Tooltip :content="$L('重要且紧急')" placement="bottom" transfer><div @click="addLevel=1" class="enter-module-icon p1"><Icon v-if="addLevel=='1'" type="md-checkmark" /></div></Tooltip>
+                <Tooltip :content="$L('重要不紧急')" placement="bottom" transfer><div @click="addLevel=2" class="enter-module-icon p2"><Icon v-if="addLevel=='2'" type="md-checkmark" /></div></Tooltip>
+                <Tooltip :content="$L('紧急不重要')" placement="bottom" transfer><div @click="addLevel=3" class="enter-module-icon p3"><Icon v-if="addLevel=='3'" type="md-checkmark" /></div></Tooltip>
+                <Tooltip :content="$L('不重要不紧急')" placement="bottom" transfer><div @click="addLevel=4" class="enter-module-icon p4"><Icon v-if="addLevel=='4'" type="md-checkmark" /></div></Tooltip>
                 <div class="enter-module-flex"></div>
                 <Poptip placement="bottom" @on-popper-show="nameTipDisabled=true" @on-popper-hide="nameTipDisabled=false" transfer>
-                    <Tooltip :content="`负责人: ${addUsername||'自己'}`" placement="bottom" :disabled="nameTipDisabled">
+                    <Tooltip :content="`${$L('负责人')}: ${addUsername||$L('自己')}`" placement="bottom" :disabled="nameTipDisabled">
                         <div class="enter-module-icon user">
                             <img v-if="addUserimg" @error="addUserimg=''" :src="addUserimg"/>
                             <Icon v-else type="md-person" />
@@ -30,12 +30,12 @@
                     </Tooltip>
                     <div slot="content">
                         <div style="width:240px">
-                            选择负责人
-                            <UseridInput v-model="addUsername" :projectid="projectid" @change="changeUser" placeholder="留空默认: 自己" style="margin:5px 0 3px"></UseridInput>
+                            {{$L('选择负责人')}}
+                            <UseridInput v-model="addUsername" :projectid="projectid" @change="changeUser" :placeholder="$L('留空默认: 自己')" style="margin:5px 0 3px"></UseridInput>
                         </div>
                     </div>
                 </Poptip>
-                <Button class="enter-module-btn" type="info" size="small" @click="clickAdd">添加任务</Button>
+                <Button class="enter-module-btn" type="info" size="small" @click="clickAdd">{{$L('添加任务')}}</Button>
             </div>
         </div>
         <div v-if="loadIng > 0" class="load-box" @click.stop="">

@@ -11,8 +11,8 @@
                 <div class="header-menu" @click="handleClick('view')"><Icon type="md-eye" /></div>-->
                 <div class="header-menu" @click="handleClick('history')"><Icon type="md-time" /></div>
                 <div class="header-title">{{docDetail.title}}</div>
-                <div v-if="docDetail.type=='mind'" class="header-hint">选中节点，按enter键添加子节点，tab键添加同级节点</div>
-                <Button :disabled="(disabledBtn || loadIng > 0) && hid == 0" class="header-button" size="small" type="primary" @click="handleClick('save')">保存</Button>
+                <div v-if="docDetail.type=='mind'" class="header-hint">{{$L('选中节点，按enter键添加子节点，tab键添加同级节点')}}</div>
+                <Button :disabled="(disabledBtn || loadIng > 0) && hid == 0" class="header-button" size="small" type="primary" @click="handleClick('save')">{{$L('保存')}}</Button>
             </div>
             <div class="docs-body">
                 <t-editor v-if="docDetail.type=='document'" class="body-text" v-model="docContent.content" height="100%"></t-editor>
@@ -201,14 +201,14 @@
         },
         created() {
             this.historyColumns = [{
-                "title": "存档日期",
+                "title": this.$L("存档日期"),
                 "minWidth": 160,
                 "maxWidth": 200,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
             }, {
-                "title": "操作员",
+                "title": this.$L("操作员"),
                 "key": 'username',
                 "minWidth": 80,
                 "maxWidth": 130,
@@ -243,7 +243,7 @@
                                 this.docDrawerShow = false;
                             }
                         }
-                    }, '还原');
+                    }, this.$L('还原'));
                 }
             }];
         },
@@ -276,7 +276,7 @@
                 switch (act) {
                     case "menu":
                         if (!this.sectionNoDataText) {
-                            this.sectionNoDataText = "数据加载中.....";
+                            this.sectionNoDataText = this.$L("数据加载中.....");
                             let bookid = this.docDetail.bookid;
                             $A.aAjax({
                                 url: 'docs/section/lists',
@@ -287,7 +287,7 @@
                                     if (bookid != this.docDetail.bookid) {
                                         return;
                                     }
-                                    this.sectionNoDataText = "数据加载失败！";
+                                    this.sectionNoDataText = this.$L("数据加载失败！");
                                 },
                                 success: (res) => {
                                     if (bookid != this.docDetail.bookid) {
@@ -295,7 +295,7 @@
                                     }
                                     if (res.ret === 1) {
                                         this.sectionLists = res.data;
-                                        this.sectionNoDataText = "没有相关的数据";
+                                        this.sectionNoDataText = this.$L("没有相关的数据");
                                     }else{
                                         this.sectionLists = [];
                                         this.sectionNoDataText = res.msg;
@@ -307,7 +307,7 @@
 
                     case "history":
                         if (!this.historyNoDataText) {
-                            this.historyNoDataText = "数据加载中.....";
+                            this.historyNoDataText = this.$L("数据加载中.....");
                             let sid = this.getSid();
                             $A.aAjax({
                                 url: 'docs/section/history',
@@ -319,7 +319,7 @@
                                     if (sid != this.getSid()) {
                                         return;
                                     }
-                                    this.historyNoDataText = "数据加载失败！";
+                                    this.historyNoDataText = this.$L("数据加载失败！");
                                 },
                                 success: (res) => {
                                     if (sid != this.getSid()) {
@@ -327,7 +327,7 @@
                                     }
                                     if (res.ret === 1) {
                                         this.historyLists = res.data;
-                                        this.historyNoDataText = "没有相关的数据";
+                                        this.historyNoDataText = this.$L("没有相关的数据");
                                     }else{
                                         this.historyLists = [];
                                         this.historyNoDataText = res.msg;
@@ -399,14 +399,14 @@
                             return;
                         }
                         this.$Modal.confirm({
-                            title: '温馨提示',
-                            content: '是否放弃修改的内容返回？',
+                            title: this.$L('温馨提示'),
+                            content: this.$L('是否放弃修改的内容返回？'),
                             loading: true,
-                            cancelText: '放弃保存',
+                            cancelText: this.$L('放弃保存'),
                             onCancel: () => {
                                 this.goBack();
                             },
-                            okText: '保存并返回',
+                            okText: this.$L('保存并返回'),
                             onOk: () => {
                                 this.bakContent = $A.jsonStringify(this.docContent);
                                 $A.aAjax({
@@ -466,7 +466,7 @@
 
                     case "share":
                     case "view":
-                        this.$Message.info("敬请期待！");
+                        this.$Message.info(this.$L("敬请期待！"));
                         break;
 
                 }

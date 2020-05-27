@@ -2,7 +2,7 @@
     <drawer-tabs-container>
         <div class="project-complete">
             <!-- 按钮 -->
-            <Button :loading="loadIng > 0" type="primary" icon="md-add" @click="addUser">添加成员</Button>
+            <Button :loading="loadIng > 0" type="primary" icon="md-add" @click="addUser">{{$L('添加成员')}}</Button>
             <!-- 列表 -->
             <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
             <!-- 分页 -->
@@ -44,12 +44,13 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
             }
         },
         created() {
+            this.noDataText = this.$L("数据加载中.....");
             this.columns = [{
-                "title": "头像",
+                "title": this.$L("头像"),
                 "minWidth": 60,
                 "maxWidth": 100,
                 render: (h, params) => {
@@ -67,38 +68,38 @@
                     });
                 }
             }, {
-                "title": "昵称",
+                "title": this.$L("昵称"),
                 "minWidth": 80,
                 "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.nickname || '-');
                 }
             }, {
-                "title": "用户名",
+                "title": this.$L("用户名"),
                 "key": 'username',
                 "minWidth": 80,
                 "ellipsis": true,
             }, {
-                "title": "职位/职称",
+                "title": this.$L("职位/职称"),
                 "minWidth": 100,
                 "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.profession || '-');
                 }
             }, {
-                "title": "成员角色",
+                "title": this.$L("成员角色"),
                 "minWidth": 100,
                 render: (h, params) => {
-                    return h('span', params.row.isowner ? '项目负责人' : '成员');
+                    return h('span', params.row.isowner ? this.$L('项目负责人') : this.$L('成员'));
                 }
             }, {
-                "title": "加入时间",
+                "title": this.$L("加入时间"),
                 "width": 160,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.indate));
                 }
             }, {
-                "title": "操作",
+                "title": this.$L("操作"),
                 "key": 'action',
                 "width": 80,
                 "align": 'center',
@@ -114,8 +115,8 @@
                         on: {
                             click: () => {
                                 this.$Modal.confirm({
-                                    title: '移出成员',
-                                    content: '你确定要将此成员移出项目吗？',
+                                    title: this.$L('移出成员'),
+                                    content: this.$L('你确定要将此成员移出项目吗？'),
                                     loading: true,
                                     onOk: () => {
                                         $A.aAjax({
@@ -145,7 +146,7 @@
                                 });
                             }
                         }
-                    }, '删除');
+                    }, this.$L('删除'));
                 }
             }];
         },
@@ -190,11 +191,11 @@
                 if (this.projectid == 0) {
                     this.lists = [];
                     this.listTotal = 0;
-                    this.noDataText = "没有相关的数据";
+                    this.noDataText = this.$L("没有相关的数据");
                     return;
                 }
                 this.loadIng++;
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'project/users/lists',
                     data: {
@@ -206,13 +207,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
+                            this.noDataText = this.$L("没有相关的数据");
                         } else {
                             this.lists = [];
                             this.listTotal = 0;
@@ -233,13 +234,13 @@
                                     fontWeight: '500',
                                     marginBottom: '20px',
                                 }
-                            }, '添加成员'),
+                            }, this.$L('添加成员')),
                             h('UseridInput', {
                                 props: {
                                     value: this.userValue,
                                     multiple: true,
                                     noprojectid: this.projectid,
-                                    placeholder: '请输入昵称/用户名搜索'
+                                    placeholder: this.$L('请输入昵称/用户名搜索')
                                 },
                                 on: {
                                     input: (val) => {

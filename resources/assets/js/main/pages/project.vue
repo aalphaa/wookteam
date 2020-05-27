@@ -11,7 +11,7 @@
                     <div class="page-nav-left">
                         <span class="hover" @click="addShow=true"><i class="ft icon">&#xE740;</i> {{$L('新建项目')}}</span>
                         <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
-                        <div v-else class="page-nav-refresh"><em @click="getLists(true)">刷新</em></div>
+                        <div v-else class="page-nav-refresh"><em @click="getLists(true)">{{$L('刷新')}}</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -48,22 +48,22 @@
                             </div>
                         </div>
                         <div class="project-num" @click="handleProject('open', item)">
-                            <div class="project-complete"><em>{{item.complete}}</em>已完成数</div>
+                            <div class="project-complete"><em>{{item.complete}}</em>{{$L('已完成数')}}</div>
                             <div class="project-num-line"></div>
-                            <div class="project-unfinished"><em>{{item.unfinished}}</em>未完成数</div>
+                            <div class="project-unfinished"><em>{{item.unfinished}}</em>{{$L('未完成数')}}</div>
                         </div>
                         <div class="project-bottom">
                             <div class="project-iconbtn" @click.stop="handleProject('archived', item)">
                                 <Icon class="project-iconbtn-icon1" type="md-filing" size="24" />
-                                <div class="project-iconbtn-text">已归档任务</div>
+                                <div class="project-iconbtn-text">{{$L('已归档任务')}}</div>
                             </div>
                             <div class="project-iconbtn" @click.stop="handleProject('statistics', item)">
                                 <Icon class="project-iconbtn-icon3" type="md-stats" size="24" />
-                                <div class="project-iconbtn-text">项目统计</div>
+                                <div class="project-iconbtn-text">{{$L('项目统计')}}</div>
                             </div>
                             <div class="project-iconbtn" @click.stop="handleProject('member', item)">
                                 <Icon class="project-iconbtn-icon2" type="md-people" size="24" />
-                                <div class="project-iconbtn-text">成员管理</div>
+                                <div class="project-iconbtn-text">{{$L('成员管理')}}</div>
                             </div>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
                     </div>
                     <div v-if="formAdd.labels.length > 0" style="margin-top:4px;"></div>
                     <div style="margin-bottom:-16px">
-                        <Button icon="ios-add" type="dashed" @click="addLabels">添加流程</Button>
+                        <Button icon="ios-add" type="dashed" @click="addLabels">{{$L('添加流程')}}</Button>
                     </div>
                 </FormItem>
             </Form>
@@ -304,16 +304,7 @@
                 },
                 ruleAdd: {},
 
-                labelLists: [{
-                    label: '空白模板',
-                    value: [],
-                }, {
-                    label: '软件开发',
-                    value: ['产品规划','前端开发','后端开发','测试','发布','其它'],
-                }, {
-                    label: '产品开发',
-                    value: ['产品计划', '正在设计', '正在研发', '测试', '准备发布', '发布成功'],
-                }],
+                labelLists: [],
 
                 lists: [],
                 listPage: 1,
@@ -329,6 +320,16 @@
             }
         },
         created() {
+            this.labelLists = [{
+                label: this.$L('空白模板'),
+                value: [],
+            }, {
+                label: this.$L('软件开发'),
+                value: [this.$L('产品规划'),this.$L('前端开发'),this.$L('后端开发'),this.$L('测试'),this.$L('发布'),this.$L('其它')],
+            }, {
+                label: this.$L('产品开发'),
+                value: [this.$L('产品计划'), this.$L('正在设计'), this.$L('正在研发'), this.$L('测试'), this.$L('准备发布'), this.$L('发布成功')],
+            }];
             this.ruleAdd = {
                 title: [
                     { required: true, message: this.$L('请填写项目名称！'), trigger: 'change' },
@@ -432,12 +433,12 @@
                                     fontWeight: '500',
                                     marginBottom: '20px',
                                 }
-                            }, '添加流程'),
+                            }, this.$L('添加流程')),
                             h('Input', {
                                 props: {
                                     value: this.labelsValue,
                                     autofocus: true,
-                                    placeholder: '请输入流程名称，多个可用空格分隔。'
+                                    placeholder: this.$L('请输入流程名称，多个可用空格分隔。')
                                 },
                                 on: {
                                     input: (val) => {
@@ -549,12 +550,12 @@
                                     fontWeight: '500',
                                     marginBottom: '20px',
                                 }
-                            }, '重命名项目'),
+                            }, this.$L('重命名项目')),
                             h('Input', {
                                 props: {
                                     value: this.renameValue,
                                     autofocus: true,
-                                    placeholder: '请输入新的项目名称'
+                                    placeholder: this.$L('请输入新的项目名称')
                                 },
                                 on: {
                                     input: (val) => {
@@ -612,12 +613,12 @@
                                     fontWeight: '500',
                                     marginBottom: '20px',
                                 }
-                            }, '移交项目'),
+                            }, this.$L('移交项目')),
                             h('UseridInput', {
                                 props: {
                                     value: this.transferValue,
                                     nousername: item.username,
-                                    placeholder: '请输入昵称/用户名搜索'
+                                    placeholder: this.$L('请输入昵称/用户名搜索')
                                 },
                                 on: {
                                     input: (val) => {

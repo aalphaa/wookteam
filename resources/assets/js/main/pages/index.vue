@@ -376,8 +376,8 @@
                                     this.goForward({path: '/todo'}, true);
                                 } else {
                                     this.$Modal.error({
-                                        title: "温馨提示",
-                                        content: res.msg
+                                        title: this.$L("温馨提示"),
+                                        content: this.$L(res.msg)
                                     });
                                 }
                             }

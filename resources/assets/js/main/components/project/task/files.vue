@@ -6,17 +6,17 @@
             <Row v-if="!simple" class="sreachBox">
                 <div class="item">
                     <div class="item-2">
-                        <sreachTitle :val="keys.name">文件名</sreachTitle>
-                        <Input v-model="keys.name" placeholder="关键词"/>
+                        <sreachTitle :val="keys.name">{{$L('文件名')}}</sreachTitle>
+                        <Input v-model="keys.name" :placeholder="$L('关键词')"/>
                     </div>
                     <div class="item-2">
-                        <sreachTitle :val="keys.username">上传者</sreachTitle>
-                        <Input v-model="keys.username" placeholder="用户名"/>
+                        <sreachTitle :val="keys.username">{{$L('上传者')}}</sreachTitle>
+                        <Input v-model="keys.username" :placeholder="$L('用户名')"/>
                     </div>
                 </div>
                 <div class="item item-button">
-                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
-                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button type="primary">
+                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">{{$L('取消筛选')}}</Button>
+                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">{{$L('搜索')}}</Button type="primary">
                 </div>
             </Row>
 
@@ -34,7 +34,7 @@
                     :on-success="handleSuccess"
                     :on-format-error="handleFormatError"
                     :on-exceeded-size="handleMaxSize">
-                    <Button :loading="loadIng > 0" type="primary" icon="ios-cloud-upload-outline" @click="">上传文件</Button>
+                    <Button :loading="loadIng > 0" type="primary" icon="ios-cloud-upload-outline" @click="">{{$L('上传文件')}}</Button>
                 </Upload>
             </Row>
 
@@ -99,7 +99,7 @@
                 listPage: 1,
                 listTotal: 0,
                 lastPage: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
 
                 uploadFormat: ['jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'],
                 actionUrl: $A.aUrl('project/files/upload'),
@@ -109,6 +109,7 @@
         },
 
         created() {
+            this.noDataText = this.$L("数据加载中.....");
             let columns = [];
             columns.push({
                 "title": "",
@@ -136,7 +137,7 @@
                 }
             });
             columns.push({
-                "title": "文件名",
+                "title": this.$L("文件名"),
                 "key": 'name',
                 "minWidth": 100,
                 "tooltip": true,
@@ -158,7 +159,7 @@
                 },
             });
             columns.push({
-                "title": "大小",
+                "title": this.$L("大小"),
                 "key": 'size',
                 "minWidth": 90,
                 "maxWidth": 120,
@@ -170,21 +171,21 @@
             });
             if (!this.simple) {
                 columns.push({
-                    "title": "下载次数",
+                    "title": this.$L("下载次数"),
                     "key": 'download',
                     "align": "center",
                     "sortable": true,
                     "width": 100,
                 });
                 columns.push({
-                    "title": "上传者",
+                    "title": this.$L("上传者"),
                     "key": 'username',
                     "minWidth": 90,
                     "maxWidth": 130,
                     "sortable": true,
                 });
                 columns.push({
-                    "title": "上传时间",
+                    "title": this.$L("上传时间"),
                     "key": 'indate',
                     "width": 160,
                     "sortable": true,
@@ -204,7 +205,7 @@
                     }
                     return h('div', [
                         h('Tooltip', {
-                            props: { content: '下载', transfer: true, delay: 600 },
+                            props: { content: this.$L('下载'), transfer: true, delay: 600 },
                             style: { position: 'relative' },
                         }, [h('Icon', {
                             props: { type: 'md-arrow-down', size: 16 },
@@ -223,7 +224,7 @@
                             }
                         })]),
                         h('Tooltip', {
-                            props: { content: '重命名', transfer: true, delay: 600 }
+                            props: { content: this.$L('重命名'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-create', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
@@ -234,7 +235,7 @@
                             }
                         })]),
                         h('Tooltip', {
-                            props: { content: '复制链接', transfer: true, delay: 600 }
+                            props: { content: this.$L('复制链接'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-link', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer', transform: 'rotate(-45deg)' },
@@ -249,7 +250,7 @@
                             }
                         })]),
                         h('Tooltip', {
-                            props: { content: '删除', transfer: true, delay: 600 }
+                            props: { content: this.$L('删除'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-trash', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
@@ -334,7 +335,7 @@
                 if (this.projectid == 0 && this.taskid == 0) {
                     this.lists = [];
                     this.listTotal = 0;
-                    this.noDataText = "没有相关的文件";
+                    this.noDataText = this.$L("没有相关的文件");
                     return;
                 }
                 this.loadIng++;
@@ -344,7 +345,7 @@
                 whereData.projectid = this.projectid;
                 whereData.taskid = this.taskid;
                 whereData.sorts = this.sorts;
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'project/files/lists',
                     data: whereData,
@@ -352,14 +353,14 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
                             this.lastPage = res.data.lastPage;
-                            this.noDataText = "没有相关的文件";
+                            this.noDataText = this.$L("没有相关的文件");
                         } else {
                             this.lists = [];
                             this.listTotal = 0;
@@ -381,12 +382,12 @@
                                     fontWeight: '500',
                                     marginBottom: '20px',
                                 }
-                            }, '重命名文件名'),
+                            }, this.$L('重命名文件名')),
                             h('Input', {
                                 props: {
                                     value: this.renameValue,
                                     autofocus: true,
-                                    placeholder: item.name || '请输入新的文件名称'
+                                    placeholder: item.name || this.$L('请输入新的文件名称')
                                 },
                                 on: {
                                     input: (val) => {
@@ -435,8 +436,8 @@
 
             deleteFile(item) {
                 this.$Modal.confirm({
-                    title: '删除文件',
-                    content: '你确定要删除此文件吗？',
+                    title: this.$L('删除文件'),
+                    content: this.$L('你确定要删除此文件吗？'),
                     loading: true,
                     onOk: () => {
                         $A.aAjax({
@@ -485,8 +486,8 @@
                     this.$emit('change', 'add');
                 } else {
                     this.$Modal.warning({
-                        title: '上传失败',
-                        content: '文件 ' + file.name + ' 上传失败，' + res.msg
+                        title: this.$L('上传失败'),
+                        content: this.$L('文件') + ' ' + file.name + ' ' + this.$L('上传失败，') + res.msg
                     });
                     this.$refs.upload.fileList.pop();
                     this.lists.some((item, index) => {
@@ -503,16 +504,16 @@
             handleFormatError (file) {
                 //上传类型错误
                 this.$Modal.warning({
-                    title: '文件格式不正确',
-                    content: '文件 ' + file.name + ' 格式不正确，仅支持上传：' + this.uploadFormat.join(',') + '。'
+                    title: this.$L('文件格式不正确'),
+                    content: this.$L('文件') + ' ' + file.name + ' ' + this.$L('格式不正确，仅支持上传：') + this.uploadFormat.join(',')
                 });
             },
 
             handleMaxSize (file) {
                 //上传大小错误
                 this.$Modal.warning({
-                    title: '超出文件大小限制',
-                    content: '文件 ' + file.name + ' 太大，不能超过 2M。'
+                    title: this.$L('超出文件大小限制'),
+                    content: this.$L('文件') + ' ' + file.name + ' ' + this.$L('太大，不能超过') + ' 2M'
                 });
             },
         }

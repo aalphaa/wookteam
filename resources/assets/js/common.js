@@ -1359,8 +1359,7 @@
             //
             if (typeof params.header !== 'object') params.header = {};
             params.header['Content-Type'] = 'application/json';
-            // params.header['platform'] = 'wap';
-            // params.header['release'] = '1.0.0';
+            params.header['language'] = window.localStorage['__language:type__'] || 'zh';
             params.header['token'] = $A.token();
             //渠道
             let channel = $A.hashParameter('channel');

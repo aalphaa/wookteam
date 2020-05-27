@@ -5,25 +5,25 @@
             <Row class="sreachBox">
                 <div class="item">
                     <div class="item-3">
-                        <sreachTitle :val="keys.username">发送人</sreachTitle>
-                        <Input v-model="keys.username" placeholder="用户名"/>
+                        <sreachTitle :val="keys.username">{{$L('发送人')}}</sreachTitle>
+                        <Input v-model="keys.username" :placeholder="$L('用户名')"/>
                     </div>
                     <div class="item-3">
-                        <sreachTitle :val="keys.type">类型</sreachTitle>
-                        <Select v-model="keys.type" placeholder="全部">
-                            <Option value="">全部</Option>
-                            <Option value="日报">日报</Option>
-                            <Option value="周报">周报</Option>
+                        <sreachTitle :val="keys.type">{{$L('类型')}}</sreachTitle>
+                        <Select v-model="keys.type" :placeholder="$L('全部')">
+                            <Option value="">{{$L('全部')}}</Option>
+                            <Option value="日报">{{$L('日报')}}</Option>
+                            <Option value="周报">{{$L('周报')}}</Option>
                         </Select>
                     </div>
                     <div class="item-3">
-                        <sreachTitle :val="keys.indate">日期</sreachTitle>
-                        <Date-picker v-model="keys.indate" type="daterange" placement="bottom" placeholder="日期范围"></Date-picker>
+                        <sreachTitle :val="keys.indate">{{$L('日期')}}</sreachTitle>
+                        <Date-picker v-model="keys.indate" type="daterange" placement="bottom" :placeholder="$L('日期范围')"></Date-picker>
                     </div>
                 </div>
                 <div class="item item-button">
-                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
-                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button>
+                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">{{$L('取消筛选')}}</Button>
+                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">{{$L('搜索')}}</Button>
                 </div>
             </Row>
 
@@ -85,34 +85,36 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
 
                 contentShow: false,
                 contentTitle: '',
-                contentText: '内容加载中.....',
+                contentText: '',
             }
         },
 
         created() {
+            this.noDataText = this.$L("数据加载中.....");
+            this.contentText = this.$L("内容加载中.....");
             this.columns = [{
-                "title": "标题",
+                "title": this.$L("标题"),
                 "key": 'title',
                 "sortable": true,
                 "minWidth": 120,
             }, {
-                "title": "发送人",
+                "title": this.$L("发送人"),
                 "key": 'username',
                 "sortable": true,
                 "minWidth": 80,
                 "maxWidth": 130,
             }, {
-                "title": "类型",
+                "title": this.$L("类型"),
                 "key": 'type',
                 "minWidth": 80,
                 "maxWidth": 120,
                 "align": 'center',
             }, {
-                "title": "创建日期",
+                "title": this.$L("创建日期"),
                 "minWidth": 160,
                 "maxWidth": 200,
                 "align": 'center',
@@ -128,7 +130,7 @@
                 render: (h, params) => {
                     return h('div', [
                         h('Tooltip', {
-                            props: { content: '查看', transfer: true, delay: 600 },
+                            props: { content: this.$L('查看'), transfer: true, delay: 600 },
                             style: { position: 'relative' },
                         }, [h('Icon', {
                             props: { type: 'md-eye', size: 16 },
@@ -194,7 +196,7 @@
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.sorts = $A.cloneData(this.sorts);
                 this.loadIng++;
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'report/receive',
                     data: whereData,
@@ -202,13 +204,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
+                            this.noDataText = this.$L("没有相关的数据");
                         } else {
                             this.lists = [];
                             this.listTotal = 0;
@@ -221,11 +223,11 @@
             contentReport(row) {
                 this.contentShow = true;
                 this.contentTitle = row.title;
-                this.contentText = '详细内容加载中.....';
+                this.contentText = this.$L('详细内容加载中.....');
                 $A.aAjax({
                     url: 'report/content?id=' + row.id,
                     error: () => {
-                        alert(this.$L('网络繁忙，请稍后再试！'));
+                        alert(this.$L(this.$L('网络繁忙，请稍后再试！')));
                         this.contentShow = false;
                     },
                     success: (res) => {

@@ -46,27 +46,28 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
             }
         },
         created() {
+            this.noDataText = this.$L("数据加载中.....");
             this.columns = [{
-                "title": "任务名称",
+                "title": this.$L("任务名称"),
                 "key": 'title',
                 "minWidth": 120,
                 render: (h, params) => {
                     return this.renderTaskTitle(h, params);
                 }
             }, {
-                "title": "创建人",
+                "title": this.$L("创建人"),
                 "key": 'createuser',
                 "minWidth": 80,
             }, {
-                "title": "负责人",
+                "title": this.$L("负责人"),
                 "key": 'username',
                 "minWidth": 80,
             }, {
-                "title": "完成时间",
+                "title": this.$L("完成时间"),
                 "width": 160,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.completedate));
@@ -150,7 +151,7 @@
                     this.listPage = 1;
                 }
                 this.loadIng++;
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: {
@@ -162,13 +163,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
+                            this.noDataText = this.$L("没有相关的数据");
                         } else {
                             this.lists = [];
                             this.listTotal = 0;

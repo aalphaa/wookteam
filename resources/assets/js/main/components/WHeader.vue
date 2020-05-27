@@ -14,7 +14,6 @@
                     </li>
                 </ul>
             </div>
-            <div class="w-header-row-flex"></div>
             <div class="w-header-row-right">
                 <Dropdown class="right-info" trigger="click" @on-click="setRightSelect" placement="bottom-end" transfer>
                    <div>
@@ -127,7 +126,7 @@
             z-index: 10;
             margin: 0 32px;
             .w-header-row-left {
-                max-width: 50%;
+                flex: 1;
                 white-space: nowrap;
                 overflow: hidden;
                 overflow-x: auto;
@@ -153,9 +152,6 @@
                 li:hover, li.active {
                     background: #0277c0;
                 }
-            }
-            .w-header-row-flex {
-                flex: 1;
             }
             .w-header-row-right {
                 white-space: nowrap;

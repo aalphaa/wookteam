@@ -11,7 +11,7 @@
                     <div class="page-nav-left">
                         <span><i class="ft icon">&#xE787;</i> {{$L('我的待办')}}</span>
                         <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
-                        <div v-else class="page-nav-refresh"><em @click="refreshTask">刷新</em></div>
+                        <div v-else class="page-nav-refresh"><em @click="refreshTask">{{$L('刷新')}}</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -58,10 +58,10 @@
                                         <Icon v-if="task.complete" class="task-check" type="md-checkbox-outline" @click.stop="taskComplete(task, false)"/>
                                         <Icon v-else class="task-check" type="md-square-outline" @click.stop="taskComplete(task, true)"/>
                                         <div v-if="!!task.loadIng" class="task-loading"><w-loading></w-loading></div>
-                                        <div v-if="task.overdue" class="task-overdue">[超期]</div>
+                                        <div v-if="task.overdue" class="task-overdue">[{{$L('超期')}}]</div>
                                         <div class="task-title">{{task.title}}</div>
                                     </div>
-                                    <div v-if="taskDatas[index].hasMorePages === true" class="content-li more" @click="getTaskLists(index, true)">加载更多</div>
+                                    <div v-if="taskDatas[index].hasMorePages === true" class="content-li more" @click="getTaskLists(index, true)">{{$L('加载更多')}}</div>
                                 </draggable>
                                 <div v-else-if="taskDatas[index].loadIng == 0" class="content-empty">{{$L('恭喜你！已完成了所有待办')}}</div>
                                 <div v-if="taskDatas[index].loadIng > 0" class="content-loading"><w-loading></w-loading></div>
@@ -479,13 +479,13 @@
             pTitle(p) {
                 switch (p) {
                     case "1":
-                        return "重要且紧急";
+                        return this.$L("重要且紧急");
                     case "2":
-                        return "重要不紧急";
+                        return this.$L("重要不紧急");
                     case "3":
-                        return "紧急不重要";
+                        return this.$L("紧急不重要");
                     case "4":
-                        return "不重要不紧急";
+                        return this.$L("不重要不紧急");
                 }
             },
 

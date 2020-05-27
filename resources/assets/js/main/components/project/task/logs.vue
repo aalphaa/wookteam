@@ -3,7 +3,7 @@
         <div class="project-task-logs">
             <ul class="logs-activity" :class="`${taskid>0?'istaskid':''}`">
                 <li v-for="items in lists">
-                    <div class="logs-date">{{items | logDate}}</div>
+                    <div class="logs-date">{{logDate(items)}}</div>
                     <div class="logs-section">
                         <Timeline>
                             <TimelineItem v-for="(item, index) in items.lists" :key="index">
@@ -21,8 +21,8 @@
                     </div>
                 </li>
                 <li v-if="loadIng > 0" class="logs-loading"><w-loading></w-loading></li>
-                <li v-else-if="hasMorePages" class="logs-more" @click="getMore">加载更多</li>
-                <li v-else-if="totalNum == 0" class="logs-none" @click="getLists(true)">没有相关{{['日志', '评论'].indexOf(logtype)===-1?'数据':logtype}}</li>
+                <li v-else-if="hasMorePages" class="logs-more" @click="getMore">{{$L('加载更多')}}</li>
+                <li v-else-if="totalNum == 0" class="logs-none" @click="getLists(true)">{{$L('没有相关内容')}}</li>
             </ul>
         </div>
     </drawer-tabs-container>
@@ -162,13 +162,6 @@
             }
         },
 
-        filters: {
-            logDate(items) {
-                let md = $A.formatDate("m-d");
-                return md == items.ymd ? (items.ymd + ' 今天') : items.key;
-            }
-        },
-
         watch: {
             projectid() {
                 if (this.loadYet) {
@@ -197,6 +190,11 @@
         },
 
         methods: {
+            logDate(items) {
+                let md = $A.formatDate("m-d");
+                return md == items.ymd ? (items.ymd + ' ' + this.$L('今天')) : items.key;
+            },
+
             getLists(resetLoad, noLoading) {
                 if (resetLoad === true) {
                     this.listPage = 1;

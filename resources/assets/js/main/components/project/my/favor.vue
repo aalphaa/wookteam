@@ -43,12 +43,13 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
             }
         },
         created() {
+            this.noDataText = this.$L("数据加载中.....");
             this.columns = [{
-                "title": "项目名称",
+                "title": this.$L("项目名称"),
                 "key": 'title',
                 "minWidth": 100,
                 render: (h, params) => {
@@ -64,13 +65,13 @@
                     }, params.row.title);
                 },
             }, {
-                "title": "收藏时间",
+                "title": this.$L("收藏时间"),
                 "minWidth": 160,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.uindate));
                 }
             }, {
-                "title": "操作",
+                "title": this.$L("操作"),
                 "key": 'action',
                 "width": 80,
                 "align": 'center',
@@ -86,8 +87,8 @@
                         on: {
                             click: () => {
                                 this.$Modal.confirm({
-                                    title: '取消收藏',
-                                    content: '你确定要取消收藏此项目吗？',
+                                    title: this.$L('取消收藏'),
+                                    content: this.$L('你确定要取消收藏此项目吗？'),
                                     loading: true,
                                     onOk: () => {
                                         this.favorProject('cancel', params.row.id, () => {
@@ -97,7 +98,7 @@
                                 });
                             }
                         }
-                    }, '取消');
+                    }, this.$L('取消'));
                 }
             }];
         },
@@ -135,7 +136,7 @@
                     this.listPage = 1;
                 }
                 this.loadIng++;
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'project/lists',
                     data: {
@@ -147,13 +148,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
+                            this.noDataText = this.$L("没有相关的数据");
                         } else {
                             this.lists = [];
                             this.listTotal = 0;

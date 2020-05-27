@@ -11,7 +11,7 @@
                     <div class="page-nav-left">
                         <span><i class="ft icon">&#xE90D;</i> {{$L('团队成员')}}</span>
                         <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
-                        <div v-else class="page-nav-refresh"><em @click="getLists(true)">刷新</em></div>
+                        <div v-else class="page-nav-refresh"><em @click="getLists(true)">{{$L('刷新')}}</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
@@ -104,7 +104,7 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
 
                 addShow: false,
                 formAdd: {
@@ -119,8 +119,9 @@
         },
         created() {
             let isAdmin = $A.identity('admin');
+            this.noDataText = this.$L("数据加载中.....");
             this.columns = [{
-                "title": "头像",
+                "title": this.$L("头像"),
                 "minWidth": 60,
                 "maxWidth": 100,
                 render: (h, params) => {
@@ -138,32 +139,32 @@
                     });
                 }
             }, {
-                "title": "昵称",
+                "title": this.$L("昵称"),
                 "minWidth": 80,
                 "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.nickname || '-');
                 }
             }, {
-                "title": "用户名",
+                "title": this.$L("用户名"),
                 "key": 'username',
                 "minWidth": 80,
                 "ellipsis": true,
             }, {
-                "title": "职位/职称",
+                "title": this.$L("职位/职称"),
                 "minWidth": 100,
                 "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.profession || '-');
                 }
             }, {
-                "title": "加入时间",
+                "title": this.$L("加入时间"),
                 "width": 160,
                 render: (h, params) => {
                     return h('span', $A.formatDate("Y-m-d H:i:s", params.row.regdate));
                 }
             }, {
-                "title": "操作",
+                "title": this.$L("操作"),
                 "key": 'action',
                 "width": isAdmin ? 160 : 80,
                 "align": 'center',
@@ -180,12 +181,12 @@
                         on: {
                             click: () => {
                                 this.$Modal.info({
-                                    title: '会员信息',
-                                    content: `<p>昵称: ${params.row.nickname || '-'}</p><p>职位/职称: ${params.row.profession || '-'}</p>`
+                                    title: this.$L('会员信息'),
+                                    content: `<p>${this.$L('昵称')}: ${params.row.nickname || '-'}</p><p>${this.$L('职位/职称')}: ${params.row.profession || '-'}</p>`
                                 });
                             }
                         }
-                    }, '查看'));
+                    }, this.$L('查看')));
                     if (isAdmin) {
                         array.push(h('Button', {
                             props: {
@@ -199,8 +200,8 @@
                             on: {
                                 click: () => {
                                     this.$Modal.confirm({
-                                        title: '删除团队成员',
-                                        content: '你确定要删除此团队成员吗？',
+                                        title: this.$L('删除团队成员'),
+                                        content: this.$L('你确定要删除此团队成员吗？'),
                                         loading: true,
                                         onOk: () => {
                                             $A.aAjax({
@@ -225,7 +226,7 @@
                                     });
                                 }
                             }
-                        }, '删除'));
+                        }, this.$L('删除')));
                     }
                     return h('div', array);
                 }
@@ -272,7 +273,7 @@
                     this.listPage = 1;
                 }
                 this.loadIng++;
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'users/team/lists',
                     data: {
@@ -283,13 +284,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
+                            this.noDataText = this.$L("没有相关的数据");
                         }else{
                             this.lists = [];
                             this.listTotal = 0;

@@ -6,22 +6,22 @@
             <Row class="sreachBox">
                 <div class="item">
                     <div class="item-4">
-                        <sreachTitle :val="keys.type">状态</sreachTitle>
-                        <Select v-model="keys.type" placeholder="全部">
-                            <Option value="">全部</Option>
-                            <Option value="未完成">未完成</Option>
-                            <Option value="已超期">已超期</Option>
-                            <Option value="已完成">已完成</Option>
+                        <sreachTitle :val="keys.type">{{$L('状态')}}</sreachTitle>
+                        <Select v-model="keys.type" :placeholder="$L('全部')">
+                            <Option value="">{{$L('全部')}}</Option>
+                            <Option value="未完成">{{$L('未完成')}}</Option>
+                            <Option value="已超期">{{$L('已超期')}}</Option>
+                            <Option value="已完成">{{$L('已完成')}}</Option>
                         </Select>
                     </div>
                     <div class="item-4">
-                        <sreachTitle :val="keys.username">负责人</sreachTitle>
-                        <Input v-model="keys.username" placeholder="用户名"/>
+                        <sreachTitle :val="keys.username">{{$L('负责人')}}</sreachTitle>
+                        <Input v-model="keys.username" :placeholder="$L('用户名')"/>
                     </div>
                     <div class="item-4">
-                        <sreachTitle :val="keys.level">级别</sreachTitle>
-                        <Select v-model="keys.level" placeholder="全部">
-                            <Option value="">全部</Option>
+                        <sreachTitle :val="keys.level">{{$L('级别')}}</sreachTitle>
+                        <Select v-model="keys.level" :placeholder="$L('全部')">
+                            <Option value="">{{$L('全部')}}</Option>
                             <Option value="1">P1</Option>
                             <Option value="2">P2</Option>
                             <Option value="3">P3</Option>
@@ -29,9 +29,9 @@
                         </Select>
                     </div>
                     <div class="item-4">
-                        <sreachTitle :val="keys.labelid">阶段</sreachTitle>
-                        <Select v-model="keys.labelid" placeholder="全部">
-                            <Option value="">全部</Option>
+                        <sreachTitle :val="keys.labelid">{{$L('阶段')}}</sreachTitle>
+                        <Select v-model="keys.labelid" :placeholder="$L('全部')">
+                            <Option value="">{{$L('全部')}}</Option>
                             <Option
                                 v-for="item in labelLists"
                                 :value="item.id"
@@ -40,8 +40,8 @@
                     </div>
                 </div>
                 <div class="item item-button">
-                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
-                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button>
+                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">{{$L('取消筛选')}}</Button>
+                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">{{$L('搜索')}}</Button>
                 </div>
             </Row>
 
@@ -102,20 +102,21 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
             }
         },
 
         created() {
+            this.noDataText = this.$L("数据加载中.....");
             this.columns = [{
-                "title": "任务名称",
+                "title": this.$L("任务名称"),
                 "key": 'title',
                 "minWidth": 120,
                 render: (h, params) => {
                     return this.renderTaskTitle(h, params);
                 }
             }, {
-                "title": "阶段",
+                "title": this.$L("阶段"),
                 "key": 'labelid',
                 "minWidth": 80,
                 "sortable": true,
@@ -125,7 +126,7 @@
                     return h('span', labelDetail ? labelDetail.title : labelid);
                 }
             }, {
-                "title": "计划时间",
+                "title": this.$L("计划时间"),
                 "key": 'enddate',
                 "width": 160,
                 "align": "center",
@@ -145,12 +146,12 @@
                     ]);
                 }
             }, {
-                "title": "负责人",
+                "title": this.$L("负责人"),
                 "key": 'username',
                 "minWidth": 90,
                 "sortable": true,
             }, {
-                "title": "优先级",
+                "title": this.$L("优先级"),
                 "key": 'level',
                 "align": "center",
                 "minWidth": 90,
@@ -180,7 +181,7 @@
                     }, "P" + level);
                 },
             }, {
-                "title": "状态",
+                "title": this.$L("状态"),
                 "key": 'type',
                 "align": "center",
                 "minWidth": 80,
@@ -191,13 +192,13 @@
                     let status;
                     if (params.row.overdue) {
                         color = "#ff0000";
-                        status = "已超期";
+                        status = this.$L("已超期");
                     } else if (params.row.complete) {
                         color = "";
-                        status = "已完成";
+                        status = this.$L("已完成");
                     } else {
                         color = "#19be6b";
-                        status = "未完成";
+                        status = this.$L("未完成");
                     }
                     return h('span', {
                         style: {
@@ -206,7 +207,7 @@
                     }, status);
                 },
             }, {
-                "title": "创建时间",
+                "title": this.$L("创建时间"),
                 "key": 'indate',
                 "width": 160,
                 "sortable": true,
@@ -306,7 +307,7 @@
                 if (this.projectid == 0) {
                     this.lists = [];
                     this.listTotal = 0;
-                    this.noDataText = "没有相关的数据";
+                    this.noDataText = this.$L("没有相关的数据");
                     return;
                 }
                 this.loadIng++;
@@ -315,7 +316,7 @@
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.projectid = this.projectid;
                 whereData.sorts = $A.cloneData(this.sorts);
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'project/task/lists',
                     data: whereData,
@@ -323,13 +324,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
+                            this.noDataText = this.$L("没有相关的数据");
                         } else {
                             this.lists = [];
                             this.listTotal = 0;

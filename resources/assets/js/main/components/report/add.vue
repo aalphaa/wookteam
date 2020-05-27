@@ -3,21 +3,21 @@
         <div class="report-add">
             <div class="add-header">
                 <div class="add-title">
-                    <Input v-model="dataDetail.title" placeholder="汇报标题"></Input>
+                    <Input v-model="dataDetail.title" :placeholder="$L('汇报标题')"></Input>
                 </div>
                 <ButtonGroup>
-                    <Button :disabled="id > 0" :type="`${type=='日报'?'primary':'default'}`" @click="type='日报'">日报</Button>
-                    <Button :disabled="id > 0" :type="`${type=='周报'?'primary':'default'}`" @click="type='周报'">周报</Button>
+                    <Button :disabled="id > 0" :type="`${type=='日报'?'primary':'default'}`" @click="type='日报'">{{$L('日报')}}</Button>
+                    <Button :disabled="id > 0" :type="`${type=='周报'?'primary':'default'}`" @click="type='周报'">{{$L('周报')}}</Button>
                 </ButtonGroup>
             </div>
             <t-editor class="add-edit" v-model="dataDetail.content" height="100%"></t-editor>
             <div class="add-input">
-                <userid-input v-model="dataDetail.ccuser" placeholder="输入关键词搜索" multiple><span slot="prepend">抄送人</span></userid-input>
+                <userid-input v-model="dataDetail.ccuser" :placeholder="$L('输入关键词搜索')" multiple><span slot="prepend">{{$L('抄送人')}}</span></userid-input>
             </div>
             <div class="add-footer">
-                <Button :loading="loadIng > 0" type="primary" @click="handleSubmit" style="margin-right:6px">保 存</Button>
-                <Button v-if="dataDetail.status=='已发送'" :loading="loadIng > 0" type="success" icon="md-checkmark-circle-outline" ghost @click="handleSubmit(true)">已发送</Button>
-                <Button v-else :loading="loadIng > 0" @click="handleSubmit(true)">保存并发送</Button>
+                <Button :loading="loadIng > 0" type="primary" @click="handleSubmit" style="margin-right:6px">{{$L('保存')}}</Button>
+                <Button v-if="dataDetail.status=='已发送'" :loading="loadIng > 0" type="success" icon="md-checkmark-circle-outline" ghost @click="handleSubmit(true)">{{$L('已发送')}}</Button>
+                <Button v-else :loading="loadIng > 0" @click="handleSubmit(true)">{{$L('保存并发送')}}</Button>
             </div>
         </div>
     </drawer-tabs-container>
@@ -85,13 +85,17 @@
 
                 dataDetail: {
                     title: '',
-                    content: '数据加载中.....',
+                    content: '',
                     ccuser: '',
                     status: '',
                 },
 
                 type: '日报'
             }
+        },
+
+        created() {
+            this.dataDetail.content = this.$L('数据加载中.....')
         },
 
         mounted() {

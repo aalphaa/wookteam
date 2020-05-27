@@ -11,15 +11,15 @@
                     <div class="page-nav-left">
                         <span class="bold">{{projectDetail.title}}</span>
                         <div v-if="loadIng > 0" class="page-nav-loading"><w-loading></w-loading></div>
-                        <div v-else class="page-nav-refresh"><em @click="getDetail(true)">刷新</em></div>
+                        <div v-else class="page-nav-refresh"><em @click="getDetail(true)">{{$L('刷新')}}</em></div>
                     </div>
                 </div>
                 <div class="w-nav-flex"></div>
                 <div class="w-nav-right">
-                    <span class="ft hover" @click="openProjectDrawer('lists')"><i class="ft icon">&#xE89E;</i> 任务列表</span>
-                    <span class="ft hover" @click="openProjectDrawer('files')"><i class="ft icon">&#xE701;</i> 文件列表</span>
-                    <span class="ft hover" @click="openProjectDrawer('logs')"><i class="ft icon">&#xE753;</i> 项目动态</span>
-                    <span class="ft hover" @click="openProjectSettingDrawer('archived')"><i class="ft icon">&#xE7A7;</i> 设置</span>
+                    <span class="ft hover" @click="openProjectDrawer('lists')"><i class="ft icon">&#xE89E;</i> {{$L('任务列表')}}</span>
+                    <span class="ft hover" @click="openProjectDrawer('files')"><i class="ft icon">&#xE701;</i> {{$L('文件列表')}}</span>
+                    <span class="ft hover" @click="openProjectDrawer('logs')"><i class="ft icon">&#xE753;</i> {{$L('项目动态')}}</span>
+                    <span class="ft hover" @click="openProjectSettingDrawer('archived')"><i class="ft icon">&#xE7A7;</i> {{$L('设置')}}</span>
                 </div>
             </div>
         </div>
@@ -67,22 +67,22 @@
                                     ]" @click="openTaskModal(task)">
                                     <div class="task-title">{{task.title}}</div>
                                     <div class="task-more">
-                                        <div v-if="task.overdue" class="task-status">已超期</div>
-                                        <div v-else-if="task.complete" class="task-status">已完成</div>
-                                        <div v-else class="task-status">未完成</div>
+                                        <div v-if="task.overdue" class="task-status">{{$L('已超期')}}</div>
+                                        <div v-else-if="task.complete" class="task-status">{{$L('已完成')}}</div>
+                                        <div v-else class="task-status">{{$L('未完成')}}</div>
                                         <Tooltip class="task-userimg" :content="task.nickname || task.username" transfer><img :src="task.userimg"/></Tooltip>
                                     </div>
                                 </div>
                             </div>
                             <div slot="footer">
-                                <project-add-task :placeholder='`添加任务至"${label.title}"`' :projectid="label.projectid" :labelid="label.id" @on-add-success="addTaskSuccess($event, label)"></project-add-task>
+                                <project-add-task :placeholder='`${$L("添加任务至")}"${label.title}"`' :projectid="label.projectid" :labelid="label.id" @on-add-success="addTaskSuccess($event, label)"></project-add-task>
                             </div>
                         </draggable>
                     </div>
                 </div>
                 <div v-if="loadDetailed" slot="footer" class="label-item label-create" @click="addLabel">
                     <div class="label-body">
-                        <div class="trigger-box ft hover"><i class="ft icon">&#xE8C8;</i>添加一个新列表</div>
+                        <div class="trigger-box ft hover"><i class="ft icon">&#xE8C8;</i>{{$L('添加一个新列表')}}</div>
                     </div>
                 </div>
             </draggable>
@@ -525,12 +525,12 @@
                                     fontWeight: '500',
                                     marginBottom: '20px',
                                 }
-                            }, '重命名列表'),
+                            }, this.$L('重命名列表')),
                             h('Input', {
                                 props: {
                                     value: this.renameValue,
                                     autofocus: true,
-                                    placeholder: '请输入新的列表名称'
+                                    placeholder: this.$L('请输入新的列表名称')
                                 },
                                 on: {
                                     input: (val) => {
@@ -579,10 +579,10 @@
             },
 
             deleteLabel(item) {
-                let redTip = item.taskLists.length > 0 ? '<div style="color:red;font-weight:500">注：将同时删除列表下所有任务</div>' : '';
+                let redTip = item.taskLists.length > 0 ? ('<div style="color:red;font-weight:500">' + this.$L('注：将同时删除列表下所有任务') + '</div>') : '';
                 this.$Modal.confirm({
-                    title: '删除列表',
-                    content: '<div>你确定要删除此列表吗？</div>' + redTip,
+                    title: this.$L('删除列表'),
+                    content: '<div>' + this.$L('你确定要删除此列表吗？') + '</div>' + redTip,
                     loading: true,
                     onOk: () => {
                         $A.aAjax({
@@ -629,12 +629,12 @@
                                     fontWeight: '500',
                                     marginBottom: '20px',
                                 }
-                            }, '添加列表'),
+                            }, this.$L('添加列表')),
                             h('Input', {
                                 props: {
                                     value: this.labelValue,
                                     autofocus: true,
-                                    placeholder: '请输入列表名称'
+                                    placeholder: this.$L('请输入列表名称')
                                 },
                                 on: {
                                     input: (val) => {

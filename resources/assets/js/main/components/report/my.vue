@@ -5,26 +5,26 @@
             <Row class="sreachBox">
                 <div class="item">
                     <div class="item-2">
-                        <sreachTitle :val="keys.type">类型</sreachTitle>
-                        <Select v-model="keys.type" placeholder="全部">
-                            <Option value="">全部</Option>
-                            <Option value="日报">日报</Option>
-                            <Option value="周报">周报</Option>
+                        <sreachTitle :val="keys.type">{{$L('类型')}}</sreachTitle>
+                        <Select v-model="keys.type" :placeholder="$L('全部')">
+                            <Option value="">{{$L('全部')}}</Option>
+                            <Option value="日报">{{$L('日报')}}</Option>
+                            <Option value="周报">{{$L('周报')}}</Option>
                         </Select>
                     </div>
                     <div class="item-2">
-                        <sreachTitle :val="keys.indate">日期</sreachTitle>
-                        <Date-picker v-model="keys.indate" type="daterange" placement="bottom" placeholder="日期范围"></Date-picker>
+                        <sreachTitle :val="keys.indate">{{$L('日期')}}</sreachTitle>
+                        <Date-picker v-model="keys.indate" type="daterange" placement="bottom" :placeholder="$L('日期范围')"></Date-picker>
                     </div>
                 </div>
                 <div class="item item-button">
-                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">取消筛选</Button>
-                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">搜索</Button>
+                    <Button type="text" v-if="$A.objImplode(keys)!=''" @click="sreachTab(true)">{{$L('取消筛选')}}</Button>
+                    <Button type="primary" icon="md-search" :loading="loadIng > 0" @click="sreachTab">{{$L('搜索')}}</Button>
                 </div>
             </Row>
             <!-- 按钮 -->
             <Row class="butBox" style="float:left;margin-top:-32px;">
-                <Button :loading="loadIng > 0" type="primary" icon="md-add" @click="[addDrawerId=0,addDrawerShow=true]">新建汇报</Button>
+                <Button :loading="loadIng > 0" type="primary" icon="md-add" @click="[addDrawerId=0,addDrawerShow=true]">{{$L('新建汇报')}}</Button>
             </Row>
             <!-- 列表 -->
             <Table class="tableFill" ref="tableRef" :columns="columns" :data="lists" :loading="loadIng > 0" :no-data-text="noDataText" stripe></Table>
@@ -84,35 +84,37 @@
                 lists: [],
                 listPage: 1,
                 listTotal: 0,
-                noDataText: "数据加载中.....",
+                noDataText: "",
 
                 addDrawerId: 0,
                 addDrawerShow: false,
 
                 contentShow: false,
                 contentTitle: '',
-                contentText: '内容加载中.....',
+                contentText: '',
             }
         },
         created() {
+            this.noDataText = this.$L("数据加载中.....");
+            this.contentText = this.$L("内容加载中.....");
             this.columns = [{
-                "title": "标题",
+                "title": this.$L("标题"),
                 "key": 'title',
                 "minWidth": 120,
             }, {
-                "title": "类型",
+                "title": this.$L("类型"),
                 "key": 'type',
                 "minWidth": 80,
                 "maxWidth": 120,
                 "align": 'center',
             }, {
-                "title": "状态",
+                "title": this.$L("状态"),
                 "key": 'status',
                 "minWidth": 80,
                 "maxWidth": 120,
                 "align": 'center',
             }, {
-                "title": "创建日期",
+                "title": this.$L("创建日期"),
                 "minWidth": 160,
                 "maxWidth": 200,
                 "align": 'center',
@@ -131,7 +133,7 @@
                     }
                     return h('div', [
                         h('Tooltip', {
-                            props: { content: '查看', transfer: true, delay: 600 },
+                            props: { content: this.$L('查看'), transfer: true, delay: 600 },
                             style: { position: 'relative' },
                         }, [h('Icon', {
                             props: { type: 'md-eye', size: 16 },
@@ -143,7 +145,7 @@
                             }
                         })]),
                         h('Tooltip', {
-                            props: { content: '编辑', transfer: true, delay: 600 }
+                            props: { content: this.$L('编辑'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-create', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
@@ -155,7 +157,7 @@
                             }
                         })]),
                         h('Tooltip', {
-                            props: { content: '发送', transfer: true, delay: 600 }
+                            props: { content: this.$L('发送'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-send', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
@@ -166,7 +168,7 @@
                             }
                         })]),
                         h('Tooltip', {
-                            props: { content: '删除', transfer: true, delay: 600 }
+                            props: { content: this.$L('删除'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-trash', size: 16 },
                             style: { margin: '0 3px', cursor: 'pointer' },
@@ -230,7 +232,7 @@
                 whereData.pagesize = Math.max($A.runNum(this.listPageSize), 10);
                 whereData.sorts = $A.cloneData(this.sorts);
                 this.loadIng++;
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'report/my',
                     data: whereData,
@@ -238,13 +240,13 @@
                         this.loadIng--;
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {
                             this.lists = res.data.lists;
                             this.listTotal = res.data.total;
-                            this.noDataText = "没有相关的数据";
+                            this.noDataText = this.$L("没有相关的数据");
                         } else {
                             this.lists = [];
                             this.listTotal = 0;
@@ -262,7 +264,7 @@
             contentReport(row) {
                 this.contentShow = true;
                 this.contentTitle = row.title;
-                this.contentText = '详细内容加载中.....';
+                this.contentText = this.$L('详细内容加载中.....');
                 $A.aAjax({
                     url: 'report/content?id=' + row.id,
                     error: () => {
@@ -282,8 +284,8 @@
 
             sendReport(row) {
                 this.$Modal.confirm({
-                    title: '发送汇报',
-                    content: '你确定要发送汇报吗？',
+                    title: this.$L('发送汇报'),
+                    content: this.$L('你确定要发送汇报吗？'),
                     loading: true,
                     onOk: () => {
                         $A.aAjax({
@@ -310,8 +312,8 @@
 
             deleteReport(row) {
                 this.$Modal.confirm({
-                    title: '删除汇报',
-                    content: '你确定要删除汇报吗？',
+                    title: this.$L('删除汇报'),
+                    content: this.$L('你确定要删除汇报吗？'),
                     loading: true,
                     onOk: () => {
                         $A.aAjax({

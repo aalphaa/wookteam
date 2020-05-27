@@ -9,7 +9,7 @@
                 <div v-if="$slots.prepend !== undefined" slot="prepend"><slot name="prepend"></slot></div>
                 <div v-if="$slots.append !== undefined" slot="append"><slot name="append"></slot></div>
             </Input>
-            <div v-if="userName" class="user-id-subtitle">用户名: {{userName}}</div>
+            <div v-if="userName" class="user-id-subtitle">{{$L('用户名')}}: {{userName}}</div>
             <div v-if="spinShow" class="user-id-spin"><div><w-loading></w-loading></div></div>
         </div>
 
@@ -171,37 +171,41 @@
 
                 winStyle: {},
 
-                columns: [
-                    {
-                        "title": "昵称",
-                        "key": "nickname",
-                        "minWidth": 80,
-                        "ellipsis": true,
-                        "tooltip": true,
-                        render: (h, params) => {
-                            let arr = [];
-                            let username = params.row.username;
-                            let mLists = this.multipleLists.filter((item) => { return item.username == username; });
-                            if (mLists.length > 0) {
-                                arr.push(h('Icon', {
-                                    props: { type: 'md-checkmark' },
-                                    style: { marginRight: '6px', fontSize: '16px', color: '#FF5722' },
-                                }));
-                            }
-                            arr.push(h('span', params.row.nickname || '-'));
-                            return h('div', arr);
-                        }
-                    }, {
-                        "title": "用户名",
-                        "key": "username",
-                        "minWidth": 80,
-                        "ellipsis": true,
-                        "tooltip": true,
-                    },
-                ],
+                columns: [],
                 userLists: [],
-                noDataText: "数据加载中.....",
+                noDataText: '',
             }
+        },
+        created() {
+            this.columns = [
+                {
+                    "title": this.$L("昵称"),
+                    "key": "nickname",
+                    "minWidth": 80,
+                    "ellipsis": true,
+                    "tooltip": true,
+                    render: (h, params) => {
+                        let arr = [];
+                        let username = params.row.username;
+                        let mLists = this.multipleLists.filter((item) => { return item.username == username; });
+                        if (mLists.length > 0) {
+                            arr.push(h('Icon', {
+                                props: { type: 'md-checkmark' },
+                                style: { marginRight: '6px', fontSize: '16px', color: '#FF5722' },
+                            }));
+                        }
+                        arr.push(h('span', params.row.nickname || '-'));
+                        return h('div', arr);
+                    }
+                }, {
+                    "title": this.$L("用户名"),
+                    "key": "username",
+                    "minWidth": 80,
+                    "ellipsis": true,
+                    "tooltip": true,
+                },
+            ];
+            this.noDataText = this.$L("数据加载中.....");
         },
         watch: {
             value (val) {
@@ -234,7 +238,7 @@
                         if (this.projectid) {
                             where['projectid'] = this.projectid;
                         }
-                        this.noDataText = "数据加载中.....";
+                        this.noDataText = this.$L("数据加载中.....");
                         $A.aAjax({
                             url: window.location.origin + '/api/users/searchinfo',
                             data: {
@@ -246,10 +250,10 @@
                             },
                             complete: () => {
                                 this.spinShow = false;
-                                this.noDataText = "没有相关的数据";
+                                this.noDataText = this.$L("没有相关的数据");
                             },
                             error: () => {
-                                this.noDataText = "数据加载失败！";
+                                this.noDataText = this.$L("数据加载失败！");
                             },
                             success: (res) => {
                                 if (res.ret === 1 && res.data.total > 0) {
@@ -370,7 +374,7 @@
                 if (this.projectid) {
                     where['projectid'] = this.projectid;
                 }
-                this.noDataText = "数据加载中.....";
+                this.noDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: window.location.origin + '/api/users/searchinfo',
                     data: {
@@ -382,10 +386,10 @@
                     },
                     complete: () => {
                         this.spinShow = false;
-                        this.noDataText = "没有相关的数据";
+                        this.noDataText = this.$L("没有相关的数据");
                     },
                     error: () => {
-                        this.noDataText = "数据加载失败！";
+                        this.noDataText = this.$L("数据加载失败！");
                     },
                     success: (res) => {
                         if (res.ret === 1) {

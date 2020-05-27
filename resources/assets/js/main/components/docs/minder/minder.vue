@@ -2,7 +2,7 @@
     <div class="minder-editor-container">
         <div class="quickbar">
             <Tooltip placement="top" theme="light">
-                <i class="ft icon" title="缩放">&#xE7B3;</i>
+                <i class="ft icon" :title="$L('缩放')">&#xE7B3;</i>
                 <div slot="content">
                     <ul class="quickul">
                         <li @click="minder.execCommand('Zoom', 200)">200%</li>
@@ -14,7 +14,7 @@
                 </div>
             </Tooltip>
             <Tooltip placement="top" theme="light">
-                <i class="ft icon" title="图形">&#xE621;</i>
+                <i class="ft icon" :title="$L('图形')">&#xE621;</i>
                 <div slot="content">
                     <ul class="quickul mold">
                         <li @click="minder.execCommand('template', 'default')"><span class="default"></span></li>
@@ -27,41 +27,41 @@
                 </div>
             </Tooltip>
             <Tooltip placement="top" theme="light">
-                <i class="ft icon" title="样式">&#xE678;</i>
+                <i class="ft icon" :title="$L('样式')">&#xE678;</i>
                 <div slot="content">
                     <ul class="quickul">
-                        <li @click="minder.execCommand('theme', 'fresh-blue')">天空蓝</li>
-                        <li @click="minder.execCommand('theme', 'wire')">线框</li>
-                        <li @click="minder.execCommand('theme', 'fish')">鱼骨图</li>
-                        <li @click="minder.execCommand('theme', 'classic')">脑图经典</li>
-                        <li @click="minder.execCommand('theme', 'classic-compact')">紧凑经典</li>
-                        <li @click="minder.execCommand('theme', 'snow')">温柔冷光</li>
-                        <li @click="minder.execCommand('theme', 'snow-compact')">紧凑冷光</li>
-                        <li @click="minder.execCommand('theme', 'tianpan')">经典天盘</li>
-                        <li @click="minder.execCommand('theme', 'tianpan-compact')">紧凑天盘</li>
+                        <li @click="minder.execCommand('theme', 'fresh-blue')">{{$L('天空蓝')}}</li>
+                        <li @click="minder.execCommand('theme', 'wire')">{{$L('线框')}}</li>
+                        <li @click="minder.execCommand('theme', 'fish')">{{$L('鱼骨图')}}</li>
+                        <li @click="minder.execCommand('theme', 'classic')">{{$L('脑图经典')}}</li>
+                        <li @click="minder.execCommand('theme', 'classic-compact')">{{$L('紧凑经典')}}</li>
+                        <li @click="minder.execCommand('theme', 'snow')">{{$L('温柔冷光')}}</li>
+                        <li @click="minder.execCommand('theme', 'snow-compact')">{{$L('紧凑冷光')}}</li>
+                        <li @click="minder.execCommand('theme', 'tianpan')">{{$L('经典天盘')}}</li>
+                        <li @click="minder.execCommand('theme', 'tianpan-compact')">{{$L('紧凑天盘')}}</li>
                     </ul>
                 </div>
             </Tooltip>
             <Tooltip placement="top" theme="light">
-                <i class="ft icon" title="折叠">&#xE779;</i>
+                <i class="ft icon" :title="$L('折叠')">&#xE779;</i>
                 <div slot="content">
                     <ul class="quickul">
-                        <li @click="minder.execCommand('ExpandToLevel', 1)">展开到一级节点</li>
-                        <li @click="minder.execCommand('ExpandToLevel', 2)">展开到二级节点</li>
-                        <li @click="minder.execCommand('ExpandToLevel', 3)">展开到三级节点</li>
-                        <li @click="minder.execCommand('ExpandToLevel', 4)">展开到四级节点</li>
-                        <li @click="minder.execCommand('ExpandToLevel', 5)">展开到五级节点</li>
-                        <li @click="minder.execCommand('ExpandToLevel', 99)">展开全部节点</li>
+                        <li @click="minder.execCommand('ExpandToLevel', 1)">{{$L('展开到一级节点')}}</li>
+                        <li @click="minder.execCommand('ExpandToLevel', 2)">{{$L('展开到二级节点')}}</li>
+                        <li @click="minder.execCommand('ExpandToLevel', 3)">{{$L('展开到三级节点')}}</li>
+                        <li @click="minder.execCommand('ExpandToLevel', 4)">{{$L('展开到四级节点')}}</li>
+                        <li @click="minder.execCommand('ExpandToLevel', 5)">{{$L('展开到五级节点')}}</li>
+                        <li @click="minder.execCommand('ExpandToLevel', 99)">{{$L('展开全部节点')}}</li>
                     </ul>
                 </div>
             </Tooltip>
-            <Tooltip placement="top" content="居中">
+            <Tooltip placement="top" :content="$L('居中')">
                 <div @click="minder.execCommand('camera', minder.getRoot(), 600)"><i class="ft icon">&#xE61F;</i></div>
             </Tooltip>
-            <Tooltip placement="top" content="移动">
+            <Tooltip placement="top" :content="$L('移动')">
                 <div @click="[minder.execCommand('Hand'),isHand=!isHand]"><i class="ft icon" :class="{active:isHand}">&#xE6CF;</i></div>
             </Tooltip>
-            <Tooltip placement="top" content="导出PNG图片">
+            <Tooltip placement="top" :content="$L('导出PNG图片')">
                 <div @click="exportHandle(0)"><Icon type="md-photos"/></div>
             </Tooltip>
         </div>
@@ -224,7 +224,7 @@
                     this.minder.exportData('png').then((content) => {
                         let element = document.createElement('a');
                         element.setAttribute('href', content);
-                        let filename = this.value.root.data.text || '无标题';
+                        let filename = this.value.root.data.text || this.$L('无标题');
                         element.setAttribute('download', filename);
                         element.style.display = 'none';
                         document.body.appendChild(element);
@@ -235,7 +235,7 @@
                     this.minder.exportData('png').then((content) => {
                         var doc = new JSPDF();
                         doc.addImage(content, 'PNG', 0, 0, 0, 0);
-                        doc.save(`${this.value.root.data.text || '无标题'}.pdf`);
+                        doc.save(`${this.value.root.data.text || this.$L('无标题')}.pdf`);
                     });
                 }
             },
@@ -269,7 +269,7 @@
                         newObj.root = {
                             data: {
                                 id: generateMixed(12),
-                                text: '默认节点',
+                                text: this.$L('默认节点'),
                             },
                             children: []
                         }

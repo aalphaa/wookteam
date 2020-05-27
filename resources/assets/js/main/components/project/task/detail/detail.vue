@@ -6,83 +6,83 @@
                     <input v-model="detail.title" :disabled="!!loadData.title" type="text" maxlength="60" @keydown.enter="(e)=>{e.target.blur()}" @blur="handleTask('title')">
                     <div class="time">
                         <span class="z-nick">{{detail.createuser}}</span>
-                        创建于：
+                        {{$L('创建于：')}}
                         <span>{{$A.formatDate("Y-m-d H:i:s", detail.indate)}}</span>
                     </div>
                 </div>
                 <div class="detail-desc-box detail-icon">
-                    <div class="detail-h2"><strong class="active">描述</strong></div>
-                    <textarea v-model="detail.desc" placeholder="添加详细描述..."  @keydown="descKeydown" @blur="handleTask('desc')"></textarea>
+                    <div class="detail-h2"><strong class="active">{{$L('描述')}}</strong></div>
+                    <textarea v-model="detail.desc" :placeholder="$L('添加详细描述...')"  @keydown="descKeydown" @blur="handleTask('desc')"></textarea>
                 </div>
                 <ul class="detail-text-box">
                     <li v-if="detail.startdate > 0 && detail.enddate > 0" class="text-time detail-icon">
-                        <span>计划时间：</span>
-                        <em>{{$A.formatDate("Y-m-d H:i", detail.startdate)}} 至 {{$A.formatDate("Y-m-d H:i", detail.enddate)}}</em>
-                        <em v-if="detail.overdue" class="overdue">[已超期]</em>
+                        <span>{{$L('计划时间：')}}</span>
+                        <em>{{$A.formatDate("Y-m-d H:i", detail.startdate)}} {{$L('至')}} {{$A.formatDate("Y-m-d H:i", detail.enddate)}}</em>
+                        <em v-if="detail.overdue" class="overdue">[{{$L('已超期')}}]</em>
                     </li>
                     <li class="text-username detail-icon">
-                        <span>负责人：</span>
+                        <span>{{$L('负责人：')}}</span>
                         <em>{{detail.username}}</em>
                     </li>
                     <li v-if="followerLength(detail.follower) > 0" class="text-follower detail-icon">
-                        <span>关注者：</span>
+                        <span>{{$L('关注者：')}}</span>
                         <em>
                             <Tag v-for="(fname, findex) in detail.follower" :key="findex" closable @on-close="handleTask('unattention', {username:fname,uisynch:true})">{{fname}}</Tag>
                         </em>
                     </li>
                     <li class="text-level detail-icon">
-                        <span>优先级：</span>
+                        <span>{{$L('优先级：')}}</span>
                         <em :class="`p${detail.level}`">{{levelFormt(detail.level)}}</em>
                     </li>
                     <li class="text-status detail-icon">
-                        <span>任务状态：</span>
-                        <em v-if="detail.complete" class="complete">已完成</em>
-                        <em v-else class="unfinished">未完成</em>
+                        <span>{{$L('任务状态：')}}</span>
+                        <em v-if="detail.complete" class="complete">{{$L('已完成')}}</em>
+                        <em v-else class="unfinished">{{$L('未完成')}}</em>
                     </li>
                 </ul>
                 <div :style="`${detail.filenum>0?'':'display:none'}`">
-                    <div class="detail-h2 detail-file-box detail-icon"><strong class="active">附件</strong></div>
+                    <div class="detail-h2 detail-file-box detail-icon"><strong class="active">{{$L('附件')}}</strong></div>
                     <project-task-files ref="upload" :taskid="taskid" :simple="true" @change="handleTask('filechange', $event)"></project-task-files>
                 </div>
-                <div class="detail-h2 detail-comment-box detail-icon"><strong class="link" :class="{active:logType=='评论'}" @click="logType='评论'">评论</strong><em></em><strong class="link" :class="{active:logType=='日志'}" @click="logType='日志'">操作记录</strong></div>
+                <div class="detail-h2 detail-comment-box detail-icon"><strong class="link" :class="{active:logType=='评论'}" @click="logType='评论'">{{$L('评论')}}</strong><em></em><strong class="link" :class="{active:logType=='日志'}" @click="logType='日志'">{{$L('操作记录')}}</strong></div>
                 <div class="detail-log-box">
                     <project-task-logs ref="log" :logtype="logType" :projectid="detail.projectid" :taskid="taskid" :pagesize="5"></project-task-logs>
                 </div>
                 <div class="detail-footer-box">
-                    <Input class="comment-input" v-model="commentText" type="textarea" :rows="1" :autosize="{ minRows: 1, maxRows: 3 }" :maxlength="255" @on-keydown="commentKeydown" placeholder="输入评论，Enter发表评论，Shift+Enter换行" />
+                    <Input class="comment-input" v-model="commentText" type="textarea" :rows="1" :autosize="{ minRows: 1, maxRows: 3 }" :maxlength="255" @on-keydown="commentKeydown" :placeholder="$L('输入评论，Enter发表评论，Shift+Enter换行')" />
                     <Button :loading="!!loadData.comment" :disabled="!commentText" type="primary" @click="handleTask('comment')">评 论</Button>
                 </div>
             </div>
             <div class="detail-right">
                 <div class="cancel"><em @click="visible=false"></em></div>
                 <Dropdown trigger="click" class="block" @on-click="handleTask">
-                    <Button :loading="!!loadData.unfinished || !!loadData.complete" icon="md-checkmark-circle-outline" class="btn">标记{{detail.complete?'未完成':'已完成'}}</Button>
+                    <Button :loading="!!loadData.unfinished || !!loadData.complete" icon="md-checkmark-circle-outline" class="btn">{{$L('标记')}}{{$L(detail.complete?'未完成':'已完成')}}</Button>
                     <DropdownMenu slot="list">
-                        <DropdownItem name="unfinished">标记未完成<Icon v-if="!detail.complete" type="md-checkmark" class="checkmark"/></DropdownItem>
-                        <DropdownItem name="complete">标记已完成<Icon v-if="detail.complete" type="md-checkmark" class="checkmark"/></DropdownItem>
-                        <DropdownItem name="archived2">完成并归档<Icon v-if="detail.complete && detail.archived" type="md-checkmark" class="checkmark"/></DropdownItem>
+                        <DropdownItem name="unfinished">{{$L('标记未完成')}}<Icon v-if="!detail.complete" type="md-checkmark" class="checkmark"/></DropdownItem>
+                        <DropdownItem name="complete">{{$L('标记已完成')}}<Icon v-if="detail.complete" type="md-checkmark" class="checkmark"/></DropdownItem>
+                        <DropdownItem name="archived2">{{$L('完成并归档')}}<Icon v-if="detail.complete && detail.archived" type="md-checkmark" class="checkmark"/></DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
                 <Dropdown trigger="click" class="block" @on-click="handleTask">
-                    <Button :loading="!!loadData.level" icon="md-funnel" class="btn">优先级</Button>
+                    <Button :loading="!!loadData.level" icon="md-funnel" class="btn">{{$L('优先级')}}</Button>
                     <DropdownMenu slot="list">
                         <DropdownItem v-for="level in [1,2,3,4]" :key="level" :name="`level-${level}`" :class="`p${level}`">{{levelFormt(level)}}<Icon v-if="detail.level==level" type="md-checkmark" class="checkmark"/></DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
                 <Poptip placement="bottom" class="block">
-                    <Button :loading="!!loadData.username" icon="md-person" class="btn">负责人</Button>
+                    <Button :loading="!!loadData.username" icon="md-person" class="btn">{{$L('负责人')}}</Button>
                     <div slot="content">
                         <div style="width:280px">
-                            选择负责人
-                            <UseridInput :projectid="detail.projectid" :nousername="detail.username" :transfer="false" @change="handleTask('usernameb', $event)" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
+                            {{$L('选择负责人')}}
+                            <UseridInput :projectid="detail.projectid" :nousername="detail.username" :transfer="false" @change="handleTask('usernameb', $event)" :placeholder="$L('输入关键词搜索')" style="margin:5px 0 3px"></UseridInput>
                         </div>
                     </div>
                 </Poptip>
                 <Poptip ref="timeRef" placement="bottom" class="block" @on-popper-show="handleTask('inittime')">
-                    <Button :loading="!!loadData.plannedtime || !!loadData.unplannedtime" icon="md-calendar" class="btn">计划时间</Button>
+                    <Button :loading="!!loadData.plannedtime || !!loadData.unplannedtime" icon="md-calendar" class="btn">{{$L('计划时间')}}</Button>
                     <div slot="content">
                         <div style="width:280px">
-                            选择日期范围
+                            {{$L('选择日期范围')}}
                             <Date-picker
                                 v-model="timeValue"
                                 :options="timeOptions"
@@ -96,22 +96,22 @@
                         </div>
                     </div>
                 </Poptip>
-                <Button icon="md-attach" class="btn" @click="handleTask('fileupload')">添加附件</Button>
+                <Button icon="md-attach" class="btn" @click="handleTask('fileupload')">{{$L('添加附件')}}</Button>
                 <Poptip ref="attentionRef" v-if="detail.username == myUsername" placement="bottom" class="block" @on-popper-show="() => {$set(detail, 'attentionLists', followerToStr(detail.follower))}">
-                    <Button :loading="!!loadData.attention" icon="md-at" class="btn">关注人</Button>
+                    <Button :loading="!!loadData.attention" icon="md-at" class="btn">{{$L('关注人')}}</Button>
                     <div slot="content">
                         <div style="width:280px">
-                            选择关注人
-                            <UseridInput :multiple="true" :transfer="false" v-model="detail.attentionLists" placeholder="输入关键词搜索" style="margin:5px 0 3px"></UseridInput>
+                            {{$L('选择关注人')}}
+                            <UseridInput :multiple="true" :transfer="false" v-model="detail.attentionLists" :placeholder="$L('输入关键词搜索')" style="margin:5px 0 3px"></UseridInput>
                             <Button :loading="!!loadData.attention" :disabled="!detail.attentionLists" class="btn" type="primary" style="text-align:center;width:72px;height:28px;font-size:13px" @click="handleTask('attention')">确 定</Button>
                         </div>
                     </div>
                 </Poptip>
-                <Button v-else-if="haveAttention(detail.follower)" :loading="!!loadData.unattention" icon="md-at" class="btn" @click="handleTask('unattention', {username:myUsername})">取消关注</Button>
-                <Button v-else :loading="!!loadData.attention" icon="md-at" class="btn" @click="handleTask('attentiona')">关注任务</Button>
-                <Button v-if="!detail.archived" :loading="!!loadData.archived" icon="md-filing" class="btn" @click="handleTask('archived')">归档</Button>
-                <Button v-else :loading="!!loadData.unarchived" icon="md-filing" class="btn" @click="handleTask('unarchived')">取消归档</Button>
-                <Button :loading="!!loadData.delete" icon="md-trash" class="btn" type="error" ghost @click="handleTask('deleteb')">删除</Button>
+                <Button v-else-if="haveAttention(detail.follower)" :loading="!!loadData.unattention" icon="md-at" class="btn" @click="handleTask('unattention', {username:myUsername})">{{$L('取消关注')}}</Button>
+                <Button v-else :loading="!!loadData.attention" icon="md-at" class="btn" @click="handleTask('attentiona')">{{$L('关注任务')}}</Button>
+                <Button v-if="!detail.archived" :loading="!!loadData.archived" icon="md-filing" class="btn" @click="handleTask('archived')">{{$L('归档')}}</Button>
+                <Button v-else :loading="!!loadData.unarchived" icon="md-filing" class="btn" @click="handleTask('unarchived')">{{$L('取消归档')}}</Button>
+                <Button :loading="!!loadData.delete" icon="md-trash" class="btn" type="error" ghost @click="handleTask('deleteb')">{{$L('删除')}}</Button>
             </div>
         </div>
     </div>
@@ -136,52 +136,7 @@
                 logType: '评论',
 
                 timeValue: [],
-                timeOptions: {
-                    shortcuts: [{
-                        text: '今天',
-                        value() {
-                            return [new Date(), new Date()];
-                        }
-                    }, {
-                        text: '明天',
-                        value() {
-                            let e = new Date();
-                            e.setDate(e.getDate() + 1);
-                            return [new Date(), e];
-                        }
-                    }, {
-                        text: '本周',
-                        value() {
-                            return [$A.getData('今天', true), $A.getData('本周结束', true)];
-                        }
-                    }, {
-                        text: '本月',
-                        value() {
-                            return [$A.getData('今天', true), $A.getData('本月结束', true)];
-                        }
-                    }, {
-                        text: '3天',
-                        value() {
-                            let e = new Date();
-                            e.setDate(e.getDate() + 3);
-                            return [new Date(), e];
-                        }
-                    }, {
-                        text: '5天',
-                        value() {
-                            let e = new Date();
-                            e.setDate(e.getDate() + 5);
-                            return [new Date(), e];
-                        }
-                    }, {
-                        text: '7天',
-                        value() {
-                            let e = new Date();
-                            e.setDate(e.getDate() + 7);
-                            return [new Date(), e];
-                        }
-                    }]
-                },
+                timeOptions: {},
 
                 myUsername: '',
             }
@@ -191,6 +146,54 @@
             for (let i = 0; i < doms.length; ++i) {
                 if (doms[i].parentNode != null) doms[i].parentNode.removeChild(doms[i]);
             }
+        },
+        created() {
+            this.timeOptions = {
+                shortcuts: [{
+                    text: this.$L('今天'),
+                    value() {
+                        return [new Date(), new Date()];
+                    }
+                }, {
+                    text: this.$L('明天'),
+                    value() {
+                        let e = new Date();
+                        e.setDate(e.getDate() + 1);
+                        return [new Date(), e];
+                    }
+                }, {
+                    text: this.$L('本周'),
+                    value() {
+                        return [$A.getData('今天', true), $A.getData('本周结束', true)];
+                    }
+                }, {
+                    text: this.$L('本月'),
+                    value() {
+                        return [$A.getData('今天', true), $A.getData('本月结束', true)];
+                    }
+                }, {
+                    text: this.$L('3天'),
+                    value() {
+                        let e = new Date();
+                        e.setDate(e.getDate() + 3);
+                        return [new Date(), e];
+                    }
+                }, {
+                    text: this.$L('5天'),
+                    value() {
+                        let e = new Date();
+                        e.setDate(e.getDate() + 5);
+                        return [new Date(), e];
+                    }
+                }, {
+                    text: this.$L('7天'),
+                    value() {
+                        let e = new Date();
+                        e.setDate(e.getDate() + 7);
+                        return [new Date(), e];
+                    }
+                }]
+            };
         },
         mounted() {
             this.$nextTick(() => {
@@ -237,13 +240,13 @@
             levelFormt(p) {
                 switch (parseInt(p)) {
                     case 1:
-                        return "重要且紧急 (P1)";
+                        return this.$L("重要且紧急") + " (P1)";
                     case 2:
-                        return "重要不紧急 (P2)";
+                        return this.$L("重要不紧急") + " (P2)";
                     case 3:
-                        return "紧急不重要 (P3)";
+                        return this.$L("紧急不重要") + " (P3)";
                     case 4:
-                        return "不重要不紧急 (P4)";
+                        return this.$L("不重要不紧急") + " (P4)";
                 }
             },
 
@@ -400,8 +403,8 @@
                             return;
                         }
                         this.$Modal.confirm({
-                            title: '修改负责人',
-                            content: '你确定修改负责人设置为“' + (eve.nickname || eve.username) + '”吗？',
+                            title: this.$L('修改负责人'),
+                            content: this.$L('你确定修改负责人设置为“') + (eve.nickname || eve.username) + this.$L('”吗？'),
                             onOk: () => {
                                 this.handleTask('username', eve);
                             }
@@ -416,8 +419,8 @@
                         ajaxCallback = (res) => {
                             if (res === 1) {
                                 this.$Modal.info({
-                                    title: '温馨提示',
-                                    content: '任务负责人已改变，点击确定关闭窗口。',
+                                    title: this.$L('温馨提示'),
+                                    content: this.$L('任务负责人已改变，点击确定关闭窗口。'),
                                     onOk: () => {
                                         this.visible = false;
                                     }
@@ -437,8 +440,8 @@
                     case 'plannedtimeb':
                         let temp = $A.date2string(this.timeValue, "Y-m-d H:i");
                         this.$Modal.confirm({
-                            title: '修改计划时间',
-                            content: '你确定将任务计划时间设置为“' + temp[0] + "~" + temp[1] + '”吗？',
+                            title: this.$L('修改计划时间'),
+                            content: this.$L('你确定将任务计划时间设置为“') + temp[0] + "~" + temp[1] + this.$L('”吗？'),
                             onOk: () => {
                                 this.handleTask('plannedtime');
                             }
@@ -453,8 +456,8 @@
 
                     case 'unplannedtimeb':
                         this.$Modal.confirm({
-                            title: '取消计划时间',
-                            content: '你确定将任务计划时间取消吗？',
+                            title: this.$L('取消计划时间'),
+                            content: this.$L('你确定将任务计划时间取消吗？'),
                             onOk: () => {
                                 this.handleTask('unplannedtime');
                             }
@@ -505,8 +508,8 @@
                         ajaxCallback = (res) => {
                             if (res === 1) {
                                 this.$Modal.info({
-                                    title: '温馨提示',
-                                    content: '任务已删除，点击确定关闭窗口。',
+                                    title: this.$L('温馨提示'),
+                                    content: this.$L('任务已删除，点击确定关闭窗口。'),
                                     onOk: () => {
                                         this.visible = false;
                                     }
