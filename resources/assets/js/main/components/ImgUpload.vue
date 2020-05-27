@@ -415,7 +415,7 @@
                 }else{
                     this.$Modal.warning({
                         title: this.$L('上传失败'),
-                        content: this.$L('文件')+ ' ' + file.name + ' ' + this.$L('上传失败') + ', ' + res.msg
+                        content: this.$L('文件 % 上传失败 %', file.name, res.msg)
                     });
                     this.$refs.upload.fileList.pop();
                 }
@@ -425,21 +425,24 @@
                 //上传类型错误
                 this.$Modal.warning({
                     title: this.$L('文件格式不正确'),
-                    content: this.$L('文件') + ' ' + file.name + ' ' + this.$L('格式不正确，请上传') + ' jpg、jpeg、gif、png ' + this.$L('格式的图片')
+                    content: this.$L('文件 % 格式不正确，请上传 jpg、jpeg、gif、png 格式的图片。', file.name)
                 });
             },
             handleMaxSize (file) {
                 //上传大小错误
                 this.$Modal.warning({
                     title: this.$L('超出文件大小限制'),
-                    content: this.$L('文件') + ' ' + file.name + ' ' + this.$L('太大，不能超过') + ' 2M'
+                    content: this.$L('文件 % 太大，不能超过2M。', file.name)
                 });
             },
             handleBeforeUpload () {
                 //上传前判断
                 let check = this.uploadList.length < this.maxNum;
                 if (!check) {
-                    this.$Modal.warning({ title: this.$L('温馨提示'), content: this.$L('最多只能上传') + ' ' + this.maxNum + ' ' + this.$L('张图片') });
+                    this.$Modal.warning({
+                        title: this.$L('温馨提示'),
+                        content: this.$L('最多只能上传 % 张图片。', this.maxNum)
+                    });
                 }
                 return check;
             },
@@ -515,7 +518,7 @@
                         }
                         let check = this.uploadList.length < this.maxNum;
                         if (!check) {
-                            this.$Modal.warning({ title: this.$L('温馨提示'), content: this.$L('最多只能选择') + ' ' + this.maxNum + ' ' + this.$L('张图片') });
+                            this.$Modal.warning({ title: this.$L('温馨提示'), content: this.$L('最多只能选择 % 张图片。', this.maxNum) });
                             return;
                         }
                         item.active = true;

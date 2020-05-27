@@ -338,7 +338,7 @@
                 ],
                 userpass: [
                     { required: true, message: this.$L('请填写登录密码！'), trigger: 'change' },
-                    { type: 'string', min: 6, message: this.$L('用户名长度至少6位！'), trigger: 'change' }
+                    { type: 'string', min: 6, message: this.$L('密码错长度至少6位！'), trigger: 'change' }
                 ]
             };
         },

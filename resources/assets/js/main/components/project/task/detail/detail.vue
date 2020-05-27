@@ -240,13 +240,13 @@
             levelFormt(p) {
                 switch (parseInt(p)) {
                     case 1:
-                        return this.$L("重要且紧急") + " (P1)";
+                        return this.$L("重要且紧急 (P1)");
                     case 2:
-                        return this.$L("重要不紧急") + " (P2)";
+                        return this.$L("重要不紧急 (P2)");
                     case 3:
-                        return this.$L("紧急不重要") + " (P3)";
+                        return this.$L("紧急不重要 (P3)");
                     case 4:
-                        return this.$L("不重要不紧急") + " (P4)";
+                        return this.$L("不重要不紧急 (P4)");
                 }
             },
 
@@ -404,7 +404,7 @@
                         }
                         this.$Modal.confirm({
                             title: this.$L('修改负责人'),
-                            content: this.$L('你确定修改负责人设置为“') + (eve.nickname || eve.username) + this.$L('”吗？'),
+                            content: this.$L('你确定修改负责人设置为“%”吗？', (eve.nickname || eve.username)),
                             onOk: () => {
                                 this.handleTask('username', eve);
                             }
@@ -441,7 +441,7 @@
                         let temp = $A.date2string(this.timeValue, "Y-m-d H:i");
                         this.$Modal.confirm({
                             title: this.$L('修改计划时间'),
-                            content: this.$L('你确定将任务计划时间设置为“') + temp[0] + "~" + temp[1] + this.$L('”吗？'),
+                            content: this.$L('你确定将任务计划时间设置为“%”吗？', temp[0] + "~" + temp[1]),
                             onOk: () => {
                                 this.handleTask('plannedtime');
                             }
