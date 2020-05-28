@@ -44,6 +44,9 @@
                         <FormItem :label="$L('头像')" prop="userimg">
                             <ImgUpload v-model="formDatum.userimg"></ImgUpload>
                         </FormItem>
+                        <FormItem :label="$L('账号')">
+                            <Input v-model="userInfo.username" :disabled="true"></Input>
+                        </FormItem>
                         <FormItem :label="$L('昵称')" prop="nickname">
                             <Input v-model="formDatum.nickname"></Input>
                         </FormItem>

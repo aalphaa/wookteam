@@ -82,6 +82,15 @@ class UsersController extends Controller
     }
 
     /**
+     * 获取基本信息
+     * @return array
+     */
+    public function basic()
+    {
+        return Base::retSuccess('success', Users::username2basic(trim(Request::input('username'))));
+    }
+
+    /**
      * 搜索会员列表
      */
     public function searchinfo()
@@ -286,10 +295,16 @@ class UsersController extends Controller
         }
         //用户名
         $username = trim(Request::input('username'));
+        if (in_array($username, ['__loadIng'])) {
+            return Base::retError('用户名包含非法字符串！');
+        }
         if (strlen($username) < 2) {
             return Base::retError('用户名不可以少于2个字符！');
-        } elseif (strlen($username) > 12) {
-            return Base::retError('用户名最多只能设置12个字符！');
+        } elseif (strlen($username) > 16) {
+            return Base::retError('用户名最多只能设置16个字符！');
+        }
+        if (!preg_match('/^[A-Za-z0-9_\x{4e00}-\x{9fa5}]+$/u', $username)) {
+            return Base::retError('用户名由2-16位数字或字母、汉字、下划线组成！');
         }
         if (Users::username2id($username) > 0) {
             return Base::retError('用户名已存在！');

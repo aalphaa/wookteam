@@ -198,19 +198,26 @@ class Users
     /**
      * username 获取 基本信息
      * @param string $username           用户名
+     * @param bool $clearCache           清理缓存
      * @return array
      */
-    public static function username2basic($username)
+    public static function username2basic($username, $clearCache = false)
     {
         if (empty($username)) {
             return [];
         }
         $fields = ['username', 'nickname', 'userimg', 'profession'];
-        $userInfo = DBCache::table('users')->where('username', $username)->select($fields)->cacheMinutes(1)->first();
-        if ($userInfo) {
-            $userInfo['userimg'] = Users::userimg($userInfo['userimg']);
+        $builder = DBCache::table('users')->where('username', $username)->select($fields)->cacheMinutes(1);
+        if ($clearCache) {
+            $builder->removeCache()->first();
+            return [];
+        } else {
+            $userInfo = $builder->first();
+            if ($userInfo) {
+                $userInfo['userimg'] = Users::userimg($userInfo['userimg']);
+            }
+            return $userInfo ?: [];
         }
-        return $userInfo ?: [];
     }
 
     /**

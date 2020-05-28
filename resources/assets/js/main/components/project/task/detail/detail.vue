@@ -5,7 +5,7 @@
                 <div class="detail-title-box detail-icon">
                     <input v-model="detail.title" :disabled="!!loadData.title" type="text" maxlength="60" @keydown.enter="(e)=>{e.target.blur()}" @blur="handleTask('title')">
                     <div class="time">
-                        <span class="z-nick">{{detail.createuser}}</span>
+                        <span class="z-nick"><UserView :username="detail.createuser"/></span>
                         {{$L('创建于：')}}
                         <span>{{$A.formatDate("Y-m-d H:i:s", detail.indate)}}</span>
                     </div>
@@ -22,7 +22,7 @@
                     </li>
                     <li class="text-username detail-icon">
                         <span>{{$L('负责人：')}}</span>
-                        <em>{{detail.username}}</em>
+                        <em><UserView :username="detail.username"/></em>
                     </li>
                     <li v-if="followerLength(detail.follower) > 0" class="text-follower detail-icon">
                         <span>{{$L('关注者：')}}</span>
