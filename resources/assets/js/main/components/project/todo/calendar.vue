@@ -1,7 +1,7 @@
 <template>
     <drawer-tabs-container>
         <div class="todo-calendar">
-            <FullCalendar :events="lists" :loading="loadIng>0" @eventClick="clickEvent" lang="zh" @change="changeDateRange"></FullCalendar>
+            <FullCalendar :events="lists" :loading="loadIng>0" @eventClick="clickEvent" :lang="lang" @change="changeDateRange"></FullCalendar>
         </div>
     </drawer-tabs-container>
 </template>
@@ -27,6 +27,8 @@
             return {
                 loadIng: 0,
 
+                lang: 'en',
+
                 lists: [],
 
                 startdate: '',
@@ -34,7 +36,7 @@
             }
         },
         created() {
-
+            this.lang = this.getLanguage() || 'en';
         },
         mounted() {
             $A.setOnTaskInfoListener('components/project/todo/calendar',(act, detail) => {

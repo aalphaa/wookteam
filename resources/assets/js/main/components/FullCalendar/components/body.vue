@@ -44,15 +44,15 @@
                 <div class="row" v-for="(time,index) in timeDivide">
                     <div class="left-info" v-if="tableType=='week'">
                         <div class="time-info first" v-if="index==0">
-                            <span class="center">上午</span>
+                            <span class="center">{{$L('上午')}}</span>
                         </div>
                         <div class="time-info" v-if="index==1">
                             <span class="top">12:00</span>
-                            <span class="center">下午</span>
+                            <span class="center">{{$L('下午')}}</span>
                         </div>
                         <div class="time-info" v-if="index==2">
                             <span class="top">18:00</span>
-                            <span class="center">晚上</span>
+                            <span class="center">{{$L('晚上')}}</span>
                         </div>
                     </div>
                     <div class="events-day" v-for="item in weekDate" v-if="weekDate.length"
@@ -113,10 +113,23 @@
             let _this = this
             document.addEventListener('click', function (e) {
                 _this.showCard = -1
-            })
+            });
             // 监听header组件事件
             bus.$on('changeWeekDays', res => {
-            })
+            });
+            this.timeDivide = [{
+                start: 0,
+                end: 12,
+                label: this.$L('上午')
+            }, {
+                start: 12,
+                end: 18,
+                label: this.$L('下午')
+            }, {
+                start: 18,
+                end: 23,
+                label: this.$L('晚上')
+            }];
         },
         data() {
             return {
@@ -130,19 +143,7 @@
                     left: 0
                 },
                 selectDay: {},
-                timeDivide: [{
-                    start: 0,
-                    end: 12,
-                    label: '上午'
-                }, {
-                    start: 12,
-                    end: 18,
-                    label: '下午'
-                }, {
-                    start: 18,
-                    end: 23,
-                    label: '晚上'
-                }],
+                timeDivide: [],
                 showCard: -1,
                 cardLeft: 0,
                 cardRight: 0,

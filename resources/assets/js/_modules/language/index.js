@@ -114,6 +114,24 @@ export default {
                 },
 
                 /**
+                 * 替换%遍历
+                 * @param text
+                 * @param objects
+                 */
+                replaceArgumentsLanguage(text, objects) {
+                    let j = 1;
+                    while (text.indexOf("%") !== -1) {
+                        if (typeof objects[j] === "object") {
+                            text = text.replace("%", "");
+                        } else {
+                            text = text.replace("%", objects[j]);
+                        }
+                        j++;
+                    }
+                    return text;
+                },
+
+                /**
                  * 显示语言
                  * @return {string}
                  */
@@ -124,10 +142,10 @@ export default {
                         if (typeof this.privateLanguageData[this.privateLanguageType] === "object") {
                             let temp = this.privateLanguageData[this.privateLanguageType][text];
                             if (temp === null) {
-                                return text;
+                                return this.replaceArgumentsLanguage(text, arguments);
                             }
                             if (typeof temp !== 'undefined') {
-                                return temp;
+                                return this.replaceArgumentsLanguage(temp, arguments);
                             }
                         }
                         //
@@ -143,7 +161,7 @@ export default {
                             //
                         }
                     }
-                    return text;
+                    return this.replaceArgumentsLanguage(text, arguments);
                 }
             }
         });

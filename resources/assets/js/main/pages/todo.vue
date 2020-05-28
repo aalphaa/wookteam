@@ -31,7 +31,7 @@
                         <div class="todo-card">
                             <div class="todo-card-head" :class="['p' + index]">
                                 <i class="ft icon flag">&#xE753;</i>
-                                <div class="todo-card-title">{{$L(pTitle(index))}}</div>
+                                <div class="todo-card-title">{{pTitle(index)}}</div>
                                 <label class="todo-input-box" :class="{active: !!taskDatas[index].focus}" @click="()=>{$set(taskDatas[index],'focus',true)}">
                                     <div class="todo-input-ibox" @click.stop="">
                                         <Input v-model="taskDatas[index].title" class="todo-input-enter" :placeholder="$L('在这里输入事项，回车即可保存')" @on-enter="addTask(index)"></Input>

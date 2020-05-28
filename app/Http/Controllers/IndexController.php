@@ -192,6 +192,28 @@ class IndexController extends Controller
     }
 
     /**
+     * 获取国际化列表
+     */
+    public function language__lists()
+    {
+        $lists = Base::readDir(resource_path('assets/js'));
+        $array = [];
+        foreach ($lists AS $file) {
+            $content = file_get_contents($file);
+            preg_match_all('/\$L\(([\'"])(.*?)\\1/', $content, $matchs);
+            foreach ($matchs[2] AS $key=>$text) {
+                if (Base::strExists($text, "',")) {
+                    $text = Base::getMiddle($text, null, "',");
+                }
+                if (!isset($array[$text])) {
+                    $array[$text] = null;
+                }
+            }
+        }
+        return json_encode($array, JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
      * 清理opcache数据
      * @return int
      */

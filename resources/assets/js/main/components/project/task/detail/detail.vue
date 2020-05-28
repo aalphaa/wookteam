@@ -240,13 +240,13 @@
             levelFormt(p) {
                 switch (parseInt(p)) {
                     case 1:
-                        return this.$L("重要且紧急 (P1)");
+                        return this.$L("重要且紧急") + " (P1)";
                     case 2:
-                        return this.$L("重要不紧急 (P2)");
+                        return this.$L("重要不紧急") + " (P2)";
                     case 3:
-                        return this.$L("紧急不重要 (P3)");
+                        return this.$L("紧急不重要") + " (P3)";
                     case 4:
-                        return this.$L("不重要不紧急 (P4)");
+                        return this.$L("不重要不紧急") + " (P4)";
                 }
             },
 

@@ -227,7 +227,7 @@
                 $A.aAjax({
                     url: 'report/content?id=' + row.id,
                     error: () => {
-                        alert(this.$L(this.$L('网络繁忙，请稍后再试！')));
+                        alert(this.$L('网络繁忙，请稍后再试！'));
                         this.contentShow = false;
                     },
                     success: (res) => {

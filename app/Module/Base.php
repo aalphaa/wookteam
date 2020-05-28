@@ -2258,6 +2258,27 @@ class Base
     }
 
     /**
+     * 遍历获取文件
+     * @param $dir
+     * @return array
+     */
+    public static function readDir($dir)
+    {
+        $files = array();
+        $dir_list = scandir($dir);
+        foreach ($dir_list as $file) {
+            if ($file != '..' && $file != '.') {
+                if (is_dir($dir . '/' . $file)) {
+                    $files = array_merge($files, self::readDir($dir . '/' . $file));
+                } else {
+                    $files[] = $dir . "/" . $file;
+                }
+            }
+        }
+        return $files;
+    }
+
+    /**
      * 缓存数据
      * @param $title
      * @param null $value

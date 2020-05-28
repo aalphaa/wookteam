@@ -377,7 +377,7 @@
                                 } else {
                                     this.$Modal.error({
                                         title: this.$L("温馨提示"),
-                                        content: this.$L(res.msg)
+                                        content: res.msg
                                     });
                                 }
                             }

@@ -1315,7 +1315,7 @@
             if (typeof params.success === 'undefined') params.success = () => { };
             if (typeof params.error === 'undefined') params.error = () => { };
             //
-            let loadText = "正在加载中.....";
+            let loadText = "数据加载中.....";
             let busyNetwork = "网络繁忙，请稍后再试！";
             if (typeof $A.app.$L === 'function') {
                 loadText = $A.app.$L(loadText);
