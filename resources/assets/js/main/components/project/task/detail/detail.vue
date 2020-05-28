@@ -27,7 +27,7 @@
                     <li v-if="followerLength(detail.follower) > 0" class="text-follower detail-icon">
                         <span>{{$L('关注者：')}}</span>
                         <em>
-                            <Tag v-for="(fname, findex) in detail.follower" :key="findex" closable @on-close="handleTask('unattention', {username:fname,uisynch:true})">{{fname}}</Tag>
+                            <Tag v-for="(fname, findex) in detail.follower" :key="findex" closable @on-close="handleTask('unattention', {username:fname,uisynch:true})"><UserView :username="fname"/></Tag>
                         </em>
                     </li>
                     <li class="text-level detail-icon">
@@ -74,7 +74,7 @@
                     <div slot="content">
                         <div style="width:280px">
                             {{$L('选择负责人')}}
-                            <UseridInput :projectid="detail.projectid" :nousername="detail.username" :transfer="false" @change="handleTask('usernameb', $event)" :placeholder="$L('输入关键词搜索')" style="margin:5px 0 3px"></UseridInput>
+                            <UserInput :projectid="detail.projectid" :nousername="detail.username" :transfer="false" @change="handleTask('usernameb', $event)" :placeholder="$L('输入关键词搜索')" style="margin:5px 0 3px"></UserInput>
                         </div>
                     </div>
                 </Poptip>
@@ -102,7 +102,7 @@
                     <div slot="content">
                         <div style="width:280px">
                             {{$L('选择关注人')}}
-                            <UseridInput :multiple="true" :transfer="false" v-model="detail.attentionLists" :placeholder="$L('输入关键词搜索')" style="margin:5px 0 3px"></UseridInput>
+                            <UserInput :multiple="true" :transfer="false" v-model="detail.attentionLists" :placeholder="$L('输入关键词搜索')" style="margin:5px 0 3px"></UserInput>
                             <Button :loading="!!loadData.attention" :disabled="!detail.attentionLists" class="btn" type="primary" style="text-align:center;width:72px;height:28px;font-size:13px" @click="handleTask('attention')">确 定</Button>
                         </div>
                     </div>

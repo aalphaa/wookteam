@@ -235,7 +235,7 @@
                                     marginBottom: '20px',
                                 }
                             }, this.$L('添加成员')),
-                            h('UseridInput', {
+                            h('UserInput', {
                                 props: {
                                     value: this.userValue,
                                     multiple: true,

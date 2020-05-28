@@ -1,7 +1,7 @@
 <template>
     <div v-clickoutside="handleClose" @click="handleClose">
         <div v-if="multipleLists.length > 0" class="user-id-multiple">
-            <Tag v-for="(item, index) in multipleLists" :key="index" @on-close="() => { multipleLists.splice(index, 1); callMultipleLists() }" closable>{{item.nickname || item.username}}</Tag>
+            <Tag v-for="(item, index) in multipleLists" :key="index" @on-close="() => { multipleLists.splice(index, 1); callMultipleLists() }" closable><UserView :username="item.username"/></Tag>
         </div>
 
         <div class="user-id-input" ref="reference">
@@ -110,7 +110,7 @@
     import WLoading from "./WLoading";
 
     export default {
-        name: 'UseridInput',
+        name: 'UserInput',
         components: {WLoading},
         directives: {clickoutside, TransferDom},
         mixins: [Popper],

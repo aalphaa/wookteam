@@ -212,6 +212,13 @@
                 "key": 'username',
                 "minWidth": 80,
                 "maxWidth": 130,
+                render: (h, params) => {
+                    return h('UserView', {
+                        props: {
+                            username: params.row.username
+                        }
+                    });
+                }
             }, {
                 "title": " ",
                 "key": 'action',

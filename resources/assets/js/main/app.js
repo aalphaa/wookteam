@@ -14,12 +14,12 @@ Vue.use(Language);
 
 import Title from '../_components/Title.vue'
 import sreachTitle from '../_components/sreachTitle.vue'
-import UseridInput from './components/UseridInput'
+import UserInput from './components/UserInput'
 import UserView from './components/UserView'
 
 Vue.component('VTitle', Title);
 Vue.component('sreachTitle', sreachTitle);
-Vue.component('UseridInput', UseridInput);
+Vue.component('UserInput', UserInput);
 Vue.component('UserView', UserView);
 
 import TaskDetail from './components/project/task/detail'

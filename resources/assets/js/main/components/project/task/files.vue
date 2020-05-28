@@ -183,6 +183,13 @@
                     "minWidth": 90,
                     "maxWidth": 130,
                     "sortable": true,
+                    render: (h, params) => {
+                        return h('UserView', {
+                            props: {
+                                username: params.row.username
+                            }
+                        });
+                    }
                 });
                 columns.push({
                     "title": this.$L("上传时间"),

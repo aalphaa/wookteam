@@ -11,7 +11,7 @@
                                     <img :src="item.userimg"/>
                                 </div>
                                 <div class="log-summary">
-                                    <span class="log-creator">{{item.username}}</span>
+                                    <span class="log-creator"><UserView :username="item.username"/></span>
                                     <span class="log-text-secondary">{{item.detail}}</span>
                                     <span v-if="item.other.type=='task' && taskid == 0" class="log-text-link" @click="taskDetail(item.other.id)">{{item.other.title}}</span>
                                     <a v-if="item.other.type=='file'" class="log-text-link" target="_blank" :href="fileDownUrl(item.other.id)">{{item.other.name}}</a>

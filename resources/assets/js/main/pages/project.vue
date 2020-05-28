@@ -614,7 +614,7 @@
                                     marginBottom: '20px',
                                 }
                             }, this.$L('移交项目')),
-                            h('UseridInput', {
+                            h('UserInput', {
                                 props: {
                                     value: this.transferValue,
                                     nousername: item.username,

@@ -31,7 +31,7 @@
                     <div slot="content">
                         <div style="width:240px">
                             {{$L('选择负责人')}}
-                            <UseridInput v-model="addUsername" :projectid="projectid" @change="changeUser" :placeholder="$L('留空默认: 自己')" style="margin:5px 0 3px"></UseridInput>
+                            <UserInput v-model="addUsername" :projectid="projectid" @change="changeUser" :placeholder="$L('留空默认: 自己')" style="margin:5px 0 3px"></UserInput>
                         </div>
                     </div>
                 </Poptip>

@@ -1,6 +1,6 @@
 <template>
     <div class="user-view-inline">
-        <Tooltip :disabled="!nickname" :delay="delay" :transfer="transfer">
+        <Tooltip :disabled="nickname === null" :delay="delay" :transfer="transfer" @on-popper-show="popperShow">
             {{nickname || username}}
             <div slot="content">
                 <div>用户名：{{username}}</div>
@@ -34,26 +34,30 @@
         },
         data() {
             return {
-                nickname: '',
+                nickname: null,
                 profession: ''
             }
         },
         mounted() {
-            this.getUserData(0);
+            this.getUserData(0, 300);
         },
         watch: {
             username() {
-                this.getUserData(0);
+                this.getUserData(0, 300);
             }
         },
         methods: {
-            getUserData(num) {
+            popperShow() {
+                this.getUserData(0, 60)
+            },
+
+            getUserData(num, cacheTime) {
                 let keyName = '__name:' + this.username.substring(0, 1) + '__';
                 let localData = $A.jsonParse(window.localStorage[keyName]);
                 if (localData.__loadIng === true) {
                     if (num < 100) {
                         setTimeout(() => {
-                            this.getUserData(num + 1)
+                            this.getUserData(num + 1, cacheTime)
                         }, 500);
                     }
                     return;
@@ -64,7 +68,7 @@
                 }
                 //
                 if (localData[this.username].success === true
-                    && localData[this.username].exptime > Math.round(new Date().getTime() / 1000)) {
+                    && localData[this.username].update + cacheTime > Math.round(new Date().getTime() / 1000)) {
                     this.nickname = localData[this.username].data.nickname;
                     this.profession = localData[this.username].data.profession;
                     return;
@@ -78,7 +82,7 @@
                     },
                     error: () => {
                         localData[this.username].success = false;
-                        localData[this.username].exptime = 0;
+                        localData[this.username].update = 0;
                         localData[this.username].data = {};
                         localData.__loadIng = false;
                         window.localStorage[keyName] = $A.jsonStringify(localData);
@@ -88,13 +92,13 @@
                             this.nickname = res.data.nickname;
                             this.profession = res.data.profession;
                             localData[this.username].success = true;
-                            localData[this.username].exptime = Math.round(new Date().getTime() / 1000) + 300;
+                            localData[this.username].update = Math.round(new Date().getTime() / 1000);
                             localData[this.username].data = res.data;
                         } else {
                             this.nickname = '';
                             this.profession = '';
                             localData[this.username].success = false;
-                            localData[this.username].exptime = 0;
+                            localData[this.username].update = 0;
                             localData[this.username].data = {};
                         }
                         localData.__loadIng = false;

@@ -150,6 +150,13 @@
                 "key": 'username',
                 "minWidth": 90,
                 "sortable": true,
+                render: (h, params) => {
+                    return h('UserView', {
+                        props: {
+                            username: params.row.username
+                        }
+                    });
+                }
             }, {
                 "title": this.$L("优先级"),
                 "key": 'level',
