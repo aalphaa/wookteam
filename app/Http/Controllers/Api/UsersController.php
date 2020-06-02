@@ -234,6 +234,13 @@ class UsersController extends Controller
 
     /**
      * 团队列表
+     *
+     * @apiParam {Object} [sorts]               排序方式，格式：{key:'', order:''}
+     * - key: username|id(默认)
+     * - order: asc|desc
+     * @apiParam {Number} [firstchart]          是否获取首字母，1:获取
+     * @apiParam {Number} [page]                当前页，默认:1
+     * @apiParam {Number} [pagesize]            每页显示数量，默认:10，最大:100
      */
     public function team__lists()
     {
@@ -244,13 +251,24 @@ class UsersController extends Controller
             $user = $user['data'];
         }
         //
-        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession', 'regdate'])->orderByDesc('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
+        $orderBy = '`id` DESC';
+        $sorts = Base::json2array(Request::input('sorts'));
+        if (in_array($sorts['order'], ['asc', 'desc'])) {
+            switch ($sorts['key']) {
+                case 'username':
+                    $orderBy = '`' . $sorts['key'] . '` ' . $sorts['order'] . ',`id` DESC';
+                    break;
+            }
+        }
+        //
+        $lists = DB::table('users')->select(['id', 'username', 'nickname', 'userimg', 'profession', 'regdate'])->orderByRaw($orderBy)->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
         $lists = Base::getPageList($lists);
         if ($lists['total'] == 0) {
             return Base::retError('未找到任何相关的团队成员');
         }
         foreach ($lists['lists'] AS $key => $item) {
             $lists['lists'][$key]['userimg'] = Users::userimg($item['userimg']);
+            $lists['lists'][$key]['firstchart'] = Base::getFirstCharter($item['username']);
         }
         return Base::retSuccess('success', $lists);
     }

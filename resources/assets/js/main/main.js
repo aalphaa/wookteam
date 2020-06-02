@@ -290,6 +290,7 @@ import '../../sass/main.scss';
         WS: {
             __instance: null,
             __connected: false,
+            __callbackid: {},
             __autoLine() {
                 let tempId = $A.randomString(16);
                 this.__autoId = tempId;
@@ -330,6 +331,11 @@ import '../../sass/main.scss';
                     let msgDetail = $A.jsonParse(event.data);
                     if (msgDetail.messageType === 'open') {
                         this.__connected = true;
+                    }
+                    if (msgDetail.messageType === 'feedback') {
+                        typeof this.__callbackid[msgDetail.messageId] === "function" && this.__callbackid[msgDetail.messageId](msgDetail.content);
+                        delete this.__callbackid[msgDetail.messageId];
+                        return;
                     }
                     this.triggerMsgListener(msgDetail);
                 };
@@ -386,8 +392,9 @@ import '../../sass/main.scss';
              * @param type      会话类型：user:指定target、all:所有会员
              * @param target    接收方的标识，type=all时此项无效
              * @param content   发送内容
+             * @param callback  发送回调
              */
-            sendTo(type, target, content) {
+            sendTo(type, target, content, callback) {
                 if (this.__instance === null) {
                     console.log("[WS] 未初始化连接");
                     return;
@@ -400,8 +407,14 @@ import '../../sass/main.scss';
                     console.log("[WS] 错误的消息类型-" + type);
                     return;
                 }
+                let messageId = '';
+                if (typeof callback === "function") {
+                    messageId = $A.randomString(16);
+                    this.__callbackid[messageId] = callback;
+                }
                 this.__instance.send(JSON.stringify({
                     messageType: 'send',
+                    messageId: messageId,
                     type: type,
                     sender: $A.getUserName(),
                     target: target,

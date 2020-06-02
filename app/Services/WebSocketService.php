@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Module\Base;
+use App\Module\Chat;
 use Cache;
 use DB;
 use Hhxsv5\LaravelS\Swoole\WebSocketHandlerInterface;
@@ -97,11 +98,30 @@ class WebSocketService implements WebSocketHandlerInterface
     public function onMessage(Server $server, Frame $frame)
     {
         $data = Base::json2array($frame->data);
+        $feedback = [
+            'status' => 1,
+            'message' => '',
+        ];
         switch ($data['type']) {
             case 'user':
-                $to = self::name2fs($data['target']);
+                $to = self::name2fd($data['target']);
                 if ($to) {
-                    $server->push($to, Base::array2json($data));
+                    $res = Chat::saveMessage(self::fd2name($frame->fd), $data['target'], $data['content']);
+                    if (Base::isError($res)) {
+                        $feedback = [
+                            'status' => 0,
+                            'message' => $res['msg'],
+                        ];
+                    } else {
+                        $data['content']['id'] = $res['data']['id'];
+                        $server->push($to, Base::array2json($data));
+                        $feedback['message'] = $res['data']['id'];
+                    }
+                } else {
+                    $feedback = [
+                        'status' => 0,
+                        'message' => '账号不存在！',
+                    ];
                 }
                 break;
 
@@ -111,6 +131,17 @@ class WebSocketService implements WebSocketHandlerInterface
                     $server->push($user['wsid'], Base::array2json($data));
                 }
                 break;
+        }
+        if ($data['messageId']) {
+            $server->push($frame->fd, Base::array2json([
+                'messageType' => 'feedback',
+                'messageId' => $data['messageId'],
+                'type' => 'user',
+                'sender' => null,
+                'target' => null,
+                'content' => $feedback,
+                'time' => Base::time()
+            ]));
         }
     }
 
@@ -171,7 +202,7 @@ class WebSocketService implements WebSocketHandlerInterface
      * @param $username
      * @return mixed
      */
-    public static function name2fs($username)
+    public static function name2fd($username)
     {
         return DB::table('users')->select(['wsid'])->where('username', $username)->value('wsid');
     }

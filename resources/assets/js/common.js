@@ -1317,7 +1317,7 @@
             //
             let loadText = "数据加载中.....";
             let busyNetwork = "网络繁忙，请稍后再试！";
-            if (typeof $A.app.$L === 'function') {
+            if (typeof $A.app === 'object' && typeof $A.app.$L === 'function') {
                 loadText = $A.app.$L(loadText);
                 busyNetwork = $A.app.$L(busyNetwork);
             }

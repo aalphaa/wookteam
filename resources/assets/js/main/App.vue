@@ -5,17 +5,22 @@
                 <router-view class="child-view"></router-view>
             </keep-alive>
         </transition>
+        <Drawer v-model="chatDrawerShow" :closable="false" width="75%">
+            <chat-index></chat-index>
+        </Drawer>
         <w-spinner></w-spinner>
     </div>
 </template>
 
 <script>
     import WSpinner from "./components/WSpinner";
+    import ChatIndex from "./components/chat/Index";
     export default {
-        components: {WSpinner},
+        components: {ChatIndex, WSpinner},
         data () {
             return {
                 transitionName: null,
+                chatDrawerShow: true,
             }
         },
         mounted() {
@@ -153,6 +158,9 @@
                 } else {
                     $A.WS.setOnMsgListener("app", (msgDetail) => {
                         if (msgDetail.sender == $A.getUserName()) {
+                            return;
+                        }
+                        if (msgDetail.messageType != 'send') {
                             return;
                         }
                         let content = $A.jsonParse(msgDetail.content)

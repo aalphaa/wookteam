@@ -19,6 +19,9 @@ Route::prefix('api')->middleware(ApiMiddleware::class)->group(function () {
     //知识库
     Route::any('docs/{method}',                     'Api\DocsController');
     Route::any('docs/{method}/{action}',            'Api\DocsController');
+    //聊天
+    Route::any('chat/{method}',                     'Api\ChatController');
+    Route::any('chat/{method}/{action}',            'Api\ChatController');
 });
 
 

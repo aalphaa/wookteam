@@ -1,6 +1,6 @@
 <template>
     <div class="user-view-inline">
-        <Tooltip :disabled="nickname === null" :delay="delay" :transfer="transfer" @on-popper-show="popperShow">
+        <Tooltip :disabled="nickname === null" :delay="delay" :transfer="transfer" :placement="placement" @on-popper-show="popperShow">
             {{nickname || username}}
             <div slot="content">
                 <div>用户名：{{username}}</div>
@@ -30,6 +30,9 @@
             transfer: {
                 type: Boolean,
                 default: true
+            },
+            placement: {
+                default: 'bottom'
             },
         },
         data() {

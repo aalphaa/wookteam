@@ -229,7 +229,6 @@
 
         created() {
             this.bookNoDataText = this.$L("数据加载中.....");
-            this.bookNoDataText = this.$L("数据加载中.....");
             this.sectionNoDataText = this.$L("数据加载中.....");
             this.sectionTypeLists = [
                 {value: 'document', text: this.$L("文本")},
