@@ -57,7 +57,7 @@
             getUserData(num, cacheTime) {
                 let keyName = '__name:' + this.username.substring(0, 1) + '__';
                 let localData = $A.jsonParse(window.localStorage[keyName]);
-                if (localData.__loadIng === true) {
+                if (window.__userViewNetworking === true) {
                     if (num < 100) {
                         setTimeout(() => {
                             this.getUserData(num + 1, cacheTime)
@@ -77,7 +77,7 @@
                     return;
                 }
                 //
-                localData.__loadIng = true;
+                window.__userViewNetworking = true;
                 $A.aAjax({
                     url: 'users/basic',
                     data: {
@@ -87,8 +87,8 @@
                         localData[this.username].success = false;
                         localData[this.username].update = 0;
                         localData[this.username].data = {};
-                        localData.__loadIng = false;
                         window.localStorage[keyName] = $A.jsonStringify(localData);
+                        window.__userViewNetworking = false;
                     },
                     success: (res) => {
                         if (res.ret === 1) {
@@ -104,8 +104,8 @@
                             localData[this.username].update = 0;
                             localData[this.username].data = {};
                         }
-                        localData.__loadIng = false;
                         window.localStorage[keyName] = $A.jsonStringify(localData);
+                        window.__userViewNetworking = false;
                     }
                 });
             }

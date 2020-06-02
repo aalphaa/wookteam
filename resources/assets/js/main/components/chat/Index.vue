@@ -541,6 +541,9 @@
                             res.data.lists.reverse().forEach((item) => {
                                 this.addMessageData(Object.assign(item.message, {
                                     id: item.id,
+                                    username: item.username,
+                                    userimg: item.userimg,
+                                    indate: item.indate,
                                 }));
                             });
                             this.messageNoDataText = this.$L("没有相关的数据");
@@ -639,6 +642,18 @@
 
             addMessageData(data, animation = false) {
                 data.self = data.username === this.userInfo.username;
+                let sikp = false;
+                if (data.id) {
+                    this.messageLists.some((item, index) => {
+                        if (item.id == data.id) {
+                            this.messageLists.splice(index, 1, data);
+                            return sikp = true;
+                        }
+                    });
+                    if (sikp) {
+                        return;
+                    }
+                }
                 this.messageLists.push(data);
                 //
                 if (this.autoBottom) {
@@ -662,7 +677,6 @@
                 let text = this.messageText.trim();
                 if ($A.count(text) > 0) {
                     let data = {
-                        id: 0,
                         type: 'text',
                         username: this.userInfo.username,
                         userimg: this.userInfo.userimg,

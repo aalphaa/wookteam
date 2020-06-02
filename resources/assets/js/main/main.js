@@ -393,18 +393,26 @@ import '../../sass/main.scss';
              * @param target    接收方的标识，type=all时此项无效
              * @param content   发送内容
              * @param callback  发送回调
+             * @param isAgain
              */
-            sendTo(type, target, content, callback) {
+            sendTo(type, target, content, callback, isAgain = false) {
                 if (this.__instance === null) {
-                    console.log("[WS] 未初始化连接");
-                    return;
+                    console.log("[WS] 服务未连接");
+                    if (isAgain === true) {
+                        typeof callback === "function" && callback({status: 0, message: '服务未连接'});
+                        return;
+                    }
+                    this.connection();
+                    setTimeout(() => { this.sendTo(type, target, content, callback, true); }, 6000);
                 }
                 if (this.__connected === false) {
                     console.log("[WS] 未连接成功");
+                    typeof callback === "function" && callback({status: 0, message: '未连接成功'});
                     return;
                 }
                 if (['user', 'all'].indexOf(type) === -1) {
                     console.log("[WS] 错误的消息类型-" + type);
+                    typeof callback === "function" && callback({status: 0, message: '错误的消息类型-' + type});
                     return;
                 }
                 let messageId = '';
@@ -429,7 +437,7 @@ import '../../sass/main.scss';
              */
             close() {
                 if (this.__instance === null) {
-                    console.log("[WS] 未初始化连接");
+                    console.log("[WS] 服务未连接");
                     return;
                 }
                 if (this.__connected === false) {

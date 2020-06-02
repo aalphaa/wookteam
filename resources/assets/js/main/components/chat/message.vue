@@ -128,6 +128,7 @@
             height: 38px;
             margin-left: 8px;
             margin-right: 8px;
+            border-radius: 3px;
         }
         .item-error {
             cursor: pointer;

@@ -222,15 +222,15 @@ class Users
 
     /**
      * 用户头像，不存在时返回默认
-     * @param string|int $var 头像地址 或 会员ID
+     * @param string $var 头像地址 或 会员用户名
      * @return \Illuminate\Contracts\Routing\UrlGenerator|string
      */
     public static function userimg($var) {
-        if (Base::isNumber($var)) {
+        if (!Base::strExists($var, '.')) {
             if (empty($var)) {
                 $var = "";
-            }else{
-                $userInfo = self::userid2basic($var);
+            } else {
+                $userInfo = self::username2basic($var);
                 $var = $userInfo['userimg'];
             }
         }

@@ -2,11 +2,8 @@
 
 namespace App\Module;
 
-use App\Model\DBCache;
 use Cache;
 use DB;
-use Request;
-use Session;
 
 /**
  * Class Chat
@@ -77,6 +74,10 @@ class Chat
         }
         //
         $indate = abs($message['indate'] - time()) > 30 ? time() : $message['indate'];
+        if (isset($message['id'])) unset($message['id']);
+        if (isset($message['username'])) unset($message['username']);
+        if (isset($message['userimg'])) unset($message['userimg']);
+        if (isset($message['indate'])) unset($message['indate']);
         $inArray = [
             'did' => $dialog['id'],
             'username' => $username,

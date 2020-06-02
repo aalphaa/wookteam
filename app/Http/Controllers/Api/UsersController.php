@@ -313,9 +313,6 @@ class UsersController extends Controller
         }
         //用户名
         $username = trim(Request::input('username'));
-        if (in_array($username, ['__loadIng'])) {
-            return Base::retError('用户名包含非法字符串！');
-        }
         if (strlen($username) < 2) {
             return Base::retError('用户名不可以少于2个字符！');
         } elseif (strlen($username) > 16) {
