@@ -1,26 +1,23 @@
 <template>
     <div id="app">
+        <w-header></w-header>
         <transition :name="transitionName">
             <keep-alive>
                 <router-view class="child-view"></router-view>
             </keep-alive>
         </transition>
-        <Drawer v-model="chatDrawerShow" :closable="false" width="75%">
-            <chat-index></chat-index>
-        </Drawer>
         <w-spinner></w-spinner>
     </div>
 </template>
 
 <script>
     import WSpinner from "./components/WSpinner";
-    import ChatIndex from "./components/chat/Index";
+    import WHeader from "./components/WHeader";
     export default {
-        components: {ChatIndex, WSpinner},
+        components: {WHeader, WSpinner},
         data () {
             return {
                 transitionName: null,
-                chatDrawerShow: true,
             }
         },
         mounted() {

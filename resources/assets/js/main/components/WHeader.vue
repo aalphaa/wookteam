@@ -1,15 +1,15 @@
 <template>
     <div class="w-header">
-        <div class="w-header-row">
+        <div v-if="tabActive" class="w-header-row">
             <div class="w-header-row-left">
                 <ul>
-                    <li :class="value==='todo'?'active':''">
+                    <li :class="tabActive==='todo'?'active':''">
                         <a href="javascript:void(0)" @click="tabPage('todo')"><i class="ft icon">&#xe89e;</i>{{$L('待办')}}</a>
-                    </li><li :class="value==='project'?'active':''">
+                    </li><li :class="tabActive==='project'?'active':''">
                         <a href="javascript:void(0)" @click="tabPage('project')"><i class="ft icon">&#xe6b8;</i>{{$L('项目')}}</a>
-                    </li><li :class="value==='docs'?'active':''">
+                    </li><li :class="tabActive==='docs'?'active':''">
                         <a href="javascript:void(0)" @click="tabPage('docs')"><i class="ft icon">&#xe915;</i>{{$L('知识库')}}</a>
-                    </li><li :class="value==='team'?'active':''">
+                    </li><li :class="tabActive==='team'?'active':''">
                         <a href="javascript:void(0)" @click="tabPage('team')"><i class="ft icon">&#xe90d;</i>{{$L('团队')}}</a>
                     </li>
                 </ul>
@@ -25,9 +25,12 @@
                         <Dropdown-item name="out">{{$L('退出登录')}}</Dropdown-item>
                     </Dropdown-menu>
                 </Dropdown>
+                <div class="right-info" @click="chatDrawerShow=true">
+                    <Icon class="right-mticon" type="md-notifications" size="24"/>
+                </div>
                 <Dropdown class="right-info" trigger="click" @on-click="setLanguage" transfer>
                     <div>
-                        <Icon class="right-globe" type="md-globe" size="24"/>
+                        <Icon class="right-mticon" type="md-globe" size="24"/>
                         <Icon type="md-arrow-dropdown"/>
                     </div>
                     <Dropdown-menu slot="list">
@@ -37,7 +40,7 @@
                 </Dropdown>
             </div>
         </div>
-        <Drawer v-model="userDrawerShow" width="70%">
+        <WDrawer v-model="userDrawerShow" maxWidth="1000">
             <Tabs v-model="userDrawerTab">
                 <TabPane :label="$L('个人资料')" name="personal">
                     <Form ref="formDatum" :model="formDatum" :rules="ruleDatum" :label-width="80">
@@ -100,14 +103,16 @@
                     <header-archived :canload="userDrawerShow && userDrawerTab == 'archivedtask'"></header-archived>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
+        <WDrawer v-model="chatDrawerShow" :closable="false" maxWidth="1080">
+            <chat-index></chat-index>
+        </WDrawer>
     </div>
 </template>
 
 <style lang="scss" scoped>
     .w-header {
         z-index: 15;
-        height: 40px;
         position: fixed;
         left: 0;
         top: 0;
@@ -165,7 +170,7 @@
                     position: relative;
                     margin-left: 12px;
                     cursor: pointer;
-                    .right-globe {
+                    .right-mticon {
                         vertical-align: top;
                         margin-top: 8px;
                     }
@@ -204,15 +209,15 @@
     import ImgUpload from "./ImgUpload";
     import HeaderCreate from "./project/header/create";
     import HeaderArchived from "./project/header/archived";
+    import ChatIndex from "./chat/Index";
+    import WDrawer from "./iview/WDrawer";
     export default {
         name: 'WHeader',
-        components: {HeaderArchived, HeaderCreate, ImgUpload},
-        props: {
-            value: {
-            },
-        },
+        components: {WDrawer, ChatIndex, HeaderArchived, HeaderCreate, ImgUpload},
         data() {
             return {
+                tabActive: '',
+
                 loadIng: 0,
                 userInfo: {},
                 userDrawerShow: false,
@@ -235,6 +240,8 @@
                 formSetting: {
                     bgid: 0,
                 },
+
+                chatDrawerShow: false,
             }
         },
         created() {
@@ -295,6 +302,14 @@
                 resCall();
             }, false);
             resCall();
+            //
+            this.tabActive = this.$route.meta.tabActive;
+        },
+        watch: {
+            '$route' () {
+                this.tabActive = this.$route.meta.tabActive;
+                this.userDrawerShow = false;
+            }
         },
         methods: {
             getBgUrl(id, thumb) {
@@ -357,8 +372,8 @@
                                     },
                                     success: (res) => {
                                         if (res.ret === 1) {
-                                            this.$Message.success(this.$L('修改成功，请重新登录！'));
                                             this.userDrawerShow = false;
+                                            this.$Message.success(this.$L('修改成功，请重新登录！'));
                                             this.$refs[name].resetFields();
                                             $A.userLogout();
                                         } else {

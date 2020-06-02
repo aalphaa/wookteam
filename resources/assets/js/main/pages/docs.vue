@@ -3,8 +3,6 @@
 
         <v-title>{{$L('知识库')}}-{{$L('轻量级的团队在线协作')}}</v-title>
 
-        <w-header value="docs"></w-header>
-
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
@@ -187,11 +185,10 @@
     }
 </style>
 <script>
-    import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
     import NestedDraggable from "../components/docs/NestedDraggable";
     export default {
-        components: {NestedDraggable, WContent, WHeader},
+        components: {NestedDraggable, WContent},
         data () {
             return {
                 loadIng: 0,

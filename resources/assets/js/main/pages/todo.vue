@@ -3,8 +3,6 @@
 
         <v-title>{{$L('待办')}}-{{$L('轻量级的团队在线协作')}}</v-title>
 
-        <w-header value="todo"></w-header>
-
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
@@ -72,7 +70,7 @@
             </div>
         </w-content>
 
-        <Drawer v-model="todoDrawerShow" width="75%">
+        <WDrawer v-model="todoDrawerShow" maxWidth="1000">
             <Tabs v-if="todoDrawerShow" v-model="todoDrawerTab">
                 <TabPane :label="$L('待办日程')" name="calendar">
                     <todo-calendar :canload="todoDrawerShow && todoDrawerTab == 'calendar'"></todo-calendar>
@@ -84,9 +82,9 @@
                     <todo-attention :canload="todoDrawerShow && todoDrawerTab == 'attention'"></todo-attention>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
 
-        <Drawer v-model="todoReportDrawerShow" width="75%">
+        <WDrawer v-model="todoReportDrawerShow" maxWidth="1000">
             <Tabs v-if="todoReportDrawerShow" v-model="todoReportDrawerTab">
                 <TabPane :label="$L('我的汇报')" name="my">
                     <report-my :canload="todoReportDrawerShow && todoReportDrawerTab == 'my'"></report-my>
@@ -95,7 +93,7 @@
                     <report-receive :canload="todoReportDrawerShow && todoReportDrawerTab == 'receive'"></report-receive>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
     </div>
 </template>
 
@@ -318,7 +316,6 @@
 <script>
     import draggable from 'vuedraggable'
 
-    import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
     import WLoading from "../components/WLoading";
     import TodoCalendar from "../components/project/todo/calendar";
@@ -328,11 +325,13 @@
     import Task from "../mixins/task";
     import ReportMy from "../components/report/my";
     import ReportReceive from "../components/report/receive";
+    import WDrawer from "../components/iview/WDrawer";
 
     export default {
         components: {
+            WDrawer,
             ReportReceive,
-            ReportMy, draggable, TodoAttention, TodoComplete, TodoCalendar, WContent, WHeader, WLoading},
+            ReportMy, draggable, TodoAttention, TodoComplete, TodoCalendar, WContent, WLoading},
         mixins: [
             Task
         ],

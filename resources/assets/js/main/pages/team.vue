@@ -3,8 +3,6 @@
 
         <v-title>{{$L('团队')}}-{{$L('轻量级的团队在线协作')}}</v-title>
 
-        <w-header value="team"></w-header>
-
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
@@ -88,11 +86,10 @@
     }
 </style>
 <script>
-    import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
     import ImgUpload from "../components/ImgUpload";
     export default {
-        components: {ImgUpload, WContent, WHeader},
+        components: {ImgUpload, WContent},
         data () {
             return {
                 loadIng: 0,

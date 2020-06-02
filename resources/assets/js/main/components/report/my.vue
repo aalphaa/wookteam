@@ -31,9 +31,9 @@
             <!-- 分页 -->
             <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
         </div>
-        <Drawer v-model="addDrawerShow" width="70%">
+        <WDrawer v-model="addDrawerShow" maxWidth="1000">
             <report-add :canload="addDrawerShow" :id="addDrawerId" @on-success="addDrawerSuccess"></report-add>
-        </Drawer>
+        </WDrawer>
         <Modal
             v-model="contentShow"
             :title="contentTitle"
@@ -57,13 +57,14 @@
     import DrawerTabsContainer from "../DrawerTabsContainer";
     import ReportAdd from "./add";
     import ReportContent from "./content";
+    import WDrawer from "../iview/WDrawer";
 
     /**
      * 我的汇报
      */
     export default {
         name: 'ReportMy',
-        components: {ReportContent, ReportAdd, DrawerTabsContainer},
+        components: {WDrawer, ReportContent, ReportAdd, DrawerTabsContainer},
         props: {
             canload: {
                 type: Boolean,

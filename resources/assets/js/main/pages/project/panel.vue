@@ -3,8 +3,6 @@
 
         <v-title>{{$L('项目面板')}}-{{$L('轻量级的团队在线协作')}}</v-title>
 
-        <w-header value="project"></w-header>
-
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
@@ -88,7 +86,7 @@
             </draggable>
         </w-content>
 
-        <Drawer v-model="projectDrawerShow" width="80%">
+        <WDrawer v-model="projectDrawerShow" maxWidth="1080">
             <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
                 <TabPane :label="$L('任务列表')" name="lists">
                     <project-task-lists :canload="projectDrawerShow && projectDrawerTab == 'lists'" :projectid="projectid" :labelLists="projectSimpleLabel"></project-task-lists>
@@ -100,9 +98,9 @@
                     <project-task-logs :canload="projectDrawerShow && projectDrawerTab == 'logs'" :projectid="projectid"></project-task-logs>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
 
-        <Drawer v-model="projectSettingDrawerShow" width="75%">
+        <WDrawer v-model="projectSettingDrawerShow" maxWidth="1000">
             <Tabs v-if="projectSettingDrawerShow" v-model="projectSettingDrawerTab">
                 <TabPane :label="$L('已归档任务')" name="archived">
                     <project-archived :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'archived'" :projectid="projectid"></project-archived>
@@ -114,7 +112,7 @@
                     <project-users :canload="projectSettingDrawerShow && projectSettingDrawerTab == 'member'" :projectid="projectid"></project-users>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
     </div>
 </template>
 
@@ -309,7 +307,6 @@
 <script>
     import draggable from 'vuedraggable'
 
-    import WHeader from "../../components/WHeader";
     import WContent from "../../components/WContent";
     import WLoading from "../../components/WLoading";
     import ProjectAddTask from "../../components/project/task/add";
@@ -319,14 +316,16 @@
     import ProjectArchived from "../../components/project/archived";
     import ProjectUsers from "../../components/project/users";
     import ProjectStatistics from "../../components/project/statistics";
+    import WDrawer from "../../components/iview/WDrawer";
 
     export default {
         components: {
+            WDrawer,
             ProjectStatistics,
             ProjectUsers,
             ProjectArchived,
             ProjectTaskLogs,
-            ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent, WHeader},
+            ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent},
         data () {
             return {
                 loadIng: 0,

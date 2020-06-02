@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        <Drawer v-model="docDrawerShow" width="450">
+        <WDrawer v-model="docDrawerShow" maxWidth="450">
             <Tabs v-if="docDrawerShow" v-model="docDrawerTab">
                 <TabPane :label="$L('知识库目录')" name="menu">
                     <nested-draggable :lists="sectionLists" :readonly="true" :activeid="sid" @change="handleSection"></nested-draggable>
@@ -32,7 +32,7 @@
                     <Table class="tableFill" :columns="historyColumns" :data="historyLists" :no-data-text="historyNoDataText" size="small" stripe></Table>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
 
     </div>
 </template>
@@ -172,11 +172,12 @@
     import Sheet from "../../components/docs/sheet/index";
     import Flow from "../../components/docs/flow/index";
     import NestedDraggable from "../../components/docs/NestedDraggable";
+    import WDrawer from "../../components/iview/WDrawer";
 
     Vue.use(minder)
 
     export default {
-        components: {Flow, Sheet, TEditor, NestedDraggable},
+        components: {WDrawer, Flow, Sheet, TEditor, NestedDraggable},
         data () {
             return {
                 loadIng: 0,

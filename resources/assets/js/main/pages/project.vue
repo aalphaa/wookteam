@@ -3,8 +3,6 @@
 
         <v-title>{{$L('项目')}}-{{$L('轻量级的团队在线协作')}}</v-title>
 
-        <w-header value="project"></w-header>
-
         <div class="w-nav">
             <div class="nav-row">
                 <div class="w-nav-left">
@@ -106,7 +104,7 @@
             </div>
         </Modal>
 
-        <Drawer v-model="projectDrawerShow" width="75%">
+        <WDrawer v-model="projectDrawerShow" maxWidth="1000">
             <Tabs v-if="projectDrawerShow" v-model="projectDrawerTab">
                 <TabPane :label="$L('已归档任务')" name="archived">
                     <project-archived :canload="projectDrawerShow && projectDrawerTab == 'archived'" :projectid="handleProjectId"></project-archived>
@@ -118,9 +116,9 @@
                     <project-users :canload="projectDrawerShow && projectDrawerTab == 'member'" :projectid="handleProjectId"></project-users>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
 
-        <Drawer v-model="projectListDrawerShow" width="50%">
+        <WDrawer v-model="projectListDrawerShow" maxWidth="740">
             <Tabs v-if="projectListDrawerShow" v-model="projectListDrawerTab">
                 <TabPane :label="$L('参与的项目')" name="myjoin">
                     <project-my-join :canload="projectListDrawerShow && projectListDrawerTab == 'myjoin'"></project-my-join>
@@ -132,7 +130,7 @@
                     <project-my-manage :canload="projectListDrawerShow && projectListDrawerTab == 'mycreate'"></project-my-manage>
                 </TabPane>
             </Tabs>
-        </Drawer>
+        </WDrawer>
     </div>
 </template>
 
@@ -272,7 +270,6 @@
     }
 </style>
 <script>
-    import WHeader from "../components/WHeader";
     import WContent from "../components/WContent";
     import WLoading from "../components/WLoading";
     import ProjectArchived from "../components/project/archived";
@@ -282,11 +279,13 @@
     import ProjectMyJoin from "../components/project/my/join";
     import ProjectMyManage from "../components/project/my/manage";
     import Project from "../mixins/project";
+    import WDrawer from "../components/iview/WDrawer";
     export default {
         components: {
+            WDrawer,
             ProjectMyManage,
             ProjectMyJoin,
-            ProjectMyFavor, ProjectStatistics, ProjectUsers, ProjectArchived, WLoading, WContent, WHeader},
+            ProjectMyFavor, ProjectStatistics, ProjectUsers, ProjectArchived, WLoading, WContent},
         mixins: [
             Project
         ],
