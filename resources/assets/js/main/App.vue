@@ -161,7 +161,7 @@
                             return;
                         }
                         let content = $A.jsonParse(msgDetail.content)
-                        if (content.type == 'task') {
+                        if (content.type == 'taskA') {
                             $A.triggerTaskInfoListener(content.act, content.taskDetail, false);
                         }
                     }).connection(force);

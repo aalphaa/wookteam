@@ -371,6 +371,7 @@
                         }
                         if (eve == 'add' || eve == 'delete') {
                             this.logType == '日志' && this.$refs.log.getLists(true, true);
+                            $A.triggerTaskInfoChange(ajaxData.taskid);
                         }
                         return;
 
@@ -556,6 +557,7 @@
                                 this.$Message.success(res.msg);
                             }
                             $A.triggerTaskInfoListener(ajaxData.act, res.data);
+                            $A.triggerTaskInfoChange(ajaxData.taskid);
                         } else {
                             ajaxCallback(0);
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});

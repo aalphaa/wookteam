@@ -671,26 +671,36 @@
                 }
                 //
                 let data = $A.jsonParse(msgDetail.content);
+                if (['taskA'].indexOf(data.type) !== -1) {
+                    return;
+                }
                 let lasttext;
                 switch (data.type) {
                     case 'text':
-                        lasttext = data['text'];
+                        lasttext = data.text;
                         break;
                     case 'image':
                         lasttext = '[图片]';
+                        break;
+                    case 'taskB':
+                        lasttext = data.detail + " [来自关注任务]";
                         break;
                     default:
                         lasttext = '[未知类型]';
                         break;
                 }
+                let plusUnread = msgDetail.sender != this.dialogTarget.username || !this.openWindow;
                 this.addDialog({
                     username: data.username,
                     userimg: data.userimg,
                     lasttext: lasttext,
                     lastdate: data.indate
-                }, msgDetail.sender != this.dialogTarget.username || !this.openWindow);
+                }, plusUnread);
                 if (msgDetail.sender == this.dialogTarget.username) {
                     this.addMessageData(data, true);
+                }
+                if (!plusUnread) {
+                    $A.WS.sendTo('read', data.username);
                 }
                 if (!this.openWindow) {
                     this.$Notice.close('chat-notice');

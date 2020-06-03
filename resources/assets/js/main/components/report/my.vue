@@ -31,17 +31,9 @@
             <!-- 分页 -->
             <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
         </div>
-        <WDrawer v-model="addDrawerShow" maxWidth="1000">
+        <WDrawer v-model="addDrawerShow" maxWidth="900">
             <report-add :canload="addDrawerShow" :id="addDrawerId" @on-success="addDrawerSuccess"></report-add>
         </WDrawer>
-        <Modal
-            v-model="contentShow"
-            :title="contentTitle"
-            width="80%"
-            :styles="{top: '35px', paddingBottom: '35px'}"
-            footerHide>
-            <report-content :content="contentText"></report-content>
-        </Modal>
     </drawer-tabs-container>
 </template>
 
@@ -89,10 +81,6 @@
 
                 addDrawerId: 0,
                 addDrawerShow: false,
-
-                contentShow: false,
-                contentTitle: '',
-                contentText: '',
             }
         },
         created() {
@@ -132,7 +120,7 @@
                     if (!params.row.id) {
                         return null;
                     }
-                    return h('div', [
+                    let arr = [
                         h('Tooltip', {
                             props: { content: this.$L('查看'), transfer: true, delay: 600 },
                             style: { position: 'relative' },
@@ -141,7 +129,7 @@
                             style: { margin: '0 3px', cursor: 'pointer' },
                             on: {
                                 click: () => {
-                                    this.contentReport(params.row);
+                                    this.reportDetail(params.row.id, params.row.title);
                                 }
                             }
                         })]),
@@ -156,8 +144,10 @@
                                     this.addDrawerShow = true
                                 }
                             }
-                        })]),
-                        h('Tooltip', {
+                        })])
+                    ];
+                    if (params.row.status !== '已发送') {
+                        arr.push(h('Tooltip', {
                             props: { content: this.$L('发送'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-send', size: 16 },
@@ -167,8 +157,8 @@
                                     this.sendReport(params.row);
                                 }
                             }
-                        })]),
-                        h('Tooltip', {
+                        })]));
+                        arr.push(h('Tooltip', {
                             props: { content: this.$L('删除'), transfer: true, delay: 600 }
                         }, [h('Icon', {
                             props: { type: 'md-trash', size: 16 },
@@ -178,8 +168,9 @@
                                     this.deleteReport(params.row);
                                 }
                             }
-                        })]),
-                    ]);
+                        })]));
+                    }
+                    return h('div', arr);
                 },
             }];
         },
@@ -260,27 +251,6 @@
             addDrawerSuccess() {
                 this.addDrawerShow = false;
                 this.getLists(true);
-            },
-
-            contentReport(row) {
-                this.contentShow = true;
-                this.contentTitle = row.title;
-                this.contentText = this.$L('详细内容加载中.....');
-                $A.aAjax({
-                    url: 'report/content?id=' + row.id,
-                    error: () => {
-                        alert(this.$L('网络繁忙，请稍后再试！'));
-                        this.contentShow = false;
-                    },
-                    success: (res) => {
-                        if (res.ret === 1) {
-                            this.contentText = res.data.content;
-                        } else {
-                            this.contentShow = false;
-                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
-                        }
-                    }
-                });
             },
 
             sendReport(row) {

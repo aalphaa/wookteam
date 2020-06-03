@@ -95,7 +95,7 @@ class Chat
             $dialog = $dialog['data'];
         }
         //
-        $indate = abs($message['indate'] - time()) > 30 ? time() : $message['indate'];
+        $indate = abs($message['indate'] - time()) > 60 ? time() : $message['indate'];
         if (isset($message['id'])) unset($message['id']);
         if (isset($message['username'])) unset($message['username']);
         if (isset($message['userimg'])) unset($message['userimg']);
@@ -114,6 +114,9 @@ class Chat
                 break;
             case 'image':
                 $lastText = '[图片]';
+                break;
+            case 'taskB':
+                $lastText = $message['detail'] . " [来自关注任务]";
                 break;
             default:
                 $lastText = '[未知类型]';

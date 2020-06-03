@@ -271,7 +271,7 @@ import '../../sass/main.scss';
             }
             if (sendToWS === true) {
                 $A.WS.sendTo('team', null, {
-                    type: "task",
+                    type: "taskA",
                     act: act,
                     taskDetail: taskDetail
                 });
@@ -279,6 +279,38 @@ import '../../sass/main.scss';
         },
         __taskInfoListenerObject: {},
 
+        /**
+         * 获取待推送的日志并推送
+         * @param taskid
+         */
+        triggerTaskInfoChange(taskid) {
+            $A.aAjax({
+                url: 'project/task/pushlog',
+                data: {
+                    taskid: taskid,
+                    pagesize: 20
+                },
+                success: (res) => {
+                    if (res.ret === 1) {
+                        res.data.lists.forEach((item) => {
+                            let msgData = {
+                                type: 'taskB',
+                                username: item.username,
+                                userimg: item.userimg,
+                                indate: item.indate,
+                                detail: item.detail,
+                                other: item.other
+                            };
+                            res.data.follower.forEach((username) => {
+                                if (username != msgData.username) {
+                                    $A.WS.sendTo('user', username, msgData);
+                                }
+                            });
+                        });
+                    }
+                }
+            });
+        }
     });
 
     /**
@@ -294,10 +326,10 @@ import '../../sass/main.scss';
             __autoLine() {
                 let tempId = $A.randomString(16);
                 this.__autoId = tempId;
-                // console.log("[WS] Connection auto 30s ...");
+                console.log("[WS] Connection auto 30s ...");
                 setTimeout(() => {
                     if (this.__autoId === tempId) {
-                        // console.log("[WS] Connection auto ...");
+                        console.log("[WS] Connection auto ...");
                         this.connection();
                     }
                 }, 30 * 1000);
@@ -310,14 +342,17 @@ import '../../sass/main.scss';
                 let url = $A.getObject(window.webSocketConfig, 'URL');
                 url += ($A.strExists(url, "?") ? "&" : "?") + "token=" + $A.getToken();
                 if (!$A.leftExists(url, "ws://") && !$A.leftExists(url, "wss://")) {
+                    console.log("[WS] Connection nourl ...");
                     return;
                 }
 
                 if ($A.getToken() === false) {
+                    console.log("[WS] Connection noid ...");
                     return;
                 }
 
                 if (this.__instance !== null && force !== true) {
+                    console.log("[WS] Connection already ...");
                     return;
                 }
 
@@ -326,7 +361,7 @@ import '../../sass/main.scss';
 
                 // 连接建立时触发
                 this.__instance.onopen = (event) => {
-                    // console.log("[WS] Connection open ...");
+                    console.log("[WS] Connection open ...");
                 }
 
                 // 接收到服务端推送时执行
@@ -334,6 +369,7 @@ import '../../sass/main.scss';
                     // console.log("[WS] Connection message ...");
                     let msgDetail = $A.jsonParse(event.data);
                     if (msgDetail.messageType === 'open') {
+                        console.log("[WS] Connection connected ...");
                         this.__connected = true;
                     }
                     if (msgDetail.messageType === 'feedback') {
@@ -346,7 +382,7 @@ import '../../sass/main.scss';
 
                 // 连接关闭时触发
                 this.__instance.onclose = (event) => {
-                    // console.log("[WS] Connection closed ...");
+                    console.log("[WS] Connection closed ...");
                     this.__connected = false;
                     this.__instance = null;
                     this.__autoLine();
@@ -354,7 +390,7 @@ import '../../sass/main.scss';
 
                 // 连接出错
                 this.__instance.onerror = (event) => {
-                    // console.log("[WS] Connection error ...");
+                    console.log("[WS] Connection error ...");
                     this.__connected = false;
                     this.__instance = null;
                     this.__autoLine();
@@ -410,16 +446,16 @@ import '../../sass/main.scss';
                 }
                 //
                 if (this.__instance === null) {
-                    console.log("[WS] 服务未连接: " + againNum);
-                    if (againNum >= 12) {
-                        typeof callback === "function" && callback({status: 0, message: '服务未连接'});
-                    } else {
+                    if (againNum < 10 && type != 'team') {
                         setTimeout(() => {
                             this.sendTo(type, target, content, callback, $A.runNum(againNum) + 1)
-                        }, 500);
+                        }, 600);
                         if (againNum === 0) {
                             this.connection();
                         }
+                    } else {
+                        console.log("[WS] 服务未连接");
+                        typeof callback === "function" && callback({status: 0, message: '服务未连接'});
                     }
                     return;
                 }

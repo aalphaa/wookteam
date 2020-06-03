@@ -1008,7 +1008,7 @@ class ProjectController extends Controller
      * - 已超期
      * - 已完成
      * @apiParam {Number} [createuser]          是否仅获取自己创建的项目（1:是；赋值时projectid和username不强制）
-     * @apiParam {Number} [attention]           是否仅获取关注数据（1:是）
+     * @apiParam {Number} [attention]           是否仅获取关注数据（1:是；赋值时projectid和username不强制）
      * @apiParam {Number} [statistics]          是否获取统计数据（1:获取）
      * @apiParam {String} [startdate]           任务开始时间，格式：YYYY-MM-DD
      * @apiParam {String} [enddate]             任务结束时间，格式：YYYY-MM-DD
@@ -1071,6 +1071,14 @@ class ProjectController extends Controller
         $whereArray[] = ['project_task.delete', '=', 0];
         if (intval(Request::input('createuser')) === 1) {
             $whereArray[] = ['project_task.createuser', '=', $user['username']];
+            if ($projectid > 0) {
+                $whereArray[] = ['project_lists.id', '=', $projectid];
+                $whereArray[] = ['project_lists.delete', '=', 0];
+            }
+            if (trim(Request::input('username'))) {
+                $whereArray[] = ['project_task.username', '=', trim(Request::input('username'))];
+            }
+        } else if (intval(Request::input('attention')) === 1) {
             if ($projectid > 0) {
                 $whereArray[] = ['project_lists.id', '=', $projectid];
                 $whereArray[] = ['project_lists.delete', '=', 0];
@@ -1767,6 +1775,67 @@ class ProjectController extends Controller
         $task['follower'] = Base::string2array($task['follower']);
         $task = array_merge($task, Users::username2basic($task['username']));
         return Base::retSuccess($message ?: '修改成功！', $task);
+    }
+
+    /**
+     * 项目任务-待推送日志
+     *
+     * @apiParam {Number} taskid                任务ID
+     * @apiParam {Number} [page]                当前页，默认:1
+     * @apiParam {Number} [pagesize]            每页显示数量，默认:20，最大:100
+     * @throws \Throwable
+     */
+    public function task__pushlog()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        return DB::transaction(function () {
+            $taskid = intval(Request::input('taskid'));
+            $task = Base::DBC2A(DB::table('project_task')
+                ->select(['pushlid', 'follower', 'username'])
+                ->where([
+                    ['delete', '=', 0],
+                    ['id', '=', $taskid],
+                ])
+                ->lockForUpdate()
+                ->first());
+            if (empty($task)) {
+                return Base::retError('任务不存在！');
+            }
+            $task['follower'] = Base::string2array($task['follower']);
+            $task['follower'][] = $task['username'];
+            //
+            $pushlid = $task['pushlid'];
+            $lists = DB::table('project_log')
+                ->select(['id', 'username', 'indate', 'detail', 'other'])
+                ->where([
+                    ['id', '>', $pushlid],
+                    ['taskid', '=', $taskid],
+                    ['indate', '>', Base::time() - 60]
+                ])
+                ->orderBy('id')->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));
+            $lists = Base::getPageList($lists, false);
+            if (count($lists['lists']) == 0) {
+                return Base::retError('no lists');
+            }
+            foreach ($lists['lists'] AS $key => $item) {
+                $item = array_merge($item, Users::username2basic($item['username']));
+                $item['other'] = Base::string2array($item['other'], ['type' => '']);
+                $lists['lists'][$key] = $item;
+                $pushlid = $item['id'];
+            }
+            if ($pushlid != $task['pushlid']) {
+                DB::table('project_task')->where('id', $taskid)->update([
+                    'pushlid' => $pushlid
+                ]);
+            }
+            return Base::retSuccess('success', array_merge($lists, $task));
+        });
     }
 
     /**

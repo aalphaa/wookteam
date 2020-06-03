@@ -27,6 +27,9 @@ Vue.component('WLoading', WLoading);
 import TaskDetail from './components/project/task/detail'
 Vue.prototype.taskDetail = TaskDetail;
 
+import ReportDetail from './components/report/detail'
+Vue.prototype.reportDetail = ReportDetail;
+
 const router = new VueRouter({routes});
 
 //进度条配置

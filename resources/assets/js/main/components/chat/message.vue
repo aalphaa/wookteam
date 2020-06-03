@@ -1,7 +1,8 @@
 <template>
     <div :data-id="info.id">
-        <!--文本-->
-        <div v-if="info.type==='text'">
+
+        <!--文本、任务-->
+        <div v-if="info.type==='text' || info.type==='taskB'">
             <div v-if="info.self===true" class="list-right">
                 <div v-if="info.error" class="item-error" @click="clickError(info.error)">
                     <Icon type="md-alert" />
@@ -12,8 +13,12 @@
                         <em v-if="info.indate" class="item-date">{{formatCDate(info.indate)}}</em>
                     </div>
                     <div class="item-text">
-                        <div class="item-text-view" v-html="textMsg(info.text)"></div>
+                        <div class="item-text-view" v-html="textMsg(info[info.type==='text'?'text':'detail'])"></div>
                     </div>
+                    <template v-if="info.type==='taskB'">
+                        <div v-if="info.other.type==='task'" class="item-link" @click="taskDetail(info.other.id)">来自关注任务:<a href="javascript:void(0)">{{info.other.title}}</a></div>
+                        <div v-if="info.other.type==='file'" class="item-link">来自关注任务:<a target="_blank" :href="fileDownUrl(info.other.id)">{{info.other.name}}</a></div>
+                    </template>
                 </div>
                 <img class="item-userimg" @click="clickUser" :src="info.userimg" onerror="this.src=window.location.origin+'/images/other/avatar.png'"/>
             </div>
@@ -26,8 +31,12 @@
                         <em v-if="info.indate" class="item-date">{{formatCDate(info.indate)}}</em>
                     </div>
                     <div class="item-text">
-                        <div class="item-text-view" v-html="textMsg(info.text)"></div>
+                        <div class="item-text-view" v-html="textMsg(info[info.type==='text'?'text':'detail'])"></div>
                     </div>
+                    <template v-if="info.type==='taskB'">
+                        <div v-if="info.other.type==='task'" class="item-link" @click="taskDetail(info.other.id)">来自关注任务:<a href="javascript:void(0)">{{info.other.title}}</a></div>
+                        <div v-if="info.other.type==='file'" class="item-link">来自关注任务:<a target="_blank" :href="fileDownUrl(info.other.id)">{{info.other.name}}</a></div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -68,6 +77,7 @@
         <div v-else-if="info.type==='notice'">
             <div class="item-notice">{{info.notice}}</div>
         </div>
+
     </div>
 </template>
 
@@ -164,6 +174,26 @@
         }
     }
 
+    /*信息底标*/
+    .item-link {
+        display: block;
+        font-size: 12px;
+        color: #ffffff;
+        background-color: #cacaca;
+        margin-top: 6px;
+        margin-bottom: -2px;
+        height: 20px;
+        line-height: 20px;
+        padding: 0 5px;
+        border-radius: 4px;
+        transform: scale(0.96);
+        transform-origin: 0 0;
+        > a {
+            color: #3D90E2;
+            padding-left: 3px;
+        }
+    }
+
     /*图片*/
     .item-image {
         display: inline-block;
@@ -228,6 +258,10 @@
             clickUser(e) {
                 this.$emit('clickUser', this.info, e);
             },
+
+            fileDownUrl(id) {
+                return $A.aUrl('project/files/download?fileid=' + id);
+            }
         }
     }
 </script>

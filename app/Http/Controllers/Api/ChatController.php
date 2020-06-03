@@ -52,8 +52,11 @@ class ChatController extends Controller
         }
         foreach ($lists AS $key => $item) {
             $lists[$key] = array_merge($item, Users::username2basic($item['user1'] == $user['username'] ? $item['user2'] : $item['user1']));
-            $lists[$key]['unread'] = $item['user1'] == $user['username'] ? $item['unread1'] : $item['unread2'];
             $lists[$key]['lastdate'] = $item['lastdate'] ?: $item['indate'];
+            $unread = 0;
+            if ($item['user1'] == $user['username']) $unread+= $item['unread1'];
+            if ($item['user2'] == $user['username']) $unread+= $item['unread2'];
+            $lists[$key]['unread'] = $unread;
         }
         return Base::retSuccess('success', $lists);
     }

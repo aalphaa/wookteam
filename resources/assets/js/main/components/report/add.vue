@@ -12,7 +12,7 @@
             </div>
             <t-editor class="add-edit" v-model="dataDetail.content" height="100%"></t-editor>
             <div class="add-input">
-                <userid-input v-model="dataDetail.ccuser" :placeholder="$L('输入关键词搜索')" multiple><span slot="prepend">{{$L('抄送人')}}</span></userid-input>
+                <user-input v-model="dataDetail.ccuser" :placeholder="$L('输入关键词搜索')" multiple><span slot="prepend">{{$L('抄送人')}}</span></user-input>
             </div>
             <div class="add-footer">
                 <Button :loading="loadIng > 0" type="primary" @click="handleSubmit" style="margin-right:6px">{{$L('保存')}}</Button>

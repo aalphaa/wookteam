@@ -126,9 +126,13 @@ class WebSocketService implements WebSocketHandlerInterface
                     $dialog = Chat::openDialog(self::fd2name($frame->fd), $data['target']);
                     if (!Base::isError($dialog)) {
                         $dialog = $dialog['data'];
-                        $upArray = [
-                            ($dialog['recField'] == 1 ? 'unread2' : 'unread1') => 0,
-                        ];
+                        $upArray = [];
+                        if ($dialog['user1'] == $dialog['user2']) {
+                            $upArray['unread1'] = 0;
+                            $upArray['unread2'] = 0;
+                        } else {
+                            $upArray[($dialog['recField'] == 1 ? 'unread2' : 'unread1')] = 0;
+                        }
                         DB::table('chat_dialog')->where('id', $dialog['id'])->update($upArray);
                     }
                 }

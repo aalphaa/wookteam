@@ -432,6 +432,32 @@
                         break;
 
                     case "username":        // 负责人
+                        if (detail.username == $A.getUserName()) {
+                            for (let level in this.taskDatas) {
+                                if (level == detail.level) {
+                                    let index = this.taskDatas[level].lists.length;
+                                    this.taskDatas[level].lists.some((task, i) => {
+                                        if (detail.userorder > task.userorder || (detail.userorder == task.userorder && detail.id > task.id)) {
+                                            index = i;
+                                            return true;
+                                        }
+                                    });
+                                    this.taskDatas[level].lists.splice(index, 0, detail);
+                                }
+                            }
+                        } else {
+                            for (let level in this.taskDatas) {
+                                this.taskDatas[level].lists.some((task, i) => {
+                                    if (task.id == detail.id) {
+                                        this.taskDatas[level].lists.splice(i, 1);
+                                        return true;
+                                    }
+                                });
+                            }
+                        }
+                        this.taskSortData = this.getTaskSort();
+                        break;
+
                     case "delete":          // 删除任务
                     case "archived":        // 归档
                         for (let level in this.taskDatas) {

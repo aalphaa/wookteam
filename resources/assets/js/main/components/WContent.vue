@@ -35,9 +35,9 @@
         mounted() {
             this.userInfo = $A.getUserInfo((res) => {
                 this.userInfo = res;
-                this.bgid = this.userInfo.bgid;
+                this.bgid = $A.runNum(this.userInfo.bgid);
             }, false);
-            this.bgid = this.userInfo.bgid;
+            this.bgid = $A.runNum(this.userInfo.bgid);
         },
         methods: {
             getBgUrl(id, thumb) {

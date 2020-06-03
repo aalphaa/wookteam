@@ -33,14 +33,6 @@
             <!-- 分页 -->
             <Page class="pageBox" :total="listTotal" :current="listPage" :disabled="loadIng > 0" @on-change="setPage" @on-page-size-change="setPageSize" :page-size-opts="[10,20,30,50,100]" placement="top" show-elevator show-sizer show-total transfer></Page>
         </div>
-        <Modal
-            v-model="contentShow"
-            :title="contentTitle"
-            width="80%"
-            :styles="{top: '35px', paddingBottom: '35px'}"
-            footerHide>
-            <report-content :content="contentText"></report-content>
-        </Modal>
     </drawer-tabs-container>
 </template>
 <style lang="scss" scoped>
@@ -54,14 +46,13 @@
 
 <script>
     import DrawerTabsContainer from "../DrawerTabsContainer";
-    import ReportContent from "./content";
 
     /**
      * 收到的汇报
      */
     export default {
         name: 'ReportReceive',
-        components: {ReportContent, DrawerTabsContainer},
+        components: {DrawerTabsContainer},
         props: {
             canload: {
                 type: Boolean,
@@ -86,10 +77,6 @@
                 listPage: 1,
                 listTotal: 0,
                 noDataText: "",
-
-                contentShow: false,
-                contentTitle: '',
-                contentText: '',
             }
         },
 
@@ -144,7 +131,7 @@
                             style: { margin: '0 3px', cursor: 'pointer' },
                             on: {
                                 click: () => {
-                                    this.contentReport(params.row);
+                                    this.reportDetail(params.row.id, params.row.title);
                                 }
                             }
                         })]),
@@ -222,27 +209,6 @@
                             this.lists = [];
                             this.listTotal = 0;
                             this.noDataText = res.msg;
-                        }
-                    }
-                });
-            },
-
-            contentReport(row) {
-                this.contentShow = true;
-                this.contentTitle = row.title;
-                this.contentText = this.$L('详细内容加载中.....');
-                $A.aAjax({
-                    url: 'report/content?id=' + row.id,
-                    error: () => {
-                        alert(this.$L('网络繁忙，请稍后再试！'));
-                        this.contentShow = false;
-                    },
-                    success: (res) => {
-                        if (res.ret === 1) {
-                            this.contentText = res.data.content;
-                        } else {
-                            this.contentShow = false;
-                            this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                         }
                     }
                 });

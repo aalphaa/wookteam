@@ -134,6 +134,7 @@
                                                     if (res.ret === 1) {
                                                         this.$Message.success(res.msg);
                                                         $A.triggerTaskInfoListener('unarchived', res.data);
+                                                        $A.triggerTaskInfoChange(params.row.id);
                                                     } else {
                                                         this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                                                     }

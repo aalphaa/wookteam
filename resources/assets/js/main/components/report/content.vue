@@ -41,6 +41,9 @@
         },
         methods: {
             setContent(val) {
+                if (!this.$el.contentWindow) {
+                    return;
+                }
                 let $d = this.$el.contentWindow.document;
                 $A("body", $d).html('<link type="text/css" rel="stylesheet" href="' + window.location.origin + '/js/build/skins/ui/oxide/content.min.css"><style>html,body{padding:0;margin:0}</style><div id="content">' + val + '</div>');
                 this.$nextTick(() => {

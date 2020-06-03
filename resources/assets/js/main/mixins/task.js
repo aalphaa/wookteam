@@ -23,6 +23,7 @@ export default {
                     if (res.ret === 1) {
                         this.$Message.success(res.msg);
                         $A.triggerTaskInfoListener(complete ? 'complete' : 'unfinished', res.data);
+                        $A.triggerTaskInfoChange(taskDetail.id);
                     } else {
                         this.$set(taskDetail, 'complete', !complete);
                         this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
