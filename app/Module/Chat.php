@@ -29,7 +29,7 @@ class Chat
                 'user2' => $receive,
             ])->first());
             if ($row) {
-                $row['recField'] = 2;   //接受信息用户的字段位置
+                $row['recField'] = 2;   //接受者的字段位置
                 return Base::retSuccess('already1', $row);
             }
             $row = Base::DBC2A(DB::table('chat_dialog')->where([
@@ -61,6 +61,22 @@ class Chat
             Cache::forget($cacheKey);
         }
         return $result;
+    }
+
+    /**
+     * 删除对话缓存
+     * @param $username
+     * @param $receive
+     * @return bool
+     */
+    public static function forgetDialog($username, $receive)
+    {
+        if (!$username || !$receive) {
+            return false;
+        }
+        Cache::forget($username . "@" . $receive);
+        Cache::forget($receive . "@" . $username);
+        return true;
     }
 
     /**
@@ -109,7 +125,16 @@ class Chat
             ]);
             $upArray['lasttext'] = $lastText;
             $upArray['lastdate'] = $indate;
+            if ($dialog['del1']) {
+                $upArray['del1'] = 0;
+            }
+            if ($dialog['del2']) {
+                $upArray['del2'] = 0;
+            }
             DB::table('chat_dialog')->where('id', $dialog['id'])->update($upArray);
+            if ($dialog['del1'] || $dialog['del2']) {
+                Chat::forgetDialog($dialog['user1'], $dialog['user2']);
+            }
         }
         $inArray['id'] = DB::table('chat_msg')->insertGetId($inArray);
         $inArray['message'] = $message;

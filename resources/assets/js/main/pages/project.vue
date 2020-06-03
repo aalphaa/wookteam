@@ -271,7 +271,6 @@
 </style>
 <script>
     import WContent from "../components/WContent";
-    import WLoading from "../components/WLoading";
     import ProjectArchived from "../components/project/archived";
     import ProjectUsers from "../components/project/users";
     import ProjectStatistics from "../components/project/statistics";
@@ -285,7 +284,7 @@
             WDrawer,
             ProjectMyManage,
             ProjectMyJoin,
-            ProjectMyFavor, ProjectStatistics, ProjectUsers, ProjectArchived, WLoading, WContent},
+            ProjectMyFavor, ProjectStatistics, ProjectUsers, ProjectArchived, WContent},
         mixins: [
             Project
         ],

@@ -26,9 +26,7 @@
     }
 </style>
 <script>
-    import WLoading from "./WLoading";
     export default {
         name: 'WSpinner',
-        components: {WLoading},
     }
 </script>

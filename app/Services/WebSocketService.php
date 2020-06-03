@@ -139,23 +139,18 @@ class WebSocketService implements WebSocketHandlerInterface
              */
             case 'user':
                 $to = self::name2fd($data['target']);
-                if ($to) {
-                    $res = Chat::saveMessage(self::fd2name($frame->fd), $data['target'], $data['content']);
-                    if (Base::isError($res)) {
-                        $feedback = [
-                            'status' => 0,
-                            'message' => $res['msg'],
-                        ];
-                    } else {
-                        $data['content']['id'] = $res['data']['id'];
-                        $server->push($to, Base::array2json($data));
-                        $feedback['message'] = $res['data']['id'];
-                    }
-                } else {
+                $res = Chat::saveMessage(self::fd2name($frame->fd), $data['target'], $data['content']);
+                if (Base::isError($res)) {
                     $feedback = [
                         'status' => 0,
-                        'message' => '账号不存在！',
+                        'message' => $res['msg'],
                     ];
+                } else {
+                    $data['content']['id'] = $res['data']['id'];
+                    $feedback['message'] = $res['data']['id'];
+                    if ($to) {
+                        $server->push($to, Base::array2json($data));
+                    }
                 }
                 break;
 

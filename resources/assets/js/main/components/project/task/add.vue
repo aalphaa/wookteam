@@ -159,10 +159,8 @@
     }
 </style>
 <script>
-    import WLoading from "../../WLoading";
     export default {
         name: 'ProjectAddTask',
-        components: {WLoading},
         props: {
             placeholder: {
                 type: String,

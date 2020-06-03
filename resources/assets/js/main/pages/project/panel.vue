@@ -308,7 +308,6 @@
     import draggable from 'vuedraggable'
 
     import WContent from "../../components/WContent";
-    import WLoading from "../../components/WLoading";
     import ProjectAddTask from "../../components/project/task/add";
     import ProjectTaskLists from "../../components/project/task/lists";
     import ProjectTaskFiles from "../../components/project/task/files";
@@ -325,7 +324,7 @@
             ProjectUsers,
             ProjectArchived,
             ProjectTaskLogs,
-            ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WLoading, WContent},
+            ProjectTaskFiles, ProjectTaskLists, ProjectAddTask, draggable, WContent},
         data () {
             return {
                 loadIng: 0,

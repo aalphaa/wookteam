@@ -39,7 +39,10 @@ class ChatController extends Controller
         //
         $lists = Base::DBC2A(DB::table('chat_dialog')
             ->where(function ($query) use ($user) {
-                return $query->where('user1', $user['username'])->orWhere('user2', $user['username']);
+                return $query->where('user1', $user['username'])->where('del1', 0);
+            })
+            ->orWhere(function ($query) use ($user) {
+                return $query->where('user2', $user['username'])->where('del2', 0);
             })
             ->orderByDesc('lastdate')
             ->take(200)
@@ -53,6 +56,44 @@ class ChatController extends Controller
             $lists[$key]['lastdate'] = $item['lastdate'] ?: $item['indate'];
         }
         return Base::retSuccess('success', $lists);
+    }
+
+    /**
+     * 清空聊天记录（删除对话）
+     *
+     * @apiParam {String} username             用户名
+     * @apiParam {Number} [delete]             是否删除对话，1:是
+     */
+    public function dialog__clear()
+    {
+        $user = Users::authE();
+        if (Base::isError($user)) {
+            return $user;
+        } else {
+            $user = $user['data'];
+        }
+        //
+        $delete = intval(Request::input('delete'));
+        $res = Chat::openDialog($user['username'], trim(Request::input('username')));
+        if (Base::isError($res)) {
+            return $res;
+        }
+        $dialog = $res['data'];
+        $lastMsg = Base::DBC2A(DB::table('chat_msg')
+            ->select('id')
+            ->where('did', $dialog['id'])
+            ->orderByDesc('indate')
+            ->orderByDesc('id')
+            ->first());
+        $upArray = [
+            ($dialog['recField'] == 1 ? 'lastid2' : 'lastid1') => $lastMsg ? $lastMsg['id'] : 0
+        ];
+        if ($delete === 1) {
+            $upArray[($dialog['recField'] == 1 ? 'del2' : 'del1')] = 1;
+        }
+        DB::table('chat_dialog')->where('id', $dialog['id'])->update($upArray);
+        Chat::forgetDialog($dialog['user1'], $dialog['user2']);
+        return Base::retSuccess($delete ? '删除成功！' : '清除成功！');
     }
 
     /**
@@ -73,8 +114,15 @@ class ChatController extends Controller
         if (Base::isError($res)) {
             return $res;
         }
+        $dialog = $res['data'];
+        $lastid = $dialog[($dialog['recField'] == 1 ? 'lastid2' : 'lastid1')];
+        $whereArray = [];
+        $whereArray[] = ['did', '=', $dialog['id']];
+        if ($lastid > 0) {
+            $whereArray[] = ['id', '>', $lastid];
+        }
         $lists = DB::table('chat_msg')
-            ->where('did', $res['data']['id'])
+            ->where($whereArray)
             ->orderByDesc('indate')
             ->orderByDesc('id')
             ->paginate(Min(Max(Base::nullShow(Request::input('pagesize'), 10), 1), 100));

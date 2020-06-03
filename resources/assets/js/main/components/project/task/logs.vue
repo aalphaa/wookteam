@@ -115,11 +115,10 @@
 <script>
 
     import DrawerTabsContainer from "../../DrawerTabsContainer";
-    import WLoading from '../../WLoading'
 
     export default {
         name: 'ProjectTaskLogs',
-        components: {DrawerTabsContainer, WLoading},
+        components: {DrawerTabsContainer},
         props: {
             projectid: {
                 default: 0

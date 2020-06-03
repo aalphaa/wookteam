@@ -107,11 +107,9 @@
     import clickoutside from '../../_modules/directives/clickoutside';
     import TransferDom from '../../_modules/directives/transfer-dom';
     import Popper from '../../_modules/directives/popper-novalue';
-    import WLoading from "./WLoading";
 
     export default {
         name: 'UserInput',
-        components: {WLoading},
         directives: {clickoutside, TransferDom},
         mixins: [Popper],
         props: {

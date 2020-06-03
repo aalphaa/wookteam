@@ -59,11 +59,9 @@
 <script>
     import Vue from 'vue'
     import VueClipboard from 'vue-clipboard2'
-    import WLoading from '../../../components/WLoading'
     import DrawerTabsContainer from "../../DrawerTabsContainer";
 
     Vue.use(VueClipboard)
-    Vue.component('WLoading', WLoading);
 
     export default {
         name: 'ProjectTaskFiles',

@@ -47,6 +47,9 @@
         watch: {
             username() {
                 this.getUserData(0, 300);
+            },
+            nickname(val) {
+                this.$emit("on-result", val);
             }
         },
         methods: {
@@ -70,11 +73,12 @@
                     localData[this.username] = {};
                 }
                 //
-                if (localData[this.username].success === true
-                    && localData[this.username].update + cacheTime > Math.round(new Date().getTime() / 1000)) {
+                if (localData[this.username].success === true) {
                     this.nickname = localData[this.username].data.nickname;
                     this.profession = localData[this.username].data.profession;
-                    return;
+                    if (localData[this.username].update + cacheTime > Math.round(new Date().getTime() / 1000)) {
+                        return;
+                    }
                 }
                 //
                 window.__userViewNetworking = true;

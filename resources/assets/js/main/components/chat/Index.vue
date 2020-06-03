@@ -16,57 +16,72 @@
         </ul>
 
         <!--对话列表-->
-        <ul v-if="chatTap=='dialog'" class="chat-user">
+        <ul class="chat-user" :style="{display:chatTap=='dialog'?'flex':'none'}">
             <li class="sreach">
-                <Input placeholder="搜索" prefix="ios-search"/>
+                <Input placeholder="搜索" prefix="ios-search" v-model="dialogSearch"/>
             </li>
-            <li v-for="(dialog, index) in dialogLists"
-                :key="index"
-                :class="{active:dialog.username==dialogTarget.username}"
-                @click="openDialog(dialog)">
-                <img :src="dialog.userimg">
-                <div class="user-msg-box">
-                    <div class="user-msg-title">
-                        <span><user-view :username="dialog.username"/></span>
-                        <em>{{formatCDate(dialog.lastdate)}}</em>
-                    </div>
-                    <div class="user-msg-text">{{dialog.lasttext}}</div>
-                </div>
-                <em v-if="dialog.unread > 0" class="user-msg-num">{{dialog.unread}}</em>
+            <li class="lists">
+                <ul>
+                    <li v-for="(dialog, index) in dialogListsS"
+                        :key="index"
+                        :class="{active:dialog.username==dialogTarget.username}"
+                        @click="openDialog(dialog)">
+                        <img :src="dialog.userimg">
+                        <div class="user-msg-box">
+                            <div class="user-msg-title">
+                                <span><user-view :username="dialog.username" placement="right" @on-result="(n)=>{dialog['nickname']=n}"/></span>
+                                <em>{{formatCDate(dialog.lastdate)}}</em>
+                            </div>
+                            <div class="user-msg-text">{{dialog.lasttext}}</div>
+                        </div>
+                        <em v-if="dialog.unread > 0" class="user-msg-num">{{dialog.unread}}</em>
+                    </li>
+                    <li v-if="dialogNoDataText==$L('数据加载中.....')" class="chat-none"><w-loading/></li>
+                    <li v-else-if="dialogLists.length == 0" class="chat-none">{{dialogNoDataText}}</li>
+                </ul>
             </li>
-            <li v-if="dialogLists.length == 0" class="chat-none">{{dialogNoDataText}}</li>
         </ul>
 
         <!--联系人列表-->
-        <ul v-else-if="chatTap=='team'" class="chat-team">
+        <ul class="chat-team" :style="{display:chatTap=='team'?'flex':'none'}">
             <li class="sreach">
-                <Input placeholder="搜索" prefix="ios-search"/>
+                <Input placeholder="搜索" prefix="ios-search" v-model="teamSearch"/>
             </li>
-            <li v-for="(lists, key) in teamLists">
-                <div class="team-label">{{key}}</div>
+            <li class="lists">
                 <ul>
-                    <li v-for="(item, index) in lists" :key="index" @click="openDialog(item)">
-                        <img :src="item.userimg">
-                        <div class="team-username"><user-view :username="item.username"/></div>
+                    <li v-for="(lists, key) in teamLists">
+                        <div class="team-label">{{key}}</div>
+                        <ul>
+                            <li v-for="(item, index) in teamListsS(lists)" :key="index" @click="openDialog(item, true)">
+                                <img :src="item.userimg">
+                                <div class="team-username"><user-view :username="item.username" placement="right" @on-result="(n)=>{item['nickname']=n}"/></div>
+                            </li>
+                        </ul>
                     </li>
+                    <li v-if="teamNoDataText==$L('数据加载中.....')" class="chat-none"><w-loading/></li>
+                    <li v-else-if="Object.keys(teamLists).length == 0" class="chat-none">{{teamNoDataText}}</li>
+                    <li v-if="teamHasMorePages" class="chat-more" @click="getTeamLists(true)">加载更多...</li>
                 </ul>
             </li>
-            <li v-if="Object.keys(teamLists).length == 0" class="chat-none">{{teamNoDataText}}</li>
         </ul>
 
         <!--对话窗口-->
-        <div v-if="chatTap=='dialog' && dialogTarget.username" class="chat-message">
+        <div class="chat-message" :style="{display:(chatTap=='dialog'&&dialogTarget.username)?'block':'none'}">
             <div class="manage-title">
                 <user-view :username="dialogTarget.username"/>
-                <Dropdown class="manage-title-right" placement="bottom-end" trigger="click" transfer>
+                <Dropdown class="manage-title-right" placement="bottom-end" trigger="click" @on-click="dialogDropdown" transfer>
                     <Icon type="ios-more"/>
                     <DropdownMenu slot="list">
+                        <DropdownItem name="delete">删除对话</DropdownItem>
                         <DropdownItem name="clear">清除聊天记录</DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
             </div>
             <ScrollerY ref="manageLists" class="manage-lists" @on-scroll="messageListsScroll">
                 <div ref="manageBody" class="manage-body">
+                    <div v-if="messageHasMorePages" class="manage-more" @click="getDialogMessage(true)">加载更多...</div>
+                    <div v-if="messageNoDataText==$L('数据加载中.....')" class="manage-more"><w-loading/></div>
+                    <div v-else-if="messageNoDataText" class="manage-more">{{messageNoDataText}}</div>
                     <chat-message v-for="(info, index) in messageLists" :key="index" :info="info"></chat-message>
                 </div>
                 <div class="manage-lists-message-new" v-if="messageNew > 0" @click="messageBottomGo(true)">有{{messageNew}}条新消息</div>
@@ -141,8 +156,19 @@
             padding: 22px 8px;
             text-align: center;
             justify-content: center;
+            margin: 0 !important;
             &:before {
                 display: none;
+            }
+        }
+        .chat-more {
+            color: #666666;
+            padding: 18px 0;
+            text-align: center;
+            cursor: pointer;
+            margin: 0 !important;
+            &:hover {
+                color: #444444;
             }
         }
         .chat-menu {
@@ -186,74 +212,103 @@
             }
         }
         .chat-user {
+            display: flex;
+            flex-direction: column;
             width: 248px;
             height: 100%;
             background-color: #ffffff;
             border-right: 1px solid #ededed;
-            li {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                height: 70px;
-                padding: 0 12px;
+            > li {
                 position: relative;
-                cursor: pointer;
-                &:before {
-                    content: "";
-                    position: absolute;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    height: 1px;
-                    background-color: rgba(0, 0, 0, 0.06);
-                }
                 &.sreach {
-                    height: 62px;
-                }
-                &.active {
-                    &:before {
-                        top: 0;
-                        height: 100%;
-                    }
-                }
-                img {
-                    width: 42px;
-                    height: 42px;
-                    border-radius: 4px;
-                }
-                .user-msg-box {
-                    flex: 1;
                     display: flex;
-                    flex-direction: column;
-                    padding-left: 12px;
-                    .user-msg-title {
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                        justify-content: space-between;
-                        line-height: 24px;
-                        span {
-                            flex: 1;
-                            max-width: 130px;
-                            color: #333333;
-                            font-size: 14px;
-                            white-space: nowrap;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                        }
-                        em {
-                            color: #999999;
-                            font-size: 12px;
-                        }
+                    flex-direction: row;
+                    align-items: center;
+                    height: 62px;
+                    margin: 0;
+                    padding: 0 12px;
+                    position: relative;
+                    cursor: pointer;
+
+                    &:before {
+                        content: "";
+                        position: absolute;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        height: 1px;
+                        background-color: rgba(0, 0, 0, 0.06);
                     }
-                    .user-msg-text {
-                        max-width: 170px;
-                        color: #999999;
-                        font-size: 12px;
-                        line-height: 24px;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
+                }
+                &.lists {
+                    flex: 1;
+                    overflow: auto;
+                    transform: translateZ(0);
+                    > ul {
+                        > li {
+                            display: flex;
+                            flex-direction: row;
+                            align-items: center;
+                            height: 70px;
+                            padding: 0 12px;
+                            position: relative;
+                            cursor: pointer;
+                            &:before {
+                                content: "";
+                                position: absolute;
+                                left: 0;
+                                right: 0;
+                                bottom: 0;
+                                height: 1px;
+                                background-color: rgba(0, 0, 0, 0.06);
+                            }
+                            &.active {
+                                &:before {
+                                    top: 0;
+                                    height: 100%;
+                                }
+                            }
+                            img {
+                                width: 42px;
+                                height: 42px;
+                                border-radius: 4px;
+                            }
+                            .user-msg-box {
+                                flex: 1;
+                                display: flex;
+                                flex-direction: column;
+                                padding-left: 12px;
+                                .user-msg-title {
+                                    display: flex;
+                                    flex-direction: row;
+                                    align-items: center;
+                                    justify-content: space-between;
+                                    line-height: 24px;
+                                    span {
+                                        flex: 1;
+                                        max-width: 130px;
+                                        color: #333333;
+                                        font-size: 14px;
+                                        white-space: nowrap;
+                                        overflow: hidden;
+                                        text-overflow: ellipsis;
+                                    }
+                                    em {
+                                        color: #999999;
+                                        font-size: 12px;
+                                    }
+                                }
+                                .user-msg-text {
+                                    max-width: 170px;
+                                    color: #999999;
+                                    font-size: 12px;
+                                    line-height: 24px;
+                                    white-space: nowrap;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                }
+                            }
+                        }
                     }
                 }
                 .user-msg-num {
@@ -274,12 +329,13 @@
             }
         }
         .chat-team {
+            display: flex;
+            flex-direction: column;
             width: 248px;
             height: 100%;
             background-color: #ffffff;
             border-right: 1px solid #ededed;
             > li {
-                margin-left: 24px;
                 position: relative;
                 &.sreach {
                     display: flex;
@@ -290,6 +346,7 @@
                     padding: 0 12px;
                     position: relative;
                     cursor: pointer;
+
                     &:before {
                         content: "";
                         position: absolute;
@@ -300,32 +357,43 @@
                         background-color: rgba(0, 0, 0, 0.06);
                     }
                 }
-                .team-label {
-                    padding-left: 4px;
-                    margin-top: 6px;
-                    margin-bottom: 6px;
-                    height: 34px;
-                    line-height: 34px;
-                    border-bottom: 1px solid #efefef;
-                }
-                > ul {
-                    > li {
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                        height: 52px;
-                        cursor: pointer;
-                        img {
-                            width: 30px;
-                            height: 30px;
-                            border-radius: 3px;
-                        }
-                        .team-username {
-                            padding: 0 12px;
-                            font-size: 14px;
-                            white-space: nowrap;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
+                &.lists {
+                    flex: 1;
+                    overflow: auto;
+                    transform: translateZ(0);
+                    > ul {
+                        > li {
+                            margin-left: 24px;
+                            position: relative;
+                            .team-label {
+                                padding-left: 4px;
+                                margin-top: 6px;
+                                margin-bottom: 6px;
+                                height: 34px;
+                                line-height: 34px;
+                                border-bottom: 1px solid #efefef;
+                            }
+                            > ul {
+                                > li {
+                                    display: flex;
+                                    flex-direction: row;
+                                    align-items: center;
+                                    height: 52px;
+                                    cursor: pointer;
+                                    img {
+                                        width: 30px;
+                                        height: 30px;
+                                        border-radius: 3px;
+                                    }
+                                    .team-username {
+                                        padding: 0 12px;
+                                        font-size: 14px;
+                                        white-space: nowrap;
+                                        overflow: hidden;
+                                        text-overflow: ellipsis;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -373,6 +441,15 @@
                 overflow: auto;
                 padding: 8px 0;
                 background-color: #E8EBF2;
+                .manage-more {
+                    color: #666666;
+                    padding: 8px 0;
+                    text-align: center;
+                    cursor: pointer;
+                    &:hover {
+                        color: #444444;
+                    }
+                }
                 .manage-lists-message-new {
                     position: fixed;
                     bottom: 130px;
@@ -531,13 +608,17 @@
 
                 chatTap: 'dialog',
 
+                dialogSearch: '',
                 dialogTarget: {},
                 dialogLists: [],
                 dialogNoDataText: '',
 
+                teamSearch: '',
                 teamReady: false,
                 teamLists: {},
                 teamNoDataText: '',
+                teamCurrentPage: 1,
+                teamHasMorePages: false,
 
                 autoBottom: true,
                 messageNew: 0,
@@ -545,6 +626,8 @@
                 messageLists: [],
                 messageNoDataText: '',
                 messageEmojiSearch: '',
+                messageCurrentPage: 1,
+                messageHasMorePages: false,
 
                 unreadTotal: 0,
             }
@@ -662,9 +745,29 @@
 
             dialogTarget: {
                 handler: function () {
+                    let username = this.dialogTarget.username;
+                    if (username === this.__dialogTargetUsername) {
+                        return;
+                    }
+                    this.__dialogTargetUsername = username;
                     this.getDialogMessage();
                 },
                 deep: true
+            }
+        },
+
+        computed: {
+            dialogListsS() {
+                return this.dialogLists.filter(item => {
+                    return (item.username + "").indexOf(this.dialogSearch) > -1 || (item.lasttext + "").indexOf(this.dialogSearch) > -1 || (item.nickname + "").indexOf(this.dialogSearch) > -1
+                });
+            },
+            teamListsS() {
+                return function (lists) {
+                    return lists.filter(item => {
+                        return (item.username + "").indexOf(this.teamSearch) > -1 || (item.nickname + "").indexOf(this.teamSearch) > -1
+                    });
+                }
             }
         },
 
@@ -706,22 +809,28 @@
                 });
             },
 
-            getDialogMessage() {
-                let username = this.dialogTarget.username;
-                if (username === this.__dialogTargetUsername) {
-                    return;
+            getDialogMessage(isNextPage = false) {
+                if (isNextPage === true) {
+                    if (!this.messageHasMorePages) {
+                        return;
+                    }
+                    this.messageCurrentPage+= 1;
+                } else {
+                    this.messageCurrentPage = 1;
+                    this.autoBottom = true;
+                    this.messageNew = 0;
+                    this.messageLists = [];
                 }
-                this.__dialogTargetUsername = username;
-                this.autoBottom = true;
-                this.messageNew = 0;
-                this.messageLists = [];
+                this.messageHasMorePages = false;
                 //
+                let username = this.dialogTarget.username;
                 this.loadIng++;
                 this.messageNoDataText = this.$L("数据加载中.....");
                 $A.aAjax({
                     url: 'chat/message/lists',
                     data: {
                         username: username,
+                        page: this.messageCurrentPage,
                         pagesize: 30
                     },
                     complete: () => {
@@ -735,23 +844,54 @@
                             return;
                         }
                         if (res.ret === 1) {
-                            res.data.lists.reverse().forEach((item) => {
+                            let tempId = "notice_" + $A.randomString(6);
+                            let tempLists = res.data.lists;
+                            if (isNextPage) {
+                                this.addMessageData({
+                                    id: tempId,
+                                    type: 'notice',
+                                    notice: '历史消息',
+                                }, false, isNextPage);
+                            } else {
+                                tempLists = tempLists.reverse();
+                            }
+                            tempLists.forEach((item) => {
                                 this.addMessageData(Object.assign(item.message, {
                                     id: item.id,
                                     username: item.username,
                                     userimg: item.userimg,
                                     indate: item.indate,
-                                }));
+                                }), false, isNextPage);
                             });
-                            this.messageNoDataText = this.$L("没有相关的数据");
+                            if (isNextPage) {
+                                this.$nextTick(() => {
+                                    let tempObj = $A('div[data-id="' + tempId + '"]');
+                                    if (tempObj.length > 0) {
+                                        this.$refs.manageLists.scrollTo(tempObj.offset().top - tempObj.height() - 24, false);
+                                    }
+                                });
+                            }
+                            this.messageNoDataText = '';
+                            this.messageHasMorePages = res.data.hasMorePages;
                         } else {
                             this.messageNoDataText = res.msg
+                            this.messageHasMorePages = false;
                         }
                     }
                 });
             },
 
-            getTeamLists() {
+            getTeamLists(isNextPage = false) {
+                if (isNextPage === true) {
+                    if (!this.teamHasMorePages) {
+                        return;
+                    }
+                    this.teamCurrentPage+= 1;
+                } else {
+                    this.teamCurrentPage = 1;
+                }
+                this.teamHasMorePages = false;
+                //
                 this.loadIng++;
                 this.teamNoDataText = this.$L("数据加载中.....");
                 $A.aAjax({
@@ -762,6 +902,7 @@
                             order: 'asc'
                         },
                         firstchart: 1,
+                        page: this.teamCurrentPage,
                         pagesize: 100,
                     },
                     complete: () => {
@@ -777,12 +918,17 @@
                                     this.$set(this.teamLists, item.firstchart, []);
                                 }
                                 this.teamLists[item.firstchart].push(item);
-                                console.log(this.teamLists);
                             });
                             this.teamNoDataText = this.$L("没有相关的数据");
+                            this.teamHasMorePages = res.data.hasMorePages;
+                            //
+                            if (this.teamHasMorePages && res.data.currentPage < 5) {
+                                this.getTeamLists(true);
+                            }
                         } else {
                             this.teamLists = {};
                             this.teamNoDataText = res.msg
+                            this.teamHasMorePages = false;
                         }
                     }
                 });
@@ -806,7 +952,13 @@
                 this.dialogLists.unshift(data);
             },
 
-            openDialog(user) {
+            openDialog(user, autoAddDialog = false) {
+                if (autoAddDialog === true) {
+                    let lists = this.dialogLists.filter((item) => {return item.username == user.username});
+                    if (lists.length === 0) {
+                        this.addDialog(user);
+                    }
+                }
                 this.chatTap = 'dialog';
                 this.dialogTarget = user;
                 if (typeof user.unread === "number" && user.unread > 0) {
@@ -820,6 +972,52 @@
                 let lists = this.dialogLists.filter((item) => {return item.username == username});
                 if (lists.length > 0) {
                     this.openDialog(lists[0]);
+                }
+            },
+
+            dialogDropdown(type) {
+                switch (type) {
+                    case 'clear':
+                    case 'delete':
+                        this.$Modal.confirm({
+                            title: '确认操作',
+                            content: type === 'delete' ? '你确定要删除此对话吗？' : '你确定要清除聊天记录吗？',
+                            loading: true,
+                            onOk: () => {
+                                let username = this.dialogTarget.username;
+                                $A.aAjax({
+                                    url: 'chat/dialog/clear',
+                                    data: {
+                                        username: username,
+                                        delete: type === 'delete' ? 1 : 0
+                                    },
+                                    error: () => {
+                                        this.$Modal.remove();
+                                        alert(this.$L('网络繁忙，请稍后再试！'));
+                                    },
+                                    success: (res) => {
+                                        this.$Modal.remove();
+                                        if (res.ret === 1) {
+                                            if (type === 'delete') {
+                                                this.dialogLists = this.dialogLists.filter((item) => {return item.username != username});
+                                                this.dialogTarget = {};
+                                            } else {
+                                                this.$set(this.dialogTarget, 'lasttext', '');
+                                                this.getDialogMessage();
+                                            }
+                                        }
+                                        setTimeout(() => {
+                                            if (res.ret === 1) {
+                                                this.$Message.success(res.msg);
+                                            } else {
+                                                this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
+                                            }
+                                        }, 350);
+                                    }
+                                });
+                            }
+                        });
+                        break;
                 }
             },
 
@@ -886,7 +1084,7 @@
                 }
             },
 
-            addMessageData(data, animation = false) {
+            addMessageData(data, animation = false, isUnshift = false) {
                 data.self = data.username === this.userInfo.username;
                 let sikp = false;
                 if (data.id) {
@@ -900,12 +1098,15 @@
                         return;
                     }
                 }
-                this.messageLists.push(data);
-                //
-                if (this.autoBottom) {
-                    this.messageBottomGo(animation);
+                if (isUnshift) {
+                    this.messageLists.unshift(data);
                 } else {
-                    this.messageNew++;
+                    this.messageLists.push(data);
+                    if (this.autoBottom) {
+                        this.messageBottomGo(animation);
+                    } else {
+                        this.messageNew++;
+                    }
                 }
             },
 

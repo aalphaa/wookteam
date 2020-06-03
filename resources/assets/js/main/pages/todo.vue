@@ -317,7 +317,6 @@
     import draggable from 'vuedraggable'
 
     import WContent from "../components/WContent";
-    import WLoading from "../components/WLoading";
     import TodoCalendar from "../components/project/todo/calendar";
     import TodoComplete from "../components/project/todo/complete";
     import TodoAttention from "../components/project/todo/attention";
@@ -331,7 +330,7 @@
         components: {
             WDrawer,
             ReportReceive,
-            ReportMy, draggable, TodoAttention, TodoComplete, TodoCalendar, WContent, WLoading},
+            ReportMy, draggable, TodoAttention, TodoComplete, TodoCalendar, WContent},
         mixins: [
             Task
         ],
