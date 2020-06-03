@@ -106,10 +106,36 @@
         </WDrawer>
         <WDrawer v-model="chatDrawerShow" :closable="false" maxWidth="1080">
             <chat-index></chat-index>
+            <div class="w-header-chat-close" @click="chatDrawerShow=false">
+                <Icon type="ios-close" />
+            </div>
         </WDrawer>
     </div>
 </template>
 
+<style lang="scss">
+    .w-header-chat-close {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+        color: #ffffff;
+        font-size: 32px;
+        width: 68px;
+        height: 58px;
+        line-height: 58px;
+        text-align: center;
+        cursor: pointer;
+        > i {
+            transition: all 0.2s;
+        }
+        &:hover {
+            > i {
+                transform: scale(1.12) rotate(90deg);
+            }
+        }
+    }
+</style>
 <style lang="scss" scoped>
     .w-header {
         z-index: 15;

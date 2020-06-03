@@ -92,10 +92,14 @@ class IndexController extends Controller
         if (!$scale[0] && !$scale[1]) {
             $scale = [2160, 4160, -1];
         }
+        $path = "uploads/picture/" . Users::token2userid() . "/" . date("Ym") . "/";
+        if (Request::input('from') == 'chat') {
+            $path = "uploads/chat/" . Users::token2userid() . "/" . date("Ym") . "/";
+        }
         $data = Base::upload([
             "file" => Request::file('image'),
             "type" => 'image',
-            "path" => "uploads/picture/" . Users::token2userid() . "/" . date("Ym") . "/",
+            "path" => $path,
             "scale" => $scale
         ]);
         if (Base::isError($data)) {

@@ -69,8 +69,26 @@
                 <textarea ref="textarea" class="manage-input" v-model="messageText" placeholder="请输入要发送的消息" @keydown="messageSend($event)"></textarea>
             </div>
             <div class="manage-quick">
-                <Button type="primary" size="small">表情</Button>
-                <Button type="warning" size="small">清除聊天记录</Button>
+                <emoji-picker @emoji="messageInsertText" :search="messageEmojiSearch">
+                    <div slot="emoji-invoker" slot-scope="{ events: { click: clickEvent } }" @click.stop="clickEvent">
+                        <Icon class="quick-item" type="ios-happy-outline"  />
+                    </div>
+                    <div slot="emoji-picker" slot-scope="{ emojis, insert, display }">
+                        <div class="emoji-box">
+                            <Input class="emoji-input" placeholder="搜索" v-model="messageEmojiSearch" prefix="ios-search"/>
+                            <div>
+                                <div v-for="(emojiGroup, category) in emojis" :key="category">
+                                    <h5>{{ category }}</h5>
+                                    <div class="emojis">
+                                        <span v-for="(emoji, emojiName) in emojiGroup" :key="emojiName" @click="insert(emoji)" :title="emojiName">{{ emoji }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </emoji-picker>
+                <Icon class="quick-item" type="ios-photos-outline" @click="$refs.messageUpload.handleClick()"/>
+                <img-upload ref="messageUpload" class="message-upload" type="callback" @on-callback="messageInsertImage" num="3" :otherParams="{from:'chat'}"></img-upload>
             </div>
         </div>
 
@@ -323,7 +341,7 @@
                     font-size: 14px;
                     box-sizing: border-box;
                     padding: 0;
-                    margin: 38px 8px 6px;
+                    margin: 38px 10px 6px;
                     border: 0;
                     line-height: 20px;
                     box-shadow: none;
@@ -350,10 +368,59 @@
                 right: 0;
                 bottom: 79px;
                 padding: 8px;
-                > button,
-                .quick-button {
-                    font-size: 12px;
-                    margin-right: 4px;
+                display: flex;
+                align-items: center;
+                .quick-item {
+                    color: #444444;
+                    font-size: 24px;
+                    margin-right: 12px;
+                }
+                .emoji-box {
+                    position: absolute;
+                    left: 0;
+                    bottom: 40px;
+                    max-height: 320px;
+                    width: 100%;
+                    overflow: auto;
+                    background-color: #ffffff;
+                    padding: 12px;
+                    border-bottom: 1px solid #efefef;
+                    .emoji-input {
+                        margin: 6px 0;
+                    }
+                    h5 {
+                        padding: 0;
+                        margin: 8px 0 0 0;
+                        color: #b1b1b1;
+                        text-transform: uppercase;
+                        font-size: 14px;
+                        cursor: default;
+                        font-weight: normal;
+                    }
+                    .emojis {
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: space-between;
+                        &:after {
+                            content: "";
+                            flex: auto;
+                        }
+                        span {
+                            padding: 2px 4px;
+                            cursor: pointer;
+                            font-size: 22px;
+                            &:hover {
+                                background: #ececec;
+                                cursor: pointer;
+                            }
+                        }
+                    }
+                }
+                .message-upload {
+                    display: none;
+                    width: 0;
+                    height: 0;
+                    overflow: hidden;
                 }
             }
             @media screen and (max-width: 768px) {
@@ -368,9 +435,9 @@
                 }
                 .manage-quick {
                     bottom: 54px;
-                    > button,
-                    .quick-button {
-                        margin-right: 2px;
+                    .quick-item {
+                        font-size: 24px;
+                        margin-right: 8px;
                     }
                 }
             }
@@ -378,12 +445,15 @@
     }
 </style>
 <script>
+    import EmojiPicker from 'vue-emoji-picker'
     import DrawerTabsContainer from "../DrawerTabsContainer";
     import ScrollerY from "../../../_components/ScrollerY";
     import ChatMessage from "./message";
+    import ImgUpload from "../ImgUpload";
+
     export default {
         name: 'ChatIndex',
-        components: {ChatMessage, ScrollerY, DrawerTabsContainer},
+        components: {ImgUpload, ChatMessage, EmojiPicker, ScrollerY, DrawerTabsContainer},
         data () {
             return {
                 loadIng: 0,
@@ -405,6 +475,7 @@
                 messageText: '',
                 messageLists: [],
                 messageNoDataText: '',
+                messageEmojiSearch: '',
             }
         },
 
@@ -461,6 +532,11 @@
                 if (val === 'team' && this.teamReady == false) {
                     this.teamReady = true;
                     this.getTeamLists();
+                } else if (val === 'dialog') {
+                    this.autoBottom = true;
+                    this.$nextTick(() => {
+                        this.messageBottomGo();
+                    });
                 }
             },
             dialogTarget: {
@@ -478,9 +554,9 @@
                     if ($A.formatDate('Ymd') === $A.formatDate('Ymd', v)) {
                         string = $A.formatDate('H:i', v)
                     } else if ($A.formatDate('Y') === $A.formatDate('Y', v)) {
-                        string = $A.formatDate('m-d H:i', v)
+                        string = $A.formatDate('m-d', v)
                     } else {
-                        string = $A.formatDate('Y-m-d H:i', v)
+                        string = $A.formatDate('Y-m-d', v)
                     }
                 }
                 return string || '';
@@ -638,6 +714,34 @@
                         this.autoBottom = true;
                     }
                 });
+            },
+
+            messageInsertText(emoji) {
+                this.messageText+= emoji;
+            },
+
+            messageInsertImage(lists) {
+                for (let i = 0; i < lists.length; i++) {
+                    let item = lists[i];
+                    if (typeof item === 'object' && typeof item.url === "string") {
+                        let data = {
+                            type: 'image',
+                            username: this.userInfo.username,
+                            userimg: this.userInfo.userimg,
+                            indate: Math.round(new Date().getTime() / 1000),
+                            url: item.url
+                        };
+                        $A.WS.sendTo('user', this.dialogTarget.username, data, (res) => {
+                            this.$set(data, res.status === 1 ? 'id' : 'error', res.message)
+                        });
+                        //
+                        this.openDialog(this.dialogTarget, {
+                            lasttext: '[图片]',
+                            lastdate: data.indate
+                        });
+                        this.addMessageData(data, true);
+                    }
+                }
             },
 
             addMessageData(data, animation = false) {

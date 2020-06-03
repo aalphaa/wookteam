@@ -169,8 +169,8 @@
         display: inline-block;
         text-decoration: none;
         .item-image-view {
-            max-width: 320px;
-            max-height: 320px;
+            max-width: 220px;
+            max-height: 220px;
             border-radius: 6px;
         }
     }
@@ -210,9 +210,9 @@
                     if ($A.formatDate('Ymd') === $A.formatDate('Ymd', v)) {
                         string = $A.formatDate('H:i', v)
                     } else if ($A.formatDate('Y') === $A.formatDate('Y', v)) {
-                        string = $A.formatDate('m-d H:i', v)
+                        string = $A.formatDate('m-d', v)
                     } else {
-                        string = $A.formatDate('Y-m-d H:i', v)
+                        string = $A.formatDate('Y-m-d', v)
                     }
                 }
                 return string ? '(' + string + ')' : '';

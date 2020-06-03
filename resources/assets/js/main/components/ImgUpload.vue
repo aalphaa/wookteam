@@ -26,7 +26,7 @@
                             ref="upload"
                             accept="image/*"
                             :action="actionUrl"
-                            :data="params"
+                            :data="uploadParams"
                             :show-upload-list="false"
                             :max-size="2048"
                             :format="['jpg', 'jpeg', 'gif', 'png']"
@@ -308,6 +308,12 @@
                 type: Boolean,
                 default: false
             },
+            otherParams: {
+                type: Object,
+                default: () => {
+                    return {};
+                }
+            },
         },
         data () {
             return {
@@ -361,6 +367,15 @@
             browseVisible() {
                 this.httpType = '';
                 this.httpValue = '';
+            }
+        },
+        computed: {
+            uploadParams() {
+                if (Object.keys(this.otherParams).length > 0) {
+                    return Object.assign(this.params, this.otherParams);
+                } else {
+                    return this.params;
+                }
             }
         },
         methods: {
