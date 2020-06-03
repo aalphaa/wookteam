@@ -103,6 +103,40 @@ class WebSocketService implements WebSocketHandlerInterface
             'message' => '',
         ];
         switch ($data['type']) {
+            /**
+             * 未读消息总数
+             */
+            case 'unread':
+                $from = self::fd2name($frame->fd);
+                if ($from) {
+                    $num = intval(DB::table('chat_dialog')->where('user1', $from)->sum('unread1'));
+                    $num+= intval(DB::table('chat_dialog')->where('user2', $from)->sum('unread2'));
+                    $feedback['message'] = $num;
+                } else {
+                    $feedback['message'] = 0;
+                }
+                break;
+
+            /**
+             * 已读消息
+             */
+            case 'read':
+                $to = self::name2fd($data['target']);
+                if ($to) {
+                    $dialog = Chat::openDialog(self::fd2name($frame->fd), $data['target']);
+                    if (!Base::isError($dialog)) {
+                        $dialog = $dialog['data'];
+                        $upArray = [
+                            ($dialog['recField'] == 1 ? 'unread2' : 'unread1') => 0,
+                        ];
+                        DB::table('chat_dialog')->where('id', $dialog['id'])->update($upArray);
+                    }
+                }
+                break;
+
+            /**
+             * 发给用户
+             */
             case 'user':
                 $to = self::name2fd($data['target']);
                 if ($to) {
@@ -125,7 +159,10 @@ class WebSocketService implements WebSocketHandlerInterface
                 }
                 break;
 
-            case 'all':
+            /**
+             * 发给整个团队
+             */
+            case 'team':
                 foreach (self::getUsersAll() as $user) {
                     $data['target'] = $user['username'];
                     $server->push($user['wsid'], Base::array2json($data));

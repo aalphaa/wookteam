@@ -6,8 +6,13 @@
             <li class="self">
                 <img :src="userInfo.userimg">
             </li>
-            <li :class="{active:chatTap=='dialog'}" @click="chatTap='dialog'"><Icon type="md-text" /></li>
-            <li :class="{active:chatTap=='team'}" @click="chatTap='team'"><Icon type="md-person" /></li>
+            <li :class="{active:chatTap=='dialog'}" @click="chatTap='dialog'">
+                <Icon type="md-text" />
+                <em v-if="unreadTotal > 0" class="chat-num">{{unreadTotal}}</em>
+            </li>
+            <li :class="{active:chatTap=='team'}" @click="chatTap='team'">
+                <Icon type="md-person" />
+            </li>
         </ul>
 
         <!--对话列表-->
@@ -27,6 +32,7 @@
                     </div>
                     <div class="user-msg-text">{{dialog.lasttext}}</div>
                 </div>
+                <em v-if="dialog.unread > 0" class="user-msg-num">{{dialog.unread}}</em>
             </li>
             <li v-if="dialogLists.length == 0" class="chat-none">{{dialogNoDataText}}</li>
         </ul>
@@ -65,7 +71,7 @@
                 </div>
                 <div class="manage-lists-message-new" v-if="messageNew > 0" @click="messageBottomGo(true)">有{{messageNew}}条新消息</div>
             </ScrollerY>
-            <div class="manage-send">
+            <div class="manage-send" @click="clickDialog(dialogTarget.username)">
                 <textarea ref="textarea" class="manage-input" v-model="messageText" placeholder="请输入要发送的消息" @keydown="messageSend($event)"></textarea>
             </div>
             <div class="manage-quick">
@@ -95,6 +101,30 @@
     </div>
 </template>
 
+<style lang="scss">
+    .chat-notice-box {
+        display: flex;
+        align-items: flex-start;
+        .chat-notice-userimg {
+            width: 42px;
+            height: 42px;
+            border-radius: 4px;
+        }
+        .ivu-notice-with-desc {
+            flex: 1;
+            padding: 0 12px;
+        }
+        .ivu-notice-desc {
+            word-break:break-all;
+            line-height: 1.3;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            overflow:hidden;
+            -webkit-box-orient: vertical;
+        }
+    }
+</style>
 <style lang="scss" scoped>
     .chat-index {
         display: flex;
@@ -121,6 +151,7 @@
             height: 100%;
             padding-top: 20px;
             li {
+                position: relative;
                 padding: 12px 0;
                 text-align: center;
                 font-size: 28px;
@@ -137,6 +168,20 @@
                 &.active {
                     color: #ffffff;
                     background-color: rgba(255, 255, 255, 0.06);
+                }
+                .chat-num {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    height: auto;
+                    line-height: normal;
+                    color: #ffffff;
+                    background-color: #ff0000;
+                    text-align: center;
+                    border-radius: 10px;
+                    padding: 1px 5px;
+                    font-size: 12px;
+                    transform: scale(0.9) translate(5px, -20px);
                 }
             }
         }
@@ -210,6 +255,21 @@
                         overflow: hidden;
                         text-overflow: ellipsis;
                     }
+                }
+                .user-msg-num {
+                    position: absolute;
+                    top: 6px;
+                    left: 44px;
+                    height: auto;
+                    line-height: normal;
+                    color: #ffffff;
+                    background-color: #ff0000;
+                    text-align: center;
+                    border-radius: 10px;
+                    padding: 1px 5px;
+                    font-size: 12px;
+                    transform: scale(0.9);
+                    border: 1px solid #ffffff;
                 }
             }
         }
@@ -454,6 +514,15 @@
     export default {
         name: 'ChatIndex',
         components: {ImgUpload, ChatMessage, EmojiPicker, ScrollerY, DrawerTabsContainer},
+        props: {
+            value: {
+                default: 0
+            },
+            openWindow: {
+                type: Boolean,
+                default: false
+            },
+        },
         data () {
             return {
                 loadIng: 0,
@@ -476,6 +545,8 @@
                 messageLists: [],
                 messageNoDataText: '',
                 messageEmojiSearch: '',
+
+                unreadTotal: 0,
             }
         },
 
@@ -486,9 +557,27 @@
         },
 
         mounted() {
-            this.userInfo = $A.getUserInfo((res) => {
-                this.userInfo = res;
+            let resCall = () => {
+                if ($A.getToken() === false) {
+                    return;
+                }
+                $A.WS.sendTo('unread', (res) => {
+                    if (res.status === 1) {
+                        this.unreadTotal = $A.runNum(res.message);
+                    } else {
+                        this.unreadTotal = 0;
+                    }
+                });
+                this.getDialogLists();
+                this.messageBottomAuto();
+            };
+            this.userInfo = $A.getUserInfo((res, isLogin) => {
+                if (this.userInfo.id != res.id) {
+                    this.userInfo = res;
+                    resCall();
+                }
             }, false);
+            resCall();
             //
             $A.WS.setOnMsgListener("chat/index", (msgDetail) => {
                 if (msgDetail.sender == $A.getUserName()) {
@@ -511,20 +600,43 @@
                         lasttext = '[未知类型]';
                         break;
                 }
-                this.openDialog({
+                this.addDialog({
                     username: data.username,
                     userimg: data.userimg,
-                }, {
                     lasttext: lasttext,
                     lastdate: data.indate
-                });
+                }, msgDetail.sender != this.dialogTarget.username || !this.openWindow);
                 if (msgDetail.sender == this.dialogTarget.username) {
                     this.addMessageData(data, true);
                 }
-            })
-            //
-            this.getDialogLists();
-            this.messageBottomAuto();
+                if (!this.openWindow) {
+                    this.$Notice.close('chat-notice');
+                    this.$Notice.open({
+                        name: 'chat-notice',
+                        duration: 0,
+                        render: h => {
+                            return h('div', {
+                                class: 'chat-notice-box',
+                                on: {
+                                    click: () => {
+                                        this.$Notice.close('chat-notice');
+                                        this.$emit("on-open-notice", data.username);
+                                        this.clickDialog(data.username);
+                                    }
+                                }
+                            }, [
+                                h('img', { class: 'chat-notice-userimg', attrs: { src: data.userimg } }),
+                                h('div', { class: 'ivu-notice-with-desc' }, [
+                                    h('div', { class: 'ivu-notice-title' }, [
+                                        h('UserView', { props: { username: data.username } })
+                                    ]),
+                                    h('div', { class: 'ivu-notice-desc' }, lasttext)
+                                ])
+                            ])
+                        }
+                    });
+                }
+            });
         },
 
         watch: {
@@ -539,6 +651,15 @@
                     });
                 }
             },
+
+            unreadTotal(val) {
+                if (val < 0) {
+                    this.unreadTotal = 0;
+                    return;
+                }
+                this.$emit('input', val);
+            },
+
             dialogTarget: {
                 handler: function () {
                     this.getDialogMessage();
@@ -667,18 +788,38 @@
                 });
             },
 
-            openDialog(user, lastMsg) {
-                if (typeof lastMsg === "object") {
-                    user = Object.assign(user, lastMsg);
-                    this.dialogLists = this.dialogLists.filter((item) => {return item.username != user.username});
+            addDialog(data, plusUnread = false) {
+                if (!data.username) {
+                    return;
                 }
-                let lists = this.dialogLists.filter((item) => {return item.username == user.username});
-                if (lists.length === 0) {
-                    this.dialogLists.unshift(user);
+                let lists = this.dialogLists.filter((item) => {return item.username == data.username});
+                if (lists.length > 0) {
+                    data.unread = $A.runNum(lists[0].unread);
+                    this.dialogLists = this.dialogLists.filter((item) => {return item.username != data.username});
+                } else {
+                    data.unread = 0;
                 }
-                if (typeof lastMsg !== "object") {
-                    this.chatTap = 'dialog';
-                    this.dialogTarget = user;
+                if (plusUnread) {
+                    data.unread += 1;
+                    this.unreadTotal += 1;
+                }
+                this.dialogLists.unshift(data);
+            },
+
+            openDialog(user) {
+                this.chatTap = 'dialog';
+                this.dialogTarget = user;
+                if (typeof user.unread === "number" && user.unread > 0) {
+                    this.unreadTotal -= user.unread;
+                    this.$set(user, 'unread', 0);
+                    $A.WS.sendTo('read', user.username);
+                }
+            },
+
+            clickDialog(username) {
+                let lists = this.dialogLists.filter((item) => {return item.username == username});
+                if (lists.length > 0) {
+                    this.openDialog(lists[0]);
                 }
             },
 
@@ -703,7 +844,7 @@
                         }
                         this.messageBottomAuto();
                     }
-                }, 1200);
+                }, 1000);
             },
 
             messageBottomGo(animation = false) {
@@ -735,10 +876,11 @@
                             this.$set(data, res.status === 1 ? 'id' : 'error', res.message)
                         });
                         //
-                        this.openDialog(this.dialogTarget, {
+                        this.addDialog(Object.assign(this.dialogTarget, {
                             lasttext: '[图片]',
                             lastdate: data.indate
-                        });
+                        }));
+                        this.openDialog(this.dialogTarget);
                         this.addMessageData(data, true);
                     }
                 }
@@ -791,10 +933,11 @@
                         this.$set(data, res.status === 1 ? 'id' : 'error', res.message)
                     });
                     //
-                    this.openDialog(this.dialogTarget, {
+                    this.addDialog(Object.assign(this.dialogTarget, {
                         lasttext: text,
                         lastdate: data.indate
-                    });
+                    }));
+                    this.openDialog(this.dialogTarget);
                     this.addMessageData(data, true);
                 }
                 this.$nextTick(() => {

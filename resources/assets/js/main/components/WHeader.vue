@@ -27,6 +27,7 @@
                 </Dropdown>
                 <div class="right-info" @click="chatDrawerShow=true">
                     <Icon class="right-mticon" type="md-notifications" size="24"/>
+                    <em v-if="chatUnreadTotal > 0" class="right-info-num">{{chatUnreadTotal}}</em>
                 </div>
                 <Dropdown class="right-info" trigger="click" @on-click="setLanguage" transfer>
                     <div>
@@ -105,10 +106,8 @@
             </Tabs>
         </WDrawer>
         <WDrawer v-model="chatDrawerShow" :closable="false" maxWidth="1080">
-            <chat-index></chat-index>
-            <div class="w-header-chat-close" @click="chatDrawerShow=false">
-                <Icon type="ios-close" />
-            </div>
+            <chat-index v-model="chatUnreadTotal" :openWindow="chatDrawerShow" @on-open-notice="chatDrawerShow=true"></chat-index>
+            <div class="w-header-chat-close" @click="chatDrawerShow=false"><Icon type="ios-close" /></div>
         </WDrawer>
     </div>
 </template>
@@ -200,6 +199,20 @@
                         vertical-align: top;
                         margin-top: 8px;
                     }
+                    .right-info-num {
+                        position: absolute;
+                        top: 2px;
+                        right: -20%;
+                        height: auto;
+                        line-height: normal;
+                        color: #ffffff;
+                        background-color: #ff0000;
+                        text-align: center;
+                        border-radius: 10px;
+                        padding: 1px 5px;
+                        font-size: 12px;
+                        transform: scale(0.9);
+                    }
                 }
             }
         }
@@ -268,6 +281,7 @@
                 },
 
                 chatDrawerShow: false,
+                chatUnreadTotal: 0,
             }
         },
         created() {

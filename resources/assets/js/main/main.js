@@ -270,7 +270,7 @@ import '../../sass/main.scss';
                 }
             }
             if (sendToWS === true) {
-                $A.WS.sendTo('all', null, {
+                $A.WS.sendTo('team', null, {
                     type: "task",
                     act: act,
                     taskDetail: taskDetail
@@ -310,6 +310,10 @@ import '../../sass/main.scss';
                 let url = $A.getObject(window.webSocketConfig, 'URL');
                 url += ($A.strExists(url, "?") ? "&" : "?") + "token=" + $A.getToken();
                 if (!$A.leftExists(url, "ws://") && !$A.leftExists(url, "wss://")) {
+                    return;
+                }
+
+                if ($A.getToken() === false) {
                     return;
                 }
 
@@ -389,28 +393,42 @@ import '../../sass/main.scss';
 
             /**
              * 发送消息
-             * @param type      会话类型：user:指定target、all:所有会员
-             * @param target    接收方的标识，type=all时此项无效
+             * @param type      会话类型：user:指定target、team:团队会员
+             * @param target    接收方的标识，仅type=user时有效
              * @param content   发送内容
              * @param callback  发送回调
-             * @param isAgain
+             * @param againNum
              */
-            sendTo(type, target, content, callback, isAgain = false) {
+            sendTo(type, target, content, callback, againNum = 0) {
+                if (typeof target === "function") {
+                    content = target;
+                    target = null;
+                }
+                if (typeof content === "function") {
+                    callback = content;
+                    content = null;
+                }
+                //
                 if (this.__instance === null) {
-                    console.log("[WS] 服务未连接");
-                    if (isAgain === true) {
+                    console.log("[WS] 服务未连接: " + againNum);
+                    if (againNum >= 12) {
                         typeof callback === "function" && callback({status: 0, message: '服务未连接'});
-                        return;
+                    } else {
+                        setTimeout(() => {
+                            this.sendTo(type, target, content, callback, $A.runNum(againNum) + 1)
+                        }, 500);
+                        if (againNum === 0) {
+                            this.connection();
+                        }
                     }
-                    this.connection();
-                    setTimeout(() => { this.sendTo(type, target, content, callback, true); }, 6000);
+                    return;
                 }
                 if (this.__connected === false) {
                     console.log("[WS] 未连接成功");
                     typeof callback === "function" && callback({status: 0, message: '未连接成功'});
                     return;
                 }
-                if (['user', 'all'].indexOf(type) === -1) {
+                if (['unread', 'read', 'user', 'team'].indexOf(type) === -1) {
                     console.log("[WS] 错误的消息类型-" + type);
                     typeof callback === "function" && callback({status: 0, message: '错误的消息类型-' + type});
                     return;

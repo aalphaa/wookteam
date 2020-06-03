@@ -49,31 +49,10 @@ class ChatController extends Controller
         }
         foreach ($lists AS $key => $item) {
             $lists[$key] = array_merge($item, Users::username2basic($item['user1'] == $user['username'] ? $item['user2'] : $item['user1']));
+            $lists[$key]['unread'] = $item['user1'] == $user['username'] ? $item['unread1'] : $item['unread2'];
             $lists[$key]['lastdate'] = $item['lastdate'] ?: $item['indate'];
         }
         return Base::retSuccess('success', $lists);
-    }
-
-
-    /**
-     * 添加/创建对话
-     *
-     * @apiParam {String} username             用户名
-     */
-    public function dialog__add()
-    {
-        $user = Users::authE();
-        if (Base::isError($user)) {
-            return $user;
-        } else {
-            $user = $user['data'];
-        }
-        //
-        $target = Users::username2basic(trim(Request::input('username')));
-        if (empty($target)) {
-            return Base::retError('用户不存在');
-        }
-        return Chat::openDialog($user['username'], $target['username']);
     }
 
     /**

@@ -19,6 +19,9 @@ class Chat
      */
     public static function openDialog($username, $receive)
     {
+        if (!$username || !$receive) {
+            return Base::retError('参数错误！');
+        }
         $cacheKey = $username . "@" . $receive;
         $result = Cache::remember($cacheKey, now()->addMinutes(10), function() use ($receive, $username) {
             $row = Base::DBC2A(DB::table('chat_dialog')->where([
@@ -26,6 +29,7 @@ class Chat
                 'user2' => $receive,
             ])->first());
             if ($row) {
+                $row['recField'] = 2;   //接受信息用户的字段位置
                 return Base::retSuccess('already1', $row);
             }
             $row = Base::DBC2A(DB::table('chat_dialog')->where([
@@ -33,6 +37,7 @@ class Chat
                 'user2' => $username,
             ])->first());
             if ($row) {
+                $row['recField'] = 1;
                 return Base::retSuccess('already2', $row);
             }
             //
@@ -46,6 +51,7 @@ class Chat
                 'user2' => $receive,
             ])->first());
             if ($row) {
+                $row['recField'] = 2;
                 return Base::retSuccess('success', $row);
             }
             //
@@ -98,10 +104,12 @@ class Chat
                 break;
         }
         if ($lastText) {
-            DB::table('chat_dialog')->where('id', $dialog['id'])->update([
-                'lasttext' => $lastText,
-                'lastdate' => $indate,
+            $upArray = Base::DBUP([
+                ($dialog['recField'] == 1 ? 'unread1' : 'unread2') => 1,
             ]);
+            $upArray['lasttext'] = $lastText;
+            $upArray['lastdate'] = $indate;
+            DB::table('chat_dialog')->where('id', $dialog['id'])->update($upArray);
         }
         $inArray['id'] = DB::table('chat_msg')->insertGetId($inArray);
         $inArray['message'] = $message;
