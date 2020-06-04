@@ -42,12 +42,22 @@
                 </Dropdown>
             </div>
         </div>
-        <WDrawer v-model="systemDrawerShow" maxWidth="640" title="系统设置">
-            <Form ref="formSystem" :model="formSystem" :label-width="80">
+        <WDrawer v-model="systemDrawerShow" maxWidth="640" :title="$L('系统设置')">
+            <Form ref="formSystem" :model="formSystem" :label-width="100">
+                <FormItem :label="$L('首页Logo')" prop="userimg">
+                    <ImgUpload v-model="formSystem.logo" :num="1"></ImgUpload>
+                    <span style="color:#777">{{$L('建议尺寸：%', '300x52')}}</span>
+                </FormItem>
+                <FormItem :label="$L('Github图标')" prop="userimg">
+                    <RadioGroup v-model="formSystem.github">
+                        <Radio label="show">{{$L('显示')}}</Radio>
+                        <Radio label="hidden">{{$L('隐藏')}}</Radio>
+                    </RadioGroup>
+                </FormItem>
                 <FormItem :label="$L('允许注册')" prop="userimg">
                     <RadioGroup v-model="formSystem.reg">
-                        <Radio label="open">允许</Radio>
-                        <Radio label="close">禁止</Radio>
+                        <Radio label="open">{{$L('允许')}}</Radio>
+                        <Radio label="close">{{$L('禁止')}}</Radio>
                     </RadioGroup>
                 </FormItem>
                 <FormItem>
@@ -61,7 +71,8 @@
                 <TabPane :label="$L('个人资料')" name="personal">
                     <Form ref="formDatum" :model="formDatum" :rules="ruleDatum" :label-width="80">
                         <FormItem :label="$L('头像')" prop="userimg">
-                            <ImgUpload v-model="formDatum.userimg"></ImgUpload>
+                            <ImgUpload v-model="formDatum.userimg" :num="1"></ImgUpload>
+                            <span style="color:#777">{{$L('建议尺寸：%', '200x200')}}</span>
                         </FormItem>
                         <FormItem :label="$L('账号')">
                             <Input v-model="userInfo.username" :disabled="true"></Input>
@@ -187,7 +198,7 @@
                     a {
                         color: #fff;
                         display: block;
-                        width: 116px;
+                        min-width: 116px;
                         text-align: center;
                         &:visited {
                             color: #fff;
@@ -281,6 +292,7 @@
                 userDrawerTab: 'personal',
 
                 formSystem: {
+                    github: 'show',
                     reg: 'open',
                 },
 
@@ -341,7 +353,7 @@
                             if (value === '') {
                                 callback(new Error(this.$L('请输入确认新密码！')));
                             } else if (value !== this.formPass.newpass) {
-                                callback(new Error(this.$L('两次密码输入不一致!')));
+                                callback(new Error(this.$L('两次密码输入不一致！')));
                             } else {
                                 callback();
                             }
@@ -370,6 +382,7 @@
         watch: {
             '$route' () {
                 this.tabActive = this.$route.meta.tabActive;
+                this.systemDrawerShow = false;
                 this.userDrawerShow = false;
             }
         },
@@ -417,9 +430,8 @@
                     success: (res) => {
                         if (res.ret === 1) {
                             this.formSystem = res.data;
-                            if (!this.formSystem.reg) {
-                                this.formSystem.reg = 'open';
-                            }
+                            this.formSystem.github = this.formSystem.github || 'show';
+                            this.formSystem.reg = this.formSystem.reg || 'open';
                             if (save) {
                                 this.$Message.success(this.$L('修改成功'));
                             }

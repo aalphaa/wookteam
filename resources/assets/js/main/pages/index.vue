@@ -7,16 +7,20 @@
             <div class="z-row">
                 <div class="header-col-sub">
                     <h2>
-                        <img src="../../../statics/images/logo4.png">
+                        <img v-if="systemConfig.logo" :src="systemConfig.logo">
+                        <img v-else src="../../../statics/images/logo-white.png">
                         <span>{{$L('轻量级的团队在线协作')}}</span>
                     </h2>
                 </div>
                 <div class="z-1">
                     <dl>
                         <dd>
+                            <a v-if="systemConfig.github=='show'" class="right-info" target="_blank" href="https://github.com/kuaifan/wookteam">
+                                <Icon class="right-icon" type="logo-github"/>
+                            </a>
                             <Dropdown class="right-info" trigger="hover" @on-click="setLanguage" transfer>
                                 <div>
-                                    <Icon class="right-globe" type="md-globe" size="26"/>
+                                    <Icon class="right-icon" type="md-globe"/>
                                     <Icon type="md-arrow-dropdown"/>
                                 </div>
                                 <Dropdown-menu slot="list">
@@ -86,7 +90,7 @@
             </div>
         </div>
 
-        <div class="p-footer"><span>WorkTeam &copy; 2018-2020</span></div>
+        <div class="p-footer"><span>WookTeam &copy; 2018-2020</span></div>
 
         <Modal
             v-model="loginShow"
@@ -110,7 +114,7 @@
             </Form>
             <div slot="header" class="login-header">
                 <div @click="loginType='login'" class="login-header-item" :class="{active:loginType=='login'}">{{$L('用户登录')}}</div>
-                <div v-if="regOpen" @click="loginType='reg'" class="login-header-item" :class="{active:loginType=='reg'}">{{$L('注册账号')}}</div>
+                <div v-if="systemConfig.reg=='open'" @click="loginType='reg'" class="login-header-item" :class="{active:loginType=='reg'}">{{$L('注册账号')}}</div>
             </div>
             <div slot="footer">
                 <Button type="default" @click="loginShow=false">{{$L('取消')}}</Button>
@@ -168,23 +172,19 @@
                 .header-col-sub {
                     width: 500px;
                     h2 {
-                        font-size: 1.2rem;
-                        height: 48px;
-                        line-height: 54px;
-                        display: inline-block;
-                        width: 400px;
                         position: relative;
+                        padding: 1rem 0 0 1rem;
+                        display: flex;
+                        align-items: flex-end;
                         img {
                             width: 150px;
-                            margin: 1rem 0 0 1rem;
+                            margin-right: 6px;
                         }
                         span {
-                            position: absolute;
                             font-size: 12px;
                             font-weight: normal;
-                            top: 8px;
-                            left: 172px;
                             color: rgba(255, 255, 255, 0.85);
+                            line-height: 14px;
                         }
                     }
                 }
@@ -200,8 +200,12 @@
                             cursor: pointer;
                             margin-right: 1px;
                             .right-info {
+                                display: inline-block;
                                 cursor: pointer;
-                                .right-globe {
+                                margin-left: 12px;
+                                color: #ffffff;
+                                .right-icon {
+                                    font-size: 26px;
                                     vertical-align: middle;
                                 }
                             }
@@ -353,13 +357,18 @@
                 loadIng: 0,
                 loginShow: false,
                 loginType: 'login',
+
                 formLogin: {
                     username: '',
                     userpass: '',
                     userpass2: ''
                 },
                 ruleLogin: {},
-                regOpen: false,
+
+                systemConfig: $A.jsonParse($A.storage("systemSetting"), {
+                    github: '',
+                    reg: '',
+                }),
             }
         },
         created() {
@@ -378,7 +387,7 @@
                     {
                         validator: (rule, value, callback) => {
                             if (value !== this.formLogin.userpass) {
-                                callback(new Error(this.$L('两次密码输入不一致!')));
+                                callback(new Error(this.$L('两次密码输入不一致！')));
                             } else {
                                 callback();
                             }
@@ -389,26 +398,41 @@
                 ]
             };
         },
+        mounted() {
+            this.getSetting();
+        },
         deactivated() {
             this.loginShow = false;
         },
         watch: {
             loginShow(val) {
                 if (val) {
-                    $A.aAjax({
-                        url: 'system/setting',
-                        success: (res) => {
-                            if (res.ret === 1) {
-                                this.regOpen = res.data.reg || 'open';
-                            }
-                        }
-                    });
+                    this.getSetting();
                 } else {
                     this.loginType = 'login';
                 }
             }
         },
         methods: {
+            getSetting() {
+                $A.aAjax({
+                    url: 'system/setting',
+                    error: () => {
+                        $A.storage("systemSetting", {});
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.systemConfig = res.data;
+                            this.systemConfig.github = this.systemConfig.github || 'show';
+                            this.systemConfig.reg = this.systemConfig.reg || 'open';
+                            $A.storage("systemSetting", this.systemConfig);
+                        } else {
+                            $A.storage("systemSetting", {});
+                        }
+                    }
+                });
+            },
+
             loginChack() {
                 if ($A.getToken() !== false) {
                     this.goForward({path: '/todo'}, true);

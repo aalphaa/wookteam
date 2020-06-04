@@ -328,7 +328,7 @@ class UsersController extends Controller
         }
         //
         if (Base::isError(Users::identity('admin'))) {
-            return Base::retError('身份权限不足！', [], -1);
+            return Base::retError('权限不足！', [], -1);
         }
         //头像
         $userimg = Request::input('userimg');
@@ -381,7 +381,7 @@ class UsersController extends Controller
         }
         //
         if (Base::isError(Users::identity('admin'))) {
-            return Base::retError('身份权限不足！', [], -1);
+            return Base::retError('权限不足！', [], -1);
         }
         $username = intval(Request::input('username'));
         if ($user['username'] == $username) {

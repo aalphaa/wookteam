@@ -28,7 +28,7 @@ class SystemController extends Controller
      *
      * @apiParam {String} type
      * - get: 获取（默认）
-     * - save: 保存设置（支持：reg）
+     * - save: 保存设置（参数：logo、github、reg）
      */
     public function setting()
     {
@@ -45,14 +45,16 @@ class SystemController extends Controller
             }
             $all = Request::input();
             foreach ($all AS $key => $value) {
-                if (!in_array($key, ['reg'])) {
+                if (!in_array($key, ['logo', 'github', 'reg'])) {
                     unset($all[$key]);
                 }
             }
+            $all['logo'] = is_array($all['logo']) ? $all['logo'][0]['path'] : $all['logo'];
             $setting = Base::setting('system', Base::newTrim($all));
         } else {
             $setting = Base::setting('system');
         }
+        $setting['logo'] = Base::fillUrl($setting['logo']);
         return Base::retSuccess('success', $setting ? $setting : json_decode('{}'));
     }
 }

@@ -197,9 +197,9 @@ class Users
         $user = Users::auth();
         if (is_array($user['identity'])
             && in_array($identity, $user['identity'])) {
-            return Base::retSuccess("权限通过");
+            return Base::retSuccess("权限通过。");
         }
-        return Base::retError("权限不足");
+        return Base::retError("权限不足！");
     }
 
     /**
