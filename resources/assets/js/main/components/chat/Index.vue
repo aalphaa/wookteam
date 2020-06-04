@@ -683,7 +683,10 @@
                         lasttext = '[图片]';
                         break;
                     case 'taskB':
-                        lasttext = data.detail + " [来自关注任务]";
+                        lasttext = data.text + " [来自关注任务]";
+                        break;
+                    case 'report':
+                        lasttext = data.text + " [来自工作报告]";
                         break;
                     default:
                         lasttext = '[未知类型]';

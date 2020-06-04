@@ -298,7 +298,7 @@ import '../../sass/main.scss';
                                 username: item.username,
                                 userimg: item.userimg,
                                 indate: item.indate,
-                                detail: item.detail,
+                                text: item.detail,
                                 other: item.other
                             };
                             res.data.follower.forEach((username) => {

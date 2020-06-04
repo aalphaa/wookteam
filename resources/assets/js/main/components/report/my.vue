@@ -275,6 +275,25 @@
                                         this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                                     }
                                 }, 350);
+                                //
+                                let userInfo = $A.getUserInfo();
+                                let msgData = {
+                                    type: 'report',
+                                    username: userInfo.username,
+                                    userimg: userInfo.userimg,
+                                    indate: Math.round(new Date().getTime() / 1000),
+                                    text: res.data.ccuserAgain ? '修改了工作报告' : '发送了工作报告',
+                                    other: {
+                                        id: res.data.id,
+                                        type: res.data.type,
+                                        title: res.data.title,
+                                    }
+                                };
+                                res.data.ccuserArray.forEach((username) => {
+                                    if (username != msgData.username) {
+                                        $A.WS.sendTo('user', username, msgData);
+                                    }
+                                });
                             }
                         });
                     }

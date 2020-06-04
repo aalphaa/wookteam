@@ -2,7 +2,7 @@
     <div :data-id="info.id">
 
         <!--文本、任务-->
-        <div v-if="info.type==='text' || info.type==='taskB'">
+        <div v-if="info.type==='text' || info.type==='taskB' || info.type==='report'">
             <div v-if="info.self===true" class="list-right">
                 <div v-if="info.error" class="item-error" @click="clickError(info.error)">
                     <Icon type="md-alert" />
@@ -13,12 +13,13 @@
                         <em v-if="info.indate" class="item-date">{{formatCDate(info.indate)}}</em>
                     </div>
                     <div class="item-text">
-                        <div class="item-text-view" v-html="textMsg(info[info.type==='text'?'text':'detail'])"></div>
+                        <div class="item-text-view" v-html="textMsg(info.text)"></div>
                     </div>
                     <template v-if="info.type==='taskB'">
                         <div v-if="info.other.type==='task'" class="item-link" @click="taskDetail(info.other.id)">来自关注任务:<a href="javascript:void(0)">{{info.other.title}}</a></div>
                         <div v-if="info.other.type==='file'" class="item-link">来自关注任务:<a target="_blank" :href="fileDownUrl(info.other.id)">{{info.other.name}}</a></div>
                     </template>
+                    <div v-else-if="info.type==='report'" class="item-link" @click="reportDetail(info.other.id, info.other.title)">来自工作报告:<a href="javascript:void(0)">{{info.other.title}}</a></div>
                 </div>
                 <img class="item-userimg" @click="clickUser" :src="info.userimg" onerror="this.src=window.location.origin+'/images/other/avatar.png'"/>
             </div>
@@ -31,12 +32,13 @@
                         <em v-if="info.indate" class="item-date">{{formatCDate(info.indate)}}</em>
                     </div>
                     <div class="item-text">
-                        <div class="item-text-view" v-html="textMsg(info[info.type==='text'?'text':'detail'])"></div>
+                        <div class="item-text-view" v-html="textMsg(info.text)"></div>
                     </div>
                     <template v-if="info.type==='taskB'">
                         <div v-if="info.other.type==='task'" class="item-link" @click="taskDetail(info.other.id)">来自关注任务:<a href="javascript:void(0)">{{info.other.title}}</a></div>
                         <div v-if="info.other.type==='file'" class="item-link">来自关注任务:<a target="_blank" :href="fileDownUrl(info.other.id)">{{info.other.name}}</a></div>
                     </template>
+                    <div v-else-if="info.type==='report'" class="item-link" @click="reportDetail(info.other.id, info.other.title)">来自工作报告:<a href="javascript:void(0)">{{info.other.title}}</a></div>
                 </div>
             </div>
         </div>

@@ -160,6 +160,27 @@
                             this.dataDetail = res.data;
                             this.$Message.success(res.msg);
                             this.$emit("on-success", res.data);
+                            //
+                            if (this.dataDetail.status === '已发送') {
+                                let userInfo = $A.getUserInfo();
+                                let msgData = {
+                                    type: 'report',
+                                    username: userInfo.username,
+                                    userimg: userInfo.userimg,
+                                    indate: Math.round(new Date().getTime() / 1000),
+                                    text: this.dataDetail.ccuserAgain ? '修改了工作报告' : '发送了工作报告',
+                                    other: {
+                                        id: this.dataDetail.id,
+                                        type: this.dataDetail.type,
+                                        title: this.dataDetail.title,
+                                    }
+                                };
+                                this.dataDetail.ccuserArray.forEach((username) => {
+                                    if (username != msgData.username) {
+                                        $A.WS.sendTo('user', username, msgData);
+                                    }
+                                });
+                            }
                         } else {
                             this.$Modal.error({title: this.$L('温馨提示'), content: res.msg});
                         }

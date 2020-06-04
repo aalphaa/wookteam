@@ -113,7 +113,11 @@ class ReportController extends Controller
                 'status' => '已发送',
                 'ccuser' => Base::array2string($ccuser)
             ]);
-            return Base::retSuccess('发送成功！');
+            $reportDetail['ccuser'] = implode(',', $ccuser);
+            $reportDetail['ccuserArray'] = explode(',', $reportDetail['ccuser']);
+            return Base::retSuccess('发送成功！', array_merge($reportDetail, [
+                'ccuserAgain' => $reportDetail['status'] == '已发送'
+            ]));
         } elseif ($act == 'delete') {
             if (empty($reportDetail)) {
                 return Base::retError('没有相关的数据或已被删除！');
@@ -147,6 +151,7 @@ class ReportController extends Controller
             //
             $D['ccuser'] = explode(",", $D['ccuser']);
             $send = $reportDetail['status'] == '已发送' ? 1 : intval(Request::input('send'));
+            $ccuserAgain = $reportDetail['status'] == '已发送';
             if ($send) {
                 DB::table('report_ccuser')->where(['rid' => $reportDetail['id']])->update(['cc' => 0]);
                 foreach ($D['ccuser'] AS $ck => $cuser) {
@@ -167,6 +172,7 @@ class ReportController extends Controller
             DB::table('report_content')->updateOrInsert(['rid' => $reportDetail['id']], ['content' => $D['content']]);
             //
             $reportDetail = array_merge($reportDetail, [
+                'ccuserAgain' => $ccuserAgain,
                 'ccuser' => $D['ccuser'],
                 'title' => $D['title'],
                 'content' => $D['content'],
@@ -217,11 +223,13 @@ class ReportController extends Controller
             $reportDetail['content'] = '<h2>已完成工作</h2><ol>' . $completeContent . '</ol><h2>未完成的工作</h2><ol>' . $unfinishedContent . '</ol>';
             $reportDetail['status'] = '未保存';
         } else {
-            $reportDetail['ccuser'] = implode(',' ,Base::string2array($reportDetail['ccuser']));
+            $reportDetail['ccuser'] = implode(',', Base::string2array($reportDetail['ccuser']));
             if (!isset($reportDetail['content'])) {
                 $reportDetail['content'] = DB::table('report_content')->select(['content'])->where('rid', $reportDetail['id'])->value('content');
             }
         }
+        $reportDetail['ccuserAgain'] = isset($reportDetail['ccuserAgain']) ? $reportDetail['ccuserAgain'] : false;
+        $reportDetail['ccuserArray'] = explode(',', $reportDetail['ccuser']);
         return Base::retSuccess($act == 'submit' ? '保存成功' : 'success', $reportDetail);
     }
 

@@ -116,7 +116,10 @@ class Chat
                 $lastText = '[图片]';
                 break;
             case 'taskB':
-                $lastText = $message['detail'] . " [来自关注任务]";
+                $lastText = $message['text'] . " [来自关注任务]";
+                break;
+            case 'report':
+                $lastText = $message['text'] . " [来自工作报告]";
                 break;
             default:
                 $lastText = '[未知类型]';
