@@ -3,8 +3,8 @@
         <Tooltip :disabled="nickname === null" :delay="delay" :transfer="transfer" :placement="placement" @on-popper-show="popperShow">
             {{nickname || username}}
             <div slot="content">
-                <div>用户名：{{username}}</div>
-                <div>职位/职称：{{profession || '-'}}</div>
+                <div>{{$L('用户名')}}: {{username}}</div>
+                <div>{{$L('职位/职称')}}: {{profession || '-'}}</div>
             </div>
         </Tooltip>
     </div>

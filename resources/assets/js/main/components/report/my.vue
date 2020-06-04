@@ -48,7 +48,6 @@
 <script>
     import DrawerTabsContainer from "../DrawerTabsContainer";
     import ReportAdd from "./add";
-    import ReportContent from "./content";
     import WDrawer from "../iview/WDrawer";
 
     /**
@@ -56,7 +55,7 @@
      */
     export default {
         name: 'ReportMy',
-        components: {WDrawer, ReportContent, ReportAdd, DrawerTabsContainer},
+        components: {WDrawer, ReportAdd, DrawerTabsContainer},
         props: {
             canload: {
                 type: Boolean,
@@ -282,7 +281,7 @@
                                     username: userInfo.username,
                                     userimg: userInfo.userimg,
                                     indate: Math.round(new Date().getTime() / 1000),
-                                    text: res.data.ccuserAgain ? '修改了工作报告' : '发送了工作报告',
+                                    text: res.data.ccuserAgain ? this.$L('修改了工作报告') : this.$L('发送了工作报告'),
                                     other: {
                                         id: res.data.id,
                                         type: res.data.type,

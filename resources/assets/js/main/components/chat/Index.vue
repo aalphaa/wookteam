@@ -18,7 +18,7 @@
         <!--对话列表-->
         <ul class="chat-user" :style="{display:chatTap=='dialog'?'flex':'none'}">
             <li class="sreach">
-                <Input placeholder="搜索" prefix="ios-search" v-model="dialogSearch"/>
+                <Input :placeholder="$L('搜索')" prefix="ios-search" v-model="dialogSearch"/>
             </li>
             <li class="lists">
                 <ul>
@@ -45,7 +45,7 @@
         <!--联系人列表-->
         <ul class="chat-team" :style="{display:chatTap=='team'?'flex':'none'}">
             <li class="sreach">
-                <Input placeholder="搜索" prefix="ios-search" v-model="teamSearch"/>
+                <Input :placeholder="$L('搜索')" prefix="ios-search" v-model="teamSearch"/>
             </li>
             <li class="lists">
                 <ul>
@@ -60,7 +60,7 @@
                     </li>
                     <li v-if="teamNoDataText==$L('数据加载中.....')" class="chat-none"><w-loading/></li>
                     <li v-else-if="Object.keys(teamLists).length == 0" class="chat-none">{{teamNoDataText}}</li>
-                    <li v-if="teamHasMorePages" class="chat-more" @click="getTeamLists(true)">加载更多...</li>
+                    <li v-if="teamHasMorePages" class="chat-more" @click="getTeamLists(true)">{{$L('加载更多...')}}</li>
                 </ul>
             </li>
         </ul>
@@ -72,22 +72,22 @@
                 <Dropdown class="manage-title-right" placement="bottom-end" trigger="click" @on-click="dialogDropdown" transfer>
                     <Icon type="ios-more"/>
                     <DropdownMenu slot="list">
-                        <DropdownItem name="delete">删除对话</DropdownItem>
-                        <DropdownItem name="clear">清除聊天记录</DropdownItem>
+                        <DropdownItem name="delete">{{$L('删除对话')}}</DropdownItem>
+                        <DropdownItem name="clear">{{$L('清除聊天记录')}}</DropdownItem>
                     </DropdownMenu>
                 </Dropdown>
             </div>
             <ScrollerY ref="manageLists" class="manage-lists" @on-scroll="messageListsScroll">
                 <div ref="manageBody" class="manage-body">
-                    <div v-if="messageHasMorePages" class="manage-more" @click="getDialogMessage(true)">加载更多...</div>
+                    <div v-if="messageHasMorePages" class="manage-more" @click="getDialogMessage(true)">{{$L('加载更多...')}}</div>
                     <div v-if="messageNoDataText==$L('数据加载中.....')" class="manage-more"><w-loading/></div>
                     <div v-else-if="messageNoDataText" class="manage-more">{{messageNoDataText}}</div>
                     <chat-message v-for="(info, index) in messageLists" :key="index" :info="info"></chat-message>
                 </div>
-                <div class="manage-lists-message-new" v-if="messageNew > 0" @click="messageBottomGo(true)">有{{messageNew}}条新消息</div>
+                <div class="manage-lists-message-new" v-if="messageNew > 0" @click="messageBottomGo(true)">{{$L('有%条新消息', messageNew)}}</div>
             </ScrollerY>
             <div class="manage-send" @click="clickDialog(dialogTarget.username)">
-                <textarea ref="textarea" class="manage-input" v-model="messageText" placeholder="请输入要发送的消息" @keydown="messageSend($event)"></textarea>
+                <textarea ref="textarea" class="manage-input" v-model="messageText" :placeholder="$L('请输入要发送的消息')" @keydown="messageSend($event)"></textarea>
             </div>
             <div class="manage-quick">
                 <emoji-picker @emoji="messageInsertText" :search="messageEmojiSearch">
@@ -96,7 +96,7 @@
                     </div>
                     <div slot="emoji-picker" slot-scope="{ emojis, insert, display }">
                         <div class="emoji-box">
-                            <Input class="emoji-input" placeholder="搜索" v-model="messageEmojiSearch" prefix="ios-search"/>
+                            <Input class="emoji-input" :placeholder="$L('搜索')" v-model="messageEmojiSearch" prefix="ios-search"/>
                             <div>
                                 <div v-for="(emojiGroup, category) in emojis" :key="category">
                                     <h5>{{ category }}</h5>
@@ -680,16 +680,16 @@
                         lasttext = data.text;
                         break;
                     case 'image':
-                        lasttext = '[图片]';
+                        lasttext = this.$L('[图片]');
                         break;
                     case 'taskB':
-                        lasttext = data.text + " [来自关注任务]";
+                        lasttext = data.text + " " + this.$L("[来自关注任务]"_;
                         break;
                     case 'report':
-                        lasttext = data.text + " [来自工作报告]";
+                        lasttext = data.text + " " + this.$L("[来自工作报告]");
                         break;
                     default:
-                        lasttext = '[未知类型]';
+                        lasttext = this.$L('[未知类型]');
                         break;
                 }
                 let plusUnread = msgDetail.sender != this.dialogTarget.username || !this.openWindow;
@@ -863,7 +863,7 @@
                                 this.addMessageData({
                                     id: tempId,
                                     type: 'notice',
-                                    notice: '历史消息',
+                                    notice: this.$L('历史消息'),
                                 }, false, isNextPage);
                             } else {
                                 tempLists = tempLists.reverse();
@@ -993,8 +993,8 @@
                     case 'clear':
                     case 'delete':
                         this.$Modal.confirm({
-                            title: '确认操作',
-                            content: type === 'delete' ? '你确定要删除此对话吗？' : '你确定要清除聊天记录吗？',
+                            title: this.$L('确认操作'),
+                            content: type === 'delete' ? this.$L('你确定要删除此对话吗？') : this.$L('你确定要清除聊天记录吗？'),
                             loading: true,
                             onOk: () => {
                                 let username = this.dialogTarget.username;
@@ -1088,7 +1088,7 @@
                         });
                         //
                         this.addDialog(Object.assign(this.dialogTarget, {
-                            lasttext: '[图片]',
+                            lasttext: this.$L('[图片]'),
                             lastdate: data.indate
                         }));
                         this.openDialog(this.dialogTarget);

@@ -168,7 +168,7 @@
                                     username: userInfo.username,
                                     userimg: userInfo.userimg,
                                     indate: Math.round(new Date().getTime() / 1000),
-                                    text: this.dataDetail.ccuserAgain ? '修改了工作报告' : '发送了工作报告',
+                                    text: this.dataDetail.ccuserAgain ? this.$L('修改了工作报告') : this.$L('发送了工作报告'),
                                     other: {
                                         id: this.dataDetail.id,
                                         type: this.dataDetail.type,
