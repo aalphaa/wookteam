@@ -1361,17 +1361,6 @@
             params.header['Content-Type'] = 'application/json';
             params.header['language'] = window.localStorage['__language:type__'] || 'zh';
             params.header['token'] = $A.token();
-            //渠道
-            let channel = $A.hashParameter('channel');
-            if (!$A.ishave(channel)) {
-                channel = $A.storage('platform-channel');
-            }else{
-                $A.storage('platform-channel', channel);
-            }
-            if (!$A.ishave(channel)) {
-                channel = "none";
-            }
-            params.header['platform-channel'] = channel;
             //
             params.data['__Access-Control-Allow-Origin'] = true;
             params.beforeSend();

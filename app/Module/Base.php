@@ -1261,7 +1261,7 @@ class Base
      */
     public static function ajaxError($msg, $data = [], $ret = 0)
     {
-        if (Request::input('__Access-Control-Allow-Origin') || Request::header('Content-Type') === 'application/json' || Request::header('platform')) {
+        if (Request::input('__Access-Control-Allow-Origin') || Request::header('Content-Type') === 'application/json') {
             return Base::retError($msg, $data, $ret);
         }else{
             return abort(404);
