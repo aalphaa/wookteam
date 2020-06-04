@@ -18,21 +18,11 @@ class IndexController extends Controller
 
     private $version = '100000';
 
-    public function __invoke($method, $action = '', $child = '', $name = '')
+    public function __invoke($method, $action = '', $child = '')
     {
         $app = $method ? $method : 'main';
-        if ($app == 'uploads') {
-            $child = $action . '/' . $child . '/' . $name;
-            $action = '';
-        }
         if ($action) {
             $app .= "__" . $action;
-        }
-        @error_reporting(E_ALL & ~E_NOTICE);
-        if (Request::input('__Access-Control-Allow-Origin')) {
-            header('Access-Control-Allow-Origin:*');
-            header('Access-Control-Allow-Methods:GET,POST,PUT,DELETE,OPTIONS');
-            header('Access-Control-Allow-Headers:Content-Type, platform, platform-channel, token, release, Access-Control-Allow-Origin');
         }
         return (method_exists($this, $app)) ? $this->$app($child) : Base::ajaxError("404 not found (" . str_replace("__", "/", $app) . ").");
     }

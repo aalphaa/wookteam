@@ -60,16 +60,17 @@ class Users
 
     /**
      * 临时身份标识
+     * @param int $length
      * @return mixed|string
      */
-    public static function tmpID()
+    public static function tmpID($length = 8)
     {
-        if (strlen(Request::input("tmpid")) == 16) {
+        if (strlen(Request::input("tmpid")) == $length) {
             return Request::input("tmpid");
         }
         $tmpID = Session::get('user::tmpID');
-        if (strlen($tmpID) != 16) {
-            $tmpID = Base::generatePassword(16);
+        if (strlen($tmpID) != $length) {
+            $tmpID = Base::generatePassword($length);
             Session::put('user::tmpID', $tmpID);
         }
         return $tmpID;
@@ -156,7 +157,7 @@ class Users
     }
 
     /**
-     * 用户身份认证, 身份丢失时exit输出（获取用户信息）
+     * 用户身份认证（获取用户信息）
      * @return array|mixed
      */
     public static function authE()

@@ -453,6 +453,10 @@
             handleBeforeUpload () {
                 //上传前判断
                 let check = this.uploadList.length < this.maxNum;
+                if (!check && this.uploadList.length == 1) {
+                    this.handleRemove(this.uploadList[0]);
+                    check = this.uploadList.length < this.maxNum;
+                }
                 if (!check) {
                     this.$Modal.warning({
                         title: this.$L('温馨提示'),

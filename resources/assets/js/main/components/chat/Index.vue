@@ -748,6 +748,12 @@
                 }
             },
 
+            openWindow(val) {
+                if (val) {
+                    $A.WS.connection();
+                }
+            },
+
             unreadTotal(val) {
                 if (val < 0) {
                     this.unreadTotal = 0;

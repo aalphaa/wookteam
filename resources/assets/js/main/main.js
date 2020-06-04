@@ -323,14 +323,16 @@ import '../../sass/main.scss';
             __instance: null,
             __connected: false,
             __callbackid: {},
+            __autoNum: 0,
             __autoLine() {
-                let tempId = $A.randomString(16);
-                this.__autoId = tempId;
-                console.log("[WS] Connection auto 30s ...");
+                let tempNum = this.__autoNum;
                 setTimeout(() => {
-                    if (this.__autoId === tempId) {
-                        console.log("[WS] Connection auto ...");
-                        this.connection();
+                    if (tempNum === this.__autoNum) {
+                        this.__autoNum++
+                        this.sendTo('refresh', (res) => {
+                            console.log("[WS] Connection " + (res.status ? 'success' : 'error'));
+                            this.__autoLine();
+                        });
                     }
                 }, 30 * 1000);
             },
@@ -342,12 +344,12 @@ import '../../sass/main.scss';
                 let url = $A.getObject(window.webSocketConfig, 'URL');
                 url += ($A.strExists(url, "?") ? "&" : "?") + "token=" + $A.getToken();
                 if (!$A.leftExists(url, "ws://") && !$A.leftExists(url, "wss://")) {
-                    console.log("[WS] Connection nourl ...");
+                    console.log("[WS] Connection noUrl ...");
                     return;
                 }
 
                 if ($A.getToken() === false) {
-                    console.log("[WS] Connection noid ...");
+                    console.log("[WS] Connection noToken ...");
                     return;
                 }
 
@@ -371,6 +373,7 @@ import '../../sass/main.scss';
                     if (msgDetail.messageType === 'open') {
                         console.log("[WS] Connection connected ...");
                         this.__connected = true;
+                        this.__autoLine();
                     }
                     if (msgDetail.messageType === 'feedback') {
                         typeof this.__callbackid[msgDetail.messageId] === "function" && this.__callbackid[msgDetail.messageId](msgDetail.content);
@@ -385,7 +388,6 @@ import '../../sass/main.scss';
                     console.log("[WS] Connection closed ...");
                     this.__connected = false;
                     this.__instance = null;
-                    this.__autoLine();
                 }
 
                 // 连接出错
@@ -393,7 +395,6 @@ import '../../sass/main.scss';
                     console.log("[WS] Connection error ...");
                     this.__connected = false;
                     this.__instance = null;
-                    this.__autoLine();
                 }
 
                 return this;
@@ -464,9 +465,9 @@ import '../../sass/main.scss';
                     typeof callback === "function" && callback({status: 0, message: '未连接成功'});
                     return;
                 }
-                if (['unread', 'read', 'user', 'team'].indexOf(type) === -1) {
-                    console.log("[WS] 错误的消息类型-" + type);
-                    typeof callback === "function" && callback({status: 0, message: '错误的消息类型-' + type});
+                if (['refresh', 'unread', 'read', 'user', 'team'].indexOf(type) === -1) {
+                    console.log("[WS] 错误的消息类型: " + type);
+                    typeof callback === "function" && callback({status: 0, message: '错误的消息类型: ' + type});
                     return;
                 }
                 let messageId = '';
@@ -499,7 +500,7 @@ import '../../sass/main.scss';
                     return;
                 }
                 this.__instance.close();
-            }
+            },
         }
     });
 

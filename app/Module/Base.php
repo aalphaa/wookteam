@@ -1613,8 +1613,8 @@ class Base
                 $onlineip = getenv('REMOTE_ADDR');
             } elseif (isset($_SERVER['REMOTE_ADDR']) and $_SERVER['REMOTE_ADDR'] and strcasecmp($_SERVER['REMOTE_ADDR'], 'unknown')) {
                 $onlineip = $_SERVER['REMOTE_ADDR'];
-            } elseif (Request::header('X-Real-IP-Swoole-Y3MTXN')) {
-                $onlineip = Request::header('X-Real-IP-Swoole-Y3MTXN');
+            } elseif (Request::header('X-Real-IP')) {
+                $onlineip = Request::header('X-Real-IP');
             } else {
                 $onlineip = '0,0,0,0';
             }
@@ -1975,7 +1975,7 @@ class Base
                 $scaleName = md5_file($file) . $scaleName . '.' . $extension;
             }
             //
-            $file->move($param['path'], $fileName);
+            $file->move(public_path($param['path']), $fileName);
             //
             $array = [
                 "name" => $file->getClientOriginalName(),               //原文件名

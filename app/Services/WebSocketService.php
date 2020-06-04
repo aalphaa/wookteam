@@ -97,6 +97,11 @@ class WebSocketService implements WebSocketHandlerInterface
      */
     public function onMessage(Server $server, Frame $frame)
     {
+        global $_A;
+        $_A = [
+            '__static_langdata' => [],
+        ];
+        //
         $data = Base::json2array($frame->data);
         $feedback = [
             'status' => 1,

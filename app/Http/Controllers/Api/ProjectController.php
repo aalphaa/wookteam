@@ -1319,6 +1319,7 @@ class ProjectController extends Controller
             $user = $user['data'];
         }
         //
+        $act = trim(Request::input('act'));
         $taskid = intval(Request::input('taskid'));
         $task = Base::DBC2A(DB::table('project_task')
             ->where([
@@ -1334,7 +1335,9 @@ class ProjectController extends Controller
             if (Base::isError($inRes)) {
                 return $inRes;
             }
-            if (!$inRes['data']['isowner'] && $task['username'] != $user['username']) {
+            if (!$inRes['data']['isowner']
+                && $task['username'] != $user['username']
+                && !in_array($act, ['comment', 'attention'])) {
                 return Base::retError('此操作只允许项目管理员或者任务负责人！');
             }
         } else {
@@ -1343,7 +1346,6 @@ class ProjectController extends Controller
             }
         }
         //
-        $act = trim(Request::input('act'));
         $content = trim(Request::input('content'));
         $message = "";
         $upArray = [];
