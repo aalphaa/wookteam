@@ -134,6 +134,9 @@
             .item-username {
                 text-align: right;
             }
+            .item-link {
+                transform-origin: right center;
+            }
         }
         .item-userimg {
             width: 38px;
@@ -189,7 +192,7 @@
         padding: 0 5px;
         border-radius: 4px;
         transform: scale(0.96);
-        transform-origin: 0 0;
+        transform-origin: left center;
         > a {
             color: #3D90E2;
             padding-left: 3px;

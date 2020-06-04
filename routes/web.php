@@ -22,6 +22,9 @@ Route::prefix('api')->middleware(ApiMiddleware::class)->group(function () {
     //聊天
     Route::any('chat/{method}',                     'Api\ChatController');
     Route::any('chat/{method}/{action}',            'Api\ChatController');
+    //系统
+    Route::any('system/{method}',                   'Api\SystemController');
+    Route::any('system/{method}/{action}',          'Api\SystemController');
 });
 
 

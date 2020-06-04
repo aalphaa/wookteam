@@ -14,6 +14,51 @@ use Session;
 class Users
 {
     /**
+     * 注册会员
+     * @param $username
+     * @param $userpass
+     * @param array $other
+     * @return array
+     */
+    public static function reg($username, $userpass, $other = [])
+    {
+        //用户名
+        if (strlen($username) < 2) {
+            return Base::retError('用户名不可以少于2个字符！');
+        } elseif (strlen($username) > 16) {
+            return Base::retError('用户名最多只能设置16个字符！');
+        }
+        if (!preg_match('/^[A-Za-z0-9_\x{4e00}-\x{9fa5}]+$/u', $username)) {
+            return Base::retError('用户名由2-16位数字或字母、汉字、下划线组成！');
+        }
+        if (Users::username2id($username) > 0) {
+            return Base::retError('用户名已存在！');
+        }
+        //密码
+        if (strlen($userpass) < 6) {
+            return Base::retError('密码设置不能小于6位数！');
+        } elseif (strlen($userpass) > 32) {
+            return Base::retError('密码最多只能设置32位数！');
+        }
+        //开始注册
+        $inArray = [
+            'username' => $username,
+            'userpass' => Base::md52($userpass),
+            'regip' => Base::getIp(),
+            'regdate' => Base::time()
+        ];
+        if ($other) {
+            $inArray = array_merge($inArray, $other);
+        }
+        DB::table('users')->insert($inArray);
+        $user = Base::DBC2A(DB::table('users')->where('username', $username)->first());
+        if (empty($user)) {
+            return Base::retError('注册失败，请稍后再试。');
+        }
+        return Base::retSuccess('success', $user);
+    }
+
+    /**
      * 临时身份标识
      * @return mixed|string
      */

@@ -90,8 +90,6 @@
 
         <Modal
             v-model="loginShow"
-            :title="$L('用户登录')"
-            :closable="false"
             :mask-closable="false">
             <Form ref="login" :model="formLogin" :rules="ruleLogin">
                 <FormItem prop="username">
@@ -104,15 +102,46 @@
                         <Icon type="ios-lock-outline" slot="prepend"></Icon>
                     </Input>
                 </FormItem>
+                <FormItem v-if="loginType=='reg'" prop="userpass2">
+                    <Input type="password" v-model="formLogin.userpass2" :placeholder="$L('确认密码')" @on-enter="onLogin">
+                        <Icon type="ios-lock-outline" slot="prepend"></Icon>
+                    </Input>
+                </FormItem>
             </Form>
+            <div slot="header" class="login-header">
+                <div @click="loginType='login'" class="login-header-item" :class="{active:loginType=='login'}">{{$L('用户登录')}}</div>
+                <div v-if="regOpen" @click="loginType='reg'" class="login-header-item" :class="{active:loginType=='reg'}">{{$L('注册账号')}}</div>
+            </div>
             <div slot="footer">
                 <Button type="default" @click="loginShow=false">{{$L('取消')}}</Button>
-                <Button type="primary" :loading="loadIng > 0" @click="onLogin">{{$L('登录')}}</Button>
+                <Button type="primary" :loading="loadIng > 0" @click="onLogin">{{$L(loginType=='reg'?'注册':'登录')}}</Button>
             </div>
         </Modal>
     </div>
 </template>
 
+<style lang="scss">
+    .login-header {
+        display: flex;
+        align-items: center;
+        .login-header-item {
+            height: 20px;
+            line-height: 20px;
+            font-size: 14px;
+            color: #444444;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding-right: 12px;
+            cursor: pointer;
+            &.active {
+                font-size: 16px;
+                color: #17233d;
+                font-weight: 500;
+            }
+        }
+    }
+</style>
 <style lang="scss" scoped>
     .index {
         position: absolute;
@@ -323,11 +352,14 @@
             return {
                 loadIng: 0,
                 loginShow: false,
+                loginType: 'login',
                 formLogin: {
                     username: '',
-                    userpass: ''
+                    userpass: '',
+                    userpass2: ''
                 },
-                ruleLogin: {}
+                ruleLogin: {},
+                regOpen: false,
             }
         },
         created() {
@@ -339,11 +371,42 @@
                 userpass: [
                     { required: true, message: this.$L('请填写登录密码！'), trigger: 'change' },
                     { type: 'string', min: 6, message: this.$L('密码错长度至少6位！'), trigger: 'change' }
+                ],
+                userpass2: [
+                    { required: true, message: this.$L('请填写确认密码！'), trigger: 'change' },
+                    { type: 'string', min: 6, message: this.$L('确认密码错长度至少6位！'), trigger: 'change' },
+                    {
+                        validator: (rule, value, callback) => {
+                            if (value !== this.formLogin.userpass) {
+                                callback(new Error(this.$L('两次密码输入不一致!')));
+                            } else {
+                                callback();
+                            }
+                        },
+                        required: true,
+                        trigger: 'change'
+                    },
                 ]
             };
         },
         deactivated() {
             this.loginShow = false;
+        },
+        watch: {
+            loginShow(val) {
+                if (val) {
+                    $A.aAjax({
+                        url: 'system/setting',
+                        success: (res) => {
+                            if (res.ret === 1) {
+                                this.regOpen = res.data.reg || 'open';
+                            }
+                        }
+                    });
+                } else {
+                    this.loginType = 'login';
+                }
+            }
         },
         methods: {
             loginChack() {
@@ -358,7 +421,7 @@
                     if (valid) {
                         this.loadIng++;
                         $A.ajax({
-                            url: $A.urlApi('users/login'),
+                            url: $A.urlApi('users/login?type=' + this.loginType),
                             data: this.formLogin,
                             complete: () => {
                                 this.loadIng--;

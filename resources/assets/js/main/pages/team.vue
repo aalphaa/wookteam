@@ -136,17 +136,30 @@
                     });
                 }
             }, {
+                "title": this.$L("用户名"),
+                "key": 'username',
+                "minWidth": 80,
+                "ellipsis": true,
+                render: (h, params) => {
+                    let arr = [];
+                    if (params.row.username == $A.getUserName()) {
+                        arr.push(h('span', {
+                            style: {
+                                color: '#ff0000',
+                                paddingRight: '4px'
+                            }
+                        }, '[自己]'))
+                    }
+                    arr.push(h('span', params.row.username))
+                    return h('span', arr);
+                }
+            }, {
                 "title": this.$L("昵称"),
                 "minWidth": 80,
                 "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.nickname || '-');
                 }
-            }, {
-                "title": this.$L("用户名"),
-                "key": 'username',
-                "minWidth": 80,
-                "ellipsis": true,
             }, {
                 "title": this.$L("职位/职称"),
                 "minWidth": 100,
@@ -202,7 +215,7 @@
                                         loading: true,
                                         onOk: () => {
                                             $A.aAjax({
-                                                url: 'users/team/delete?id=' + params.row.id,
+                                                url: 'users/team/delete?username=' + params.row.username,
                                                 error: () => {
                                                     this.$Modal.remove();
                                                     alert(this.$L('网络繁忙，请稍后再试！'));

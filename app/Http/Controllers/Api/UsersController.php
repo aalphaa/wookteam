@@ -27,17 +27,38 @@ class UsersController extends Controller
     }
 
     /**
-     * 登陆
-     * @return array
+     * 登陆、注册
+     *
+     * @apiParam {String} type           类型
+     * - login:登录（默认）
+     * - reg:注册
+     * @apiParam {String} username       用户名
+     * @apiParam {String} userpass       密码
      */
     public function login()
     {
-        $user = Base::DBC2A(DB::table('users')->where('username', trim(Request::input('username')))->first());
-        if (empty($user)) {
-            return Base::retError('账号或密码错误。');
-        }
-        if ($user['userpass'] != Base::md52(Request::input('userpass'))) {
-            return Base::retError('账号或密码错误！');
+        $type = trim(Request::input('type'));
+        $username = trim(Request::input('username'));
+        $userpass = trim(Request::input('userpass'));
+        if ($type == 'reg') {
+            $setting = Base::setting('system');
+            if ($setting['reg'] == 'close') {
+                return Base::retError('未开放注册。');
+            }
+            $user = Users::reg($username, $userpass);
+            if (Base::isError($user)) {
+                return $user;
+            } else {
+                $user = $user['data'];
+            }
+        } else {
+            $user = Base::DBC2A(DB::table('users')->where('username', $username)->first());
+            if (empty($user)) {
+                return Base::retError('账号或密码错误。');
+            }
+            if ($user['userpass'] != Base::md52($userpass)) {
+                return Base::retError('账号或密码错误！');
+            }
         }
         //
         $array = [
@@ -51,15 +72,13 @@ class UsersController extends Controller
         Base::array_over($user, $array);
         DB::table('users')->where('id', $user['id'])->update($array);
         //
-        if (intval(Request::input('onlydata')) !== 1) {
-            Session::put('sessionToken', $array['token']);
-        }
-        return Base::retSuccess("登陆成功！", Users::retInfo($user));
+        return Base::retSuccess($type == 'reg' ? "注册成功！" : "登陆成功！", Users::retInfo($user));
     }
 
     /**
-     * 获取会员信息
-     * @return array|mixed
+     * 获取我的信息
+     *
+     * @apiParam {String} [callback]           jsonp返回字段
      */
     public function info()
     {
@@ -82,8 +101,9 @@ class UsersController extends Controller
     }
 
     /**
-     * 获取基本信息
-     * @return array
+     * 获取指定会员基本信息
+     *
+     * @apiParam {String} username           会员用户名
      */
     public function basic()
     {
@@ -92,6 +112,16 @@ class UsersController extends Controller
 
     /**
      * 搜索会员列表
+     *
+     * @apiParam {Object} where            搜索条件
+     * - where.usernameequal
+     * - where.username
+     * - where.nousername
+     * - where.identity
+     * - where.noidentity
+     * - where.projectid
+     * - where.noprojectid
+     * @apiParam {Number} [take]           获取数量，10-100
      */
     public function searchinfo()
     {
@@ -144,7 +174,11 @@ class UsersController extends Controller
 
     /**
      * 修改资料
-     * @return array|mixed
+     *
+     * @apiParam {Object} [userimg]             会员头像
+     * @apiParam {String} [nickname]            昵称
+     * @apiParam {String} [profession]          职位/职称
+     * @apiParam {String} [bgid]                背景编号
      */
     public function editdata()
     {
@@ -200,7 +234,9 @@ class UsersController extends Controller
 
     /**
      * 修改密码
-     * @return array|mixed
+     *
+     * @apiParam {String} oldpass           旧密码
+     * @apiParam {String} newpass           新密码
      */
     public function editpass()
     {
@@ -275,6 +311,12 @@ class UsersController extends Controller
 
     /**
      * 添加团队成员
+     *
+     * @apiParam {String} username              用户名
+     * @apiParam {String} userpass              密码
+     * @apiParam {Object} [userimg]             会员头像
+     * @apiParam {String} [nickname]            昵称
+     * @apiParam {String} [profession]          职位/职称
      */
     public function team__add()
     {
@@ -311,44 +353,23 @@ class UsersController extends Controller
                 return Base::retError('昵称最多只能设置20个字！');
             }
         }
-        //用户名
-        $username = trim(Request::input('username'));
-        if (strlen($username) < 2) {
-            return Base::retError('用户名不可以少于2个字符！');
-        } elseif (strlen($username) > 16) {
-            return Base::retError('用户名最多只能设置16个字符！');
-        }
-        if (!preg_match('/^[A-Za-z0-9_\x{4e00}-\x{9fa5}]+$/u', $username)) {
-            return Base::retError('用户名由2-16位数字或字母、汉字、下划线组成！');
-        }
-        if (Users::username2id($username) > 0) {
-            return Base::retError('用户名已存在！');
-        }
-        //密码
-        $userpass = trim(Request::input('userpass'));
-        if (strlen($userpass) < 6) {
-            return Base::retError('密码设置不能小于6位数！');
-        } elseif (strlen($userpass) > 32) {
-            return Base::retError('密码最多只能设置32位数！');
-        }
-        //
-        if (DB::table('users')->insert([
+        //开始注册
+        $user = Users::reg(trim(Request::input('username')), trim(Request::input('userpass')), [
             'userimg' => $userimg ?: '',
             'nickname' => $nickname ?: '',
             'profession' => $profession ?: '',
-            'username' => $username,
-            'userpass' => Base::md52($userpass),
-            'regip' => Base::getIp(),
-            'regdate' => Base::time()
-        ])) {
-            return Base::retSuccess('添加成功！');
+        ]);
+        if (Base::isError($user)) {
+            return $user;
         } else {
-            return Base::retError('添加失败！');
+            return Base::retSuccess('添加成功！');
         }
     }
 
     /**
      * 删除团队成员
+     *
+     * @apiParam {String} username           用户名
      */
     public function team__delete()
     {
@@ -362,12 +383,12 @@ class UsersController extends Controller
         if (Base::isError(Users::identity('admin'))) {
             return Base::retError('身份权限不足！', [], -1);
         }
-        $id = intval(Request::input('id'));
-        if ($user['id'] == $id) {
+        $username = intval(Request::input('username'));
+        if ($user['username'] == $username) {
             return Base::retError('不能删除自己！');
         }
         //
-        if (DB::table('users')->where('id', $id)->delete()) {
+        if (DB::table('users')->where('username', $username)->delete()) {
             return Base::retSuccess('删除成功！');
         } else {
             return Base::retError('删除失败！');

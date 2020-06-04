@@ -27,7 +27,7 @@
                        :style="tableStyle"
                        :columns="columns"
                        :data="userLists"
-                       @on-current-change="userChange"
+                       @on-row-click="userChange"
                        :no-data-text="noDataText"></Table>
             </div>
         </transition>
@@ -177,8 +177,8 @@
         created() {
             this.columns = [
                 {
-                    "title": this.$L("昵称"),
-                    "key": "nickname",
+                    "title": this.$L("用户名"),
+                    "key": "username",
                     "minWidth": 80,
                     "ellipsis": true,
                     "tooltip": true,
@@ -192,16 +192,19 @@
                                 style: { marginRight: '6px', fontSize: '16px', color: '#FF5722' },
                             }));
                         }
-                        arr.push(h('span', params.row.nickname || '-'));
+                        arr.push(h('span', username));
                         return h('div', arr);
                     }
                 }, {
-                    "title": this.$L("用户名"),
-                    "key": "username",
+                    "title": this.$L("昵称"),
+                    "key": "nickname",
                     "minWidth": 80,
                     "ellipsis": true,
                     "tooltip": true,
-                },
+                    render: (h, params) => {
+                        return h('span', params.row.nickname || '-');
+                    }
+                }
             ];
             this.noDataText = this.$L("数据加载中.....");
         },
@@ -408,7 +411,12 @@
 
             userChange(item) {
                 if (this.multiple) {
-                    this.addMultipleLists(item);
+                    let tempLists = this.multipleLists.filter((res) => { return res.username == item.username });
+                    if (tempLists.length > 0) {
+                        this.multipleLists = this.multipleLists.filter((res) => { return res.username != item.username });
+                    } else {
+                        this.addMultipleLists(item);
+                    }
                 } else {
                     this.userName = item.username;
                     this.seleName = item.nickname || item.username;

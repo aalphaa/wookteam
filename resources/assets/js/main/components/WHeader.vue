@@ -21,6 +21,7 @@
                        <Icon type="md-arrow-dropdown"/>
                    </div>
                     <Dropdown-menu slot="list">
+                        <Dropdown-item v-if="userInfo.id==1" name="system">{{$L('系统设置')}}</Dropdown-item>
                         <Dropdown-item name="user">{{$L('个人中心')}}</Dropdown-item>
                         <Dropdown-item name="out">{{$L('退出登录')}}</Dropdown-item>
                     </Dropdown-menu>
@@ -41,6 +42,20 @@
                 </Dropdown>
             </div>
         </div>
+        <WDrawer v-model="systemDrawerShow" maxWidth="640" title="系统设置">
+            <Form ref="formSystem" :model="formSystem" :label-width="80">
+                <FormItem :label="$L('允许注册')" prop="userimg">
+                    <RadioGroup v-model="formSystem.reg">
+                        <Radio label="open">允许</Radio>
+                        <Radio label="close">禁止</Radio>
+                    </RadioGroup>
+                </FormItem>
+                <FormItem>
+                    <Button :loading="loadIng > 0" type="primary" @click="handleSubmit('formSystem')">{{$L('提交')}}</Button>
+                    <Button :loading="loadIng > 0" @click="handleReset('formSystem')" style="margin-left: 8px">{{$L('重置')}}</Button>
+                </FormItem>
+            </Form>
+        </WDrawer>
         <WDrawer v-model="userDrawerShow" maxWidth="1000">
             <Tabs v-model="userDrawerTab">
                 <TabPane :label="$L('个人资料')" name="personal">
@@ -259,8 +274,15 @@
 
                 loadIng: 0,
                 userInfo: {},
+
+                systemDrawerShow: false,
+
                 userDrawerShow: false,
                 userDrawerTab: 'personal',
+
+                formSystem: {
+                    reg: 'open',
+                },
 
                 formDatum: {
                     userimg: '',
@@ -361,6 +383,11 @@
             },
             setRightSelect(act) {
                 switch (act) {
+                    case 'system':
+                        this.systemSetting(false);
+                        this.systemDrawerShow = true;
+                        break;
+
                     case 'user':
                         this.userDrawerShow = true;
                         break;
@@ -379,10 +406,39 @@
                     },
                 });
             },
+            systemSetting(save) {
+                this.loadIng++;
+                $A.aAjax({
+                    url: 'system/setting?type=' + (save ? 'save' : 'get'),
+                    data: this.formSystem,
+                    complete: () => {
+                        this.loadIng--;
+                    },
+                    success: (res) => {
+                        if (res.ret === 1) {
+                            this.formSystem = res.data;
+                            if (!this.formSystem.reg) {
+                                this.formSystem.reg = 'open';
+                            }
+                            if (save) {
+                                this.$Message.success(this.$L('修改成功'));
+                            }
+                        } else {
+                            if (save) {
+                                this.$Modal.error({title: this.$L('温馨提示'), content: res.msg });
+                            }
+                        }
+                    }
+                });
+            },
             handleSubmit(name) {
                 this.$refs[name].validate((valid) => {
                     if (valid) {
                         switch (name) {
+                            case "formSystem": {
+                                this.systemSetting(true);
+                                break;
+                            }
                             case "formDatum": {
                                 this.loadIng++;
                                 $A.aAjax({

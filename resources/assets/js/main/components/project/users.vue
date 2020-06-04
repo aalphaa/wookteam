@@ -68,17 +68,17 @@
                     });
                 }
             }, {
+                "title": this.$L("用户名"),
+                "key": 'username',
+                "minWidth": 80,
+                "ellipsis": true,
+            }, {
                 "title": this.$L("昵称"),
                 "minWidth": 80,
                 "ellipsis": true,
                 render: (h, params) => {
                     return h('span', params.row.nickname || '-');
                 }
-            }, {
-                "title": this.$L("用户名"),
-                "key": 'username',
-                "minWidth": 80,
-                "ellipsis": true,
             }, {
                 "title": this.$L("职位/职称"),
                 "minWidth": 100,
