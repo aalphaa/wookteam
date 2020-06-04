@@ -683,7 +683,7 @@
                         lasttext = this.$L('[图片]');
                         break;
                     case 'taskB':
-                        lasttext = data.text + " " + this.$L("[来自关注任务]"_;
+                        lasttext = data.text + " " + this.$L("[来自关注任务]");
                         break;
                     case 'report':
                         lasttext = data.text + " " + this.$L("[来自工作报告]");
