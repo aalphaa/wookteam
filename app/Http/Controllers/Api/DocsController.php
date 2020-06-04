@@ -144,7 +144,7 @@ class DocsController extends Controller
             ->where('bookid', intval(Request::input('bookid')))
             ->orderByDesc('inorder')
             ->orderByDesc('id')
-            ->take(300)
+            ->take(500)
             ->get());
         if (empty($lists)) {
             return Base::retError('暂无章节');
@@ -177,8 +177,8 @@ class DocsController extends Controller
             return Base::retError('知识库不存在或已被删除！');
         }
         $count = DB::table('docs_section')->where('bookid', $bookid)->count();
-        if ($count >= 300) {
-            return Base::retError('知识库章节已经超过最大限制（300）！');
+        if ($count >= 500) {
+            return Base::retError(['知识库章节已经超过最大限制（%）！', 500]);
         }
         //
         $id = intval(Request::input('id'));

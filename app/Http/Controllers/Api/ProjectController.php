@@ -371,7 +371,7 @@ class ProjectController extends Controller
         }
         $count = DB::table('users')->where('username', $username)->count();
         if ($count <= 0) {
-            return Base::retError('成员用户名(' . $username . ')不存在！');
+            return Base::retError(['成员用户名(%)不存在！', $username]);
         }
         //判断是否已在项目成员内
         $inRes = Project::inThe($projectDetail['id'], $username);
@@ -1438,7 +1438,7 @@ class ProjectController extends Controller
                 if ($task['projectid'] > 0) {
                     $inRes = Project::inThe($task['projectid'], $content);
                     if (Base::isError($inRes)) {
-                        return Base::retError($content . '不在成员列表内！');
+                        return Base::retError(['%不在成员列表内！', $content]);
                     }
                 }
                 $upArray['username'] = $content;

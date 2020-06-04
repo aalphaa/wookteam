@@ -230,7 +230,7 @@ class ReportController extends Controller
         }
         $reportDetail['ccuserAgain'] = isset($reportDetail['ccuserAgain']) ? $reportDetail['ccuserAgain'] : false;
         $reportDetail['ccuserArray'] = explode(',', $reportDetail['ccuser']);
-        return Base::retSuccess($act == 'submit' ? '保存成功' : 'success', $reportDetail);
+        return Base::retSuccess($act == 'submit' ? '保存成功！' : 'success', $reportDetail);
     }
 
     /**

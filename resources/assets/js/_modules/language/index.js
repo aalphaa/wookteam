@@ -21,8 +21,8 @@ export default {
                         this.privateLanguageInit = true;
                         //
                         this.addLanguageData({
-                            en: require("./global/en.js").default,
-                            zh: require("./global/zh.js").default
+                            en: require("../../../../lang/en/general.js").default,
+                            zh: require("../../../../lang/zh/general.js").default
                         });
                         this.privateLanguageType = window.localStorage['__language:type__'] || 'zh';
                         //

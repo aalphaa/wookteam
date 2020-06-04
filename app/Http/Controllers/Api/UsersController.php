@@ -54,7 +54,7 @@ class UsersController extends Controller
         if (intval(Request::input('onlydata')) !== 1) {
             Session::put('sessionToken', $array['token']);
         }
-        return Base::retSuccess("登陆成功", Users::retInfo($user));
+        return Base::retSuccess("登陆成功！", Users::retInfo($user));
     }
 
     /**

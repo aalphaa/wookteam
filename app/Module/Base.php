@@ -1038,6 +1038,26 @@ class Base
     }
 
     /**
+     * 自定义替换次数
+     * @param $search
+     * @param $replace
+     * @param $subject
+     * @param int $limit
+     * @return string|string[]|null
+     */
+    public static function strReplaceLimit($search, $replace, $subject, $limit = -1)
+    {
+        if (is_array($search)) {
+            foreach ($search as $k => $v) {
+                $search[$k] = '`' . preg_quote($search[$k], '`') . '`';
+            }
+        } else {
+            $search = '`' . preg_quote($search, '`') . '`';
+        }
+        return preg_replace($search, $replace, $subject, $limit);
+    }
+
+    /**
      * 获取或设置
      * @param $setname          //配置名称
      * @param bool $array       //保存内容
@@ -1203,6 +1223,54 @@ class Base
     }
 
     /**
+     * 国际化（替换国际语言）
+     * @param $val
+     * @return mixed
+     */
+    public static function Lang($val)
+    {
+        $repArray = [];
+        if (is_array($val)) {
+            if (self::strExists($val[0], '%') && count($val) > 1) {
+                $repArray = array_slice($val, 1);
+            }
+            $val = $val[0];
+        }
+        $data = self::langData();
+        if (isset($data[$val]) && $data[$val] !== null) {
+            $val = $data[$val];
+        }
+        if ($repArray) {
+            foreach ($repArray AS $item) {
+                $val = self::strReplaceLimit('%', $item, $val, 1);
+            }
+        }
+        return $val;
+    }
+
+    /**
+     * 加载语言数据
+     * @param bool $refresh
+     * @return array|mixed
+     */
+    public static function langData($refresh = false)
+    {
+        global $_A;
+        if (!isset($_A["__static_langdata"]) || $refresh === true) {
+            $_A["__static_langdata"] = [];
+            $language = trim(Request::header('language'));
+            $langpath = resource_path('lang/' . $language . '/general.php');
+            if (file_exists($langpath)) {
+                $data = include $langpath;
+                if (is_array($data)) {
+                    $_A["__static_langdata"] = $data;
+                }
+            }
+        }
+        return $_A["__static_langdata"];
+    }
+
+    /**
      * JSON返回
      * @param $param
      * @return string
@@ -1231,7 +1299,7 @@ class Base
     {
         return array(
             'ret' => $ret,
-            'msg' => $msg,
+            'msg' => self::Lang($msg),
             'data' => $data
         );
     }
@@ -1247,7 +1315,7 @@ class Base
     {
         return array(
             'ret' => $ret,
-            'msg' => $msg,
+            'msg' => self::Lang($msg),
             'data' => $data
         );
     }
@@ -1842,7 +1910,7 @@ class Base
     {
         $file = $param['file'];
         if (empty($file)) {
-            return Base::retError("您没有选择要上传的文件!");
+            return Base::retError("您没有选择要上传的文件！");
         }
         if($file->isValid()){
             Base::makeDir(public_path($param['path']));
@@ -1880,12 +1948,12 @@ class Base
             }
             $extension = strtolower($file->getClientOriginalExtension());
             if ($type && is_array($type) && !in_array($extension, $type)) {
-                return Base::retError('文件格式错误，限制类型：'.implode(",", $type));
+                return Base::retError(['文件格式错误，限制类型：%！', implode(",", $type)]);
             }
             try {
                 $fileSize = $file->getSize();
                 if ($param['size'] > 0 && $fileSize > $param['size'] * 1024) {
-                    return Base::retError('文件大小超限，最大限制：' . $param['size'] . 'kB');
+                    return Base::retError(['文件大小超限，最大限制：%KB！', $param['size']]);
                 }
             } catch (Exception $e) {
                 $fileSize = 0;
@@ -1921,7 +1989,7 @@ class Base
                 "ext" => $extension,                                    //文件后缀名
             ];
             if (!is_file($array['file'])) {
-                return Base::retError('上传失败!');
+                return Base::retError('上传失败！');
             }
             //iOS照片颠倒处理
             if (in_array($extension, ['jpg', 'jpeg']) && function_exists('exif_read_data')) {
