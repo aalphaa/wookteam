@@ -170,7 +170,7 @@ class Users
         }
         //
         $userinfo['setting'] = Base::string2array($userinfo['setting']);
-        $userinfo['userimg'] = $userinfo['userimg'] ? Base::fillUrl($userinfo['userimg']) : url('images/other/avatar.png');
+        $userinfo['userimg'] = self::userimg($userinfo['userimg']);
         $userinfo['identity'] = is_array($userinfo['identity']) ? $userinfo['identity'] : explode(",", trim($userinfo['identity'], ","));
         unset($userinfo['encrypt']);
         unset($userinfo['userpass']);

@@ -135,7 +135,7 @@ class UsersController extends Controller
             ->take(Min(Max(Base::nullShow(Request::input('take'), 10), 1), 100))
             ->get();
         foreach ($lists AS $key => $item) {
-            $lists[$key]['userimg'] = Base::fillUrl($item['userimg']);
+            $lists[$key]['userimg'] = Users::userimg($item['userimg']);
             $lists[$key]['identitys'] = explode(",", trim($item['identity'], ","));
             $lists[$key]['setting'] = Base::string2array($item['setting']);
         }
