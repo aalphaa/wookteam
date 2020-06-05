@@ -13,24 +13,18 @@
 $ git clone git@github.com:kuaifan/wookteam.git
 // 或者你也可以使用https
 $ git clone https://github.com/kuaifan/wookteam.git
-```
 
-#### 配置 remotes
-
-```bash
+// 配置 remotes
 $ cd wookteam
 $ git remote add origin git@github.com:kuaifan/wookteam.git
-```
 
-#### 拷贝`.env`
-
-```bash
+// 拷贝 .env
 $ cp .env.example .env
 ```
 
 #### 修改`.env`
 
-修改数据库信息、websocket
+> 数据库信息、WebSocket
 
 ```env
 DB_CONNECTION=mysql
@@ -59,7 +53,7 @@ $ npm install
 $ npm run production
 ```
 
-#### 运行 Laravels (websocket)
+#### 运行 Laravels (WebSocket)
 
 ```bash
 $ php bin/laravels start

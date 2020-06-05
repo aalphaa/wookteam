@@ -13,24 +13,18 @@
 $ git clone git@github.com:kuaifan/wookteam.git
 // or you can use https
 $ git clone https://github.com/kuaifan/wookteam.git
-```
 
-#### Configure remotes
-
-```bash
+// configure remotes
 $ cd wookteam
 $ git remote add origin git@github.com:kuaifan/wookteam.git
-```
 
-#### Copy`.env`
-
-```bash
+// copy .env
 $ cp .env.example .env
 ```
 
 #### Modify`.env`
 
-database、websocket
+> Database、WebSocket
 
 ```env
 DB_CONNECTION=mysql
@@ -59,7 +53,7 @@ $ npm install
 $ npm run production
 ```
 
-#### Run Laravels (websocket)
+#### Run Laravels (WebSocket)
 
 ```bash
 $ php bin/laravels start
