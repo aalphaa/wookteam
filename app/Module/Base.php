@@ -1636,7 +1636,7 @@ class Base
         }
         $cacheKey = "getIpInfo::" . md5($ip);
         $result = Cache::rememberForever($cacheKey, function() use ($ip) {
-            return Ihttp::ihttp_request("http://ip.taobao.com/service/getIpInfo.php?ip=" . $ip, [], [], 8);
+            return Ihttp::ihttp_request("http://ip.taobao.com/service/getIpInfo.php?accessKey=alibaba-inc&ip=" . $ip, [], [], 8);
         });
         if (Base::isError($result)) {
             return $result;

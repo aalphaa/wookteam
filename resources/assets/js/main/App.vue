@@ -163,12 +163,23 @@
                             $A.triggerUserInfoListener({});
                             //
                             let content = $A.jsonParse(msgDetail.content)
+                            let id = 'inip_' + Math.round(Math.random() * 10000);
+                            let ip = content.ip;
+                            let ip2 = ip.substring(0, ip.lastIndexOf('.')) + '.*';
                             this.$Modal.warning({
                                 title: this.$L("系统提示"),
-                                content: this.$L('您的帐号在其他地方（%）登录，您被迫退出，如果这不是您本人的操作，请注意帐号安全！', content.ip),
+                                content: this.$L('您的帐号在其他地方（%）登录，您被迫退出，如果这不是您本人的操作，请注意帐号安全！', '<span id="' + id + '">' + ip2 + '</span>'),
                                 onOk: () => {
                                     this.goForward({path: '/'}, true);
                                 }
+                            });
+                            this.$nextTick(() => {
+                                $A.getIpInfo(ip, (res) => {
+                                    if (res.ret === 1) {
+                                        $A("span#" + id).text(res.data.textSmall);
+                                        $A("span#" + id).attr("title", ip2);
+                                    }
+                                });
                             });
                             return;
                         } else if (msgDetail.messageType != 'send') {
