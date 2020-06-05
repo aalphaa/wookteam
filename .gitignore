@@ -4,6 +4,8 @@
 /public/images
 /public/js
 /public/uploads/*
+/public/.well-known
+/public/.user.ini
 /public/hot
 /storage/*.key
 /vendor

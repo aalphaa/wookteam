@@ -258,6 +258,15 @@ class UsersController extends Controller
             return Base::retError('新旧密码一致！');
         }
         //
+        if (env("PASSWORD_ADMIN") == 'disabled') {
+            if ($user['id'] == 1) {
+                return Base::retError('当前环境禁止修改密码！');
+            }
+        }
+        if (env("PASSWORD_OWNER") == 'disabled') {
+            return Base::retError('当前环境禁止修改密码！');
+        }
+        //
         if ($user['setpass']) {
             $verify = DB::table('users')->where(['id'=>$user['id'], 'userpass'=>Base::md52($oldpass, Users::token2encrypt())])->count();
             if (empty($verify)) {
