@@ -900,7 +900,7 @@ class Base
                 $arr_ch = array('1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2');
                 $sign = 0;
                 for ( $i = 0; $i < 17; $i++ ) {
-                    $b = (int) $id{$i};
+                    $b = (int) $id[$i];
                     $w = $arr_int[$i];
                     $sign += $b * $w;
                 }
