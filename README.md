@@ -1,79 +1,49 @@
-<p align="center"><img src="https://res.cloudinary.com/dtfbvvkyp/image/upload/v1566331377/laravel-logolockup-cmyk-red.svg" width="400"></p>
+# 产品介绍
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+**[English Documentation](./README-EN.md)**
 
-## About Laravel
+- `wookteam` 是一款轻量级的在线团队协作工具，提供各类文档工具、在线思维导图、在线流程图、项目管理、任务分发，知识库管理等工具。
+- `wookteam` 支持团队在线聊天沟通，订阅任务动态实时推送。
+- **`wookteam` 全部开源。**
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 官网地址
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- [https://www.wookteam.com](https://www.wookteam.com)
+- [安装教程](./INSTALL.md)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 演示地址
 
-## Learning Laravel
+- [https://demo.wookteam.com](https://demo.wookteam.com) (admin/123456)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 微信咨询
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- ![二维码](./resources/assets/statics/other/wxqr.jpeg)
 
-## Laravel Sponsors
+## 技术选型
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+- 后端框架：[Laravel7](https://laravel.com/) + LaravelS
+- 前端框架：[Vue 2.0](https://cn.vuejs.org/) + Iview UI
+- 数据库：Mysql
+- 通讯框架：Swoole
+- 主题样式：Kooteam
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[British Software Development](https://www.britishsoftware.co)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- [UserInsights](https://userinsights.com)
-- [Fragrantica](https://www.fragrantica.com)
-- [SOFTonSOFA](https://softonsofa.com/)
-- [User10](https://user10.com)
-- [Soumettre.fr](https://soumettre.fr/)
-- [CodeBrisk](https://codebrisk.com)
-- [1Forge](https://1forge.com)
-- [TECPRESSO](https://tecpresso.co.jp/)
-- [Runtime Converter](http://runtimeconverter.com/)
-- [WebL'Agence](https://weblagence.com/)
-- [Invoice Ninja](https://www.invoiceninja.com)
-- [iMi digital](https://www.imi-digital.de/)
-- [Earthlink](https://www.earthlink.ro/)
-- [Steadfast Collective](https://steadfastcollective.com/)
-- [We Are The Robots Inc.](https://watr.mx/)
-- [Understand.io](https://www.understand.io/)
-- [Abdel Elrafa](https://abdelelrafa.com)
-- [Hyper Host](https://hyper.host)
-- [Appoly](https://www.appoly.co.uk)
-- [OP.GG](https://op.gg)
-- [云软科技](http://www.yunruan.ltd/)
+## 国际化
 
-## Contributing
+- `WookTeam`支持国际化，支持：简体中文、英文，英文译文来自谷歌翻译。如果你有更好的语法表达欢迎参与[译文编写](https://docs.google.com/spreadsheets/d/1m0de8-5vCwjKRwW_lsgzsi8wmOmQRl_bIMGN988Keak/edit?usp=sharing)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 功能简介
 
-## Code of Conduct
+**1. 待办四象限：突出事情优先级，帮助员工合理安排时间，提高工作效率**
+![待办四象限：突出事情优先级，帮助员工合理安排时间，提高工作效率](./resources/assets/statics/images/index/todo.jpg)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+**2. 在线流程图：在线流程图工具，使用方便**
+![在线流程图：在线流程图工具，使用方便](./resources/assets/statics/images/index/banner/1.jpg)
 
-## Security Vulnerabilities
+**3. 在线思维导图：梳理思路，优化工作流程**
+![在线思维导图：梳理思路，优化工作流程](./resources/assets/statics/images/index/banner/2.jpg)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+**4. 项目管理：自定义项目看板，可视化任务安排**
+![项目管理：自定义项目看板，可视化任务安排](./resources/assets/statics/images/index/project.jpg)
 
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**5. 在线知识库：在线流程图，在线文档，以及可视化的目录编排，文档管理无忧**
+![在线知识库：在线流程图，在线文档，以及可视化的目录编排，文档管理无忧](./resources/assets/statics/images/index/wiki.jpg)
