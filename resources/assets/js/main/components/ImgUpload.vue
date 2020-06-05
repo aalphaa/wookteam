@@ -318,7 +318,11 @@
         data () {
             return {
                 actionUrl: $A.aUrl('imgupload'),
-                params: {'token': $A.token(), 'width': this.width, 'height': this.height},
+                params: {
+                    token: $A.getToken(),
+                    width: this.width,
+                    height: this.height
+                },
                 multiple: this.num > 1,
                 visible: false,
                 browseVisible: false,
@@ -463,6 +467,11 @@
                         content: this.$L('最多只能上传 % 张图片。', this.maxNum)
                     });
                 }
+                this.params = {
+                    token: $A.getToken(),
+                    width: this.width,
+                    height: this.height
+                };
                 return check;
             },
             handleClick() {

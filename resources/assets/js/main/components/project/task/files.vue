@@ -33,7 +33,8 @@
                     :max-size="10240"
                     :on-success="handleSuccess"
                     :on-format-error="handleFormatError"
-                    :on-exceeded-size="handleMaxSize">
+                    :on-exceeded-size="handleMaxSize"
+                    :before-upload="handleBeforeUpload">
                     <Button :loading="loadIng > 0" type="primary" icon="ios-cloud-upload-outline" @click="">{{$L('上传文件')}}</Button>
                 </Upload>
             </Row>
@@ -101,7 +102,11 @@
 
                 uploadFormat: ['jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'],
                 actionUrl: $A.aUrl('project/files/upload'),
-                params: {'token': $A.token(), taskid:this.taskid, projectid:this.projectid},
+                params: {
+                    token: $A.getToken(),
+                    taskid: this.taskid,
+                    projectid: this.projectid
+                },
                 uploadList: [],
             }
         },
@@ -520,6 +525,16 @@
                     title: this.$L('超出文件大小限制'),
                     content: this.$L('文件 % 太大，不能超过2M。', file.name)
                 });
+            },
+
+            handleBeforeUpload () {
+                //上传前判断
+                this.params = {
+                    token: $A.getToken(),
+                    taskid: this.taskid,
+                    projectid: this.projectid
+                };
+                return true;
             },
         }
     }
