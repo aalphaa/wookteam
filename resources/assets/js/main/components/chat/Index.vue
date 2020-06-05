@@ -120,6 +120,7 @@
     .chat-notice-box {
         display: flex;
         align-items: flex-start;
+        cursor: pointer;
         .chat-notice-userimg {
             width: 42px;
             height: 42px;
@@ -130,12 +131,13 @@
             padding: 0 12px;
         }
         .ivu-notice-desc {
-            word-break:break-all;
+            font-size: 13px;
+            word-break: break-all;
             line-height: 1.3;
             text-overflow: ellipsis;
             display: -webkit-box;
             -webkit-line-clamp: 2;
-            overflow:hidden;
+            overflow: hidden;
             -webkit-box-orient: vertical;
         }
     }
@@ -185,6 +187,7 @@
                 background-color: transparent;
                 cursor: pointer;
                 &.self {
+                    cursor: default;
                     img {
                         width: 36px;
                         height: 36px;
@@ -194,6 +197,14 @@
                 &.active {
                     color: #ffffff;
                     background-color: rgba(255, 255, 255, 0.06);
+                }
+                &:hover {
+                    > i {
+                        transform: scale(1.1);
+                    }
+                }
+                > i {
+                    transition: all 0.2s;
                 }
                 .chat-num {
                     position: absolute;
@@ -604,6 +615,8 @@
             return {
                 loadIng: 0,
 
+                openAlready: false,
+
                 userInfo: {},
 
                 chatTap: 'dialog',
@@ -666,44 +679,37 @@
                 if (msgDetail.sender == $A.getUserName()) {
                     return;
                 }
+                if (msgDetail.messageType == 'open') {
+                    if (this.openWindow) {
+                        this.getDialogLists();
+                        this.getDialogMessage();
+                    } else {
+                        this.openAlready = false;
+                        this.dialogTarget = {};
+                    }
+                    return;
+                }
                 if (msgDetail.messageType != 'send') {
                     return;
                 }
                 //
-                let data = $A.jsonParse(msgDetail.content);
-                if (['taskA'].indexOf(data.type) !== -1) {
+                let content = $A.jsonParse(msgDetail.content);
+                if (['taskA'].indexOf(content.type) !== -1) {
                     return;
                 }
-                let lasttext;
-                switch (data.type) {
-                    case 'text':
-                        lasttext = data.text;
-                        break;
-                    case 'image':
-                        lasttext = this.$L('[图片]');
-                        break;
-                    case 'taskB':
-                        lasttext = data.text + " " + this.$L("[来自关注任务]");
-                        break;
-                    case 'report':
-                        lasttext = data.text + " " + this.$L("[来自工作报告]");
-                        break;
-                    default:
-                        lasttext = this.$L('[未知类型]');
-                        break;
-                }
+                let lasttext = $A.WS.getMsgDesc(content);
                 let plusUnread = msgDetail.sender != this.dialogTarget.username || !this.openWindow;
                 this.addDialog({
-                    username: data.username,
-                    userimg: data.userimg,
+                    username: content.username,
+                    userimg: content.userimg,
                     lasttext: lasttext,
-                    lastdate: data.indate
-                }, plusUnread);
+                    lastdate: content.indate
+                }, plusUnread && content.resend !== 1);
                 if (msgDetail.sender == this.dialogTarget.username) {
-                    this.addMessageData(data, true);
+                    this.addMessageData(content, true);
                 }
                 if (!plusUnread) {
-                    $A.WS.sendTo('read', data.username);
+                    $A.WS.sendTo('read', content.username);
                 }
                 if (!this.openWindow) {
                     this.$Notice.close('chat-notice');
@@ -716,15 +722,15 @@
                                 on: {
                                     click: () => {
                                         this.$Notice.close('chat-notice');
-                                        this.$emit("on-open-notice", data.username);
-                                        this.clickDialog(data.username);
+                                        this.$emit("on-open-notice", content.username);
+                                        this.clickDialog(content.username);
                                     }
                                 }
                             }, [
-                                h('img', { class: 'chat-notice-userimg', attrs: { src: data.userimg } }),
+                                h('img', { class: 'chat-notice-userimg', attrs: { src: content.userimg } }),
                                 h('div', { class: 'ivu-notice-with-desc' }, [
                                     h('div', { class: 'ivu-notice-title' }, [
-                                        h('UserView', { props: { username: data.username } })
+                                        h('UserView', { props: { username: content.username } })
                                     ]),
                                     h('div', { class: 'ivu-notice-desc' }, lasttext)
                                 ])
@@ -732,6 +738,14 @@
                         }
                     });
                 }
+            });
+            $A.WS.setOnSpecialListener("chat/index", (content) => {
+                this.addDialog({
+                    username: content.username,
+                    userimg: content.userimg,
+                    lasttext: $A.WS.getMsgDesc(content),
+                    lastdate: content.indate
+                });
             });
         },
 
@@ -751,6 +765,10 @@
             openWindow(val) {
                 if (val) {
                     $A.WS.connection();
+                    if (!this.openAlready) {
+                        this.openAlready = true;
+                        this.getDialogLists();
+                    }
                 }
             },
 
@@ -806,6 +824,9 @@
             },
 
             getDialogLists() {
+                if (!this.openAlready) {
+                    return;
+                }
                 this.loadIng++;
                 this.dialogNoDataText = this.$L("数据加载中.....");
                 $A.aAjax({
@@ -829,6 +850,11 @@
             },
 
             getDialogMessage(isNextPage = false) {
+                let username = this.dialogTarget.username;
+                if (!username) {
+                    return;
+                }
+                //
                 if (isNextPage === true) {
                     if (!this.messageHasMorePages) {
                         return;
@@ -842,7 +868,6 @@
                 }
                 this.messageHasMorePages = false;
                 //
-                let username = this.dialogTarget.username;
                 this.loadIng++;
                 this.messageNoDataText = this.$L("数据加载中.....");
                 $A.aAjax({

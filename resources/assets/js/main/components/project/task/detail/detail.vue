@@ -856,6 +856,9 @@
                     margin-top: 8px;
                     padding-left: 10px;
                     padding-right: 10px;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
                 }
             }
         }

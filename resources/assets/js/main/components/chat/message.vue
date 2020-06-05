@@ -21,10 +21,10 @@
                     </template>
                     <div v-else-if="info.type==='report'" class="item-link" @click="reportDetail(info.other.id, info.other.title)">{{$L('来自工作报告')}}:<a href="javascript:void(0)">{{info.other.title}}</a></div>
                 </div>
-                <img class="item-userimg" @click="clickUser" :src="info.userimg" onerror="this.src=window.location.origin+'/images/other/avatar.png'"/>
+                <img class="item-userimg" @click="clickUser" :src="info.userimg"/>
             </div>
             <div v-else-if="info.self===false" class="list-item">
-                <img class="item-userimg" @click="clickUser" :src="info.userimg" onerror="this.src=window.location.origin+'/images/other/avatar.png'"/>
+                <img class="item-userimg" @click="clickUser" :src="info.userimg"/>
                 <div class="item-left">
                     <div class="item-username" @click="clickUser">
                         <em class="item-name"><user-view :username="info.username" placement="right"/></em>

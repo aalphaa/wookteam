@@ -270,7 +270,7 @@ import '../../sass/main.scss';
                 }
             }
             if (sendToWS === true) {
-                $A.WS.sendTo('team', null, {
+                $A.WS.sendTo('team', {
                     type: "taskA",
                     act: act,
                     taskDetail: taskDetail
@@ -303,7 +303,7 @@ import '../../sass/main.scss';
                             };
                             res.data.follower.forEach((username) => {
                                 if (username != msgData.username) {
-                                    $A.WS.sendTo('user', username, msgData);
+                                    $A.WS.sendTo('user', username, msgData, 'special');
                                 }
                             });
                         });
@@ -323,18 +323,24 @@ import '../../sass/main.scss';
             __instance: null,
             __connected: false,
             __callbackid: {},
+            __openNum: 0,
             __autoNum: 0,
-            __autoLine() {
+            __autoLine(timeout) {
                 let tempNum = this.__autoNum;
                 setTimeout(() => {
                     if (tempNum === this.__autoNum) {
                         this.__autoNum++
-                        this.sendTo('refresh', (res) => {
-                            console.log("[WS] Connection " + (res.status ? 'success' : 'error'));
-                            this.__autoLine();
-                        });
+                        if ($A.getToken() === false) {
+                            console.log("[WS] No token");
+                            this.__autoLine(timeout + 5);
+                        } else {
+                            this.sendTo('refresh', (res) => {
+                                console.log("[WS] Connection " + (res.status ? 'success' : 'error'));
+                                this.__autoLine(timeout + 5);
+                            });
+                        }
                     }
-                }, 30 * 1000);
+                }, Math.min(timeout, 30) * 1000);
             },
 
             /**
@@ -344,17 +350,17 @@ import '../../sass/main.scss';
                 let url = $A.getObject(window.webSocketConfig, 'URL');
                 url += ($A.strExists(url, "?") ? "&" : "?") + "token=" + $A.getToken();
                 if (!$A.leftExists(url, "ws://") && !$A.leftExists(url, "wss://")) {
-                    console.log("[WS] Connection noUrl ...");
+                    console.log("[WS] No connection address");
                     return;
                 }
 
                 if ($A.getToken() === false) {
-                    console.log("[WS] Connection noToken ...");
+                    console.log("[WS] No connected token");
                     return;
                 }
 
                 if (this.__instance !== null && force !== true) {
-                    console.log("[WS] Connection already ...");
+                    console.log("[WS] Connection exists");
                     return;
                 }
 
@@ -363,38 +369,43 @@ import '../../sass/main.scss';
 
                 // 连接建立时触发
                 this.__instance.onopen = (event) => {
-                    console.log("[WS] Connection open ...");
+                    console.log("[WS] Connection opened");
                 }
 
                 // 接收到服务端推送时执行
                 this.__instance.onmessage = (event) => {
-                    // console.log("[WS] Connection message ...");
                     let msgDetail = $A.jsonParse(event.data);
                     if (msgDetail.messageType === 'open') {
-                        console.log("[WS] Connection connected ...");
+                        console.log("[WS] Connection connected");
+                        msgDetail.openNum = this.__openNum;
+                        this.__openNum++;
                         this.__connected = true;
-                        this.__autoLine();
-                    }
-                    if (msgDetail.messageType === 'feedback') {
+                        this.__autoLine(30);
+                    } else if (msgDetail.messageType === 'feedback') {
                         typeof this.__callbackid[msgDetail.messageId] === "function" && this.__callbackid[msgDetail.messageId](msgDetail.content);
                         delete this.__callbackid[msgDetail.messageId];
                         return;
+                    }
+                    if ($A.runNum(msgDetail.contentId) > 0) {
+                        $A.WS.sendTo('roger', msgDetail.contentId);
                     }
                     this.triggerMsgListener(msgDetail);
                 };
 
                 // 连接关闭时触发
                 this.__instance.onclose = (event) => {
-                    console.log("[WS] Connection closed ...");
+                    console.log("[WS] Connection closed");
                     this.__connected = false;
                     this.__instance = null;
+                    this.__autoLine(5);
                 }
 
                 // 连接出错
                 this.__instance.onerror = (event) => {
-                    console.log("[WS] Connection error ...");
+                    console.log("[WS] Connection error");
                     this.__connected = false;
                     this.__instance = null;
+                    this.__autoLine(5);
                 }
 
                 return this;
@@ -429,14 +440,52 @@ import '../../sass/main.scss';
             __msgListenerObject: {},
 
             /**
+             * 添加特殊监听
+             * @param listenerName
+             * @param callback
+             */
+            setOnSpecialListener(listenerName, callback) {
+                if (typeof listenerName != "string") {
+                    return;
+                }
+                if (typeof callback === "function") {
+                    this.__specialListenerObject[listenerName] = {
+                        callback: callback,
+                    }
+                }
+                return this;
+            },
+            triggerSpecialListener(content) {
+                let key, item;
+                for (key in this.__specialListenerObject) {
+                    if (!this.__specialListenerObject.hasOwnProperty(key)) continue;
+                    item = this.__specialListenerObject[key];
+                    if (typeof item.callback === "function") {
+                        item.callback(content);
+                    }
+                }
+            },
+            __specialListenerObject: {},
+
+            /**
              * 发送消息
-             * @param type      会话类型：user:指定target、team:团队会员
-             * @param target    接收方的标识，仅type=user时有效
-             * @param content   发送内容
+             * @param type      会话类型
+             * - refresh: 刷新
+             * - unread: 未读信息总数量
+             * - read: 已读会员信息
+             * - roger: 收到信息回执
+             * - user: 指定target
+             * - team: 团队会员
+             * @param target    发送目标
+             * @param content   发送内容（对象或数组）
              * @param callback  发送回调
              * @param againNum
              */
             sendTo(type, target, content, callback, againNum = 0) {
+                if (typeof target === "object" && typeof content === "undefined") {
+                    content = target;
+                    target = null;
+                }
                 if (typeof target === "function") {
                     content = target;
                     target = null;
@@ -455,22 +504,33 @@ import '../../sass/main.scss';
                             this.connection();
                         }
                     } else {
-                        console.log("[WS] 服务未连接");
+                        console.log("[WS] Service not connected");
                         typeof callback === "function" && callback({status: 0, message: '服务未连接'});
                     }
                     return;
                 }
                 if (this.__connected === false) {
-                    console.log("[WS] 未连接成功");
+                    console.log("[WS] Failed connection");
                     typeof callback === "function" && callback({status: 0, message: '未连接成功'});
                     return;
                 }
-                if (['refresh', 'unread', 'read', 'user', 'team'].indexOf(type) === -1) {
-                    console.log("[WS] 错误的消息类型: " + type);
+                if (['refresh', 'unread', 'read', 'roger', 'user', 'team'].indexOf(type) === -1) {
+                    console.log("[WS] Wrong message type: " + type);
                     typeof callback === "function" && callback({status: 0, message: '错误的消息类型: ' + type});
                     return;
                 }
+                //
+                let contentId = 0;
+                if (type === 'roger') {
+                    contentId = target;
+                    target = null;
+                }
                 let messageId = '';
+                if (typeof callback === "string" && callback === 'special') {
+                    callback = (res) => {
+                        res.status === 1 && this.triggerSpecialListener(content);
+                    }
+                }
                 if (typeof callback === "function") {
                     messageId = $A.randomString(16);
                     this.__callbackid[messageId] = callback;
@@ -478,6 +538,7 @@ import '../../sass/main.scss';
                 this.__instance.send(JSON.stringify({
                     messageType: 'send',
                     messageId: messageId,
+                    contentId: contentId,
                     type: type,
                     sender: $A.getUserName(),
                     target: target,
@@ -492,15 +553,42 @@ import '../../sass/main.scss';
              */
             close() {
                 if (this.__instance === null) {
-                    console.log("[WS] 服务未连接");
+                    console.log("[WS] Service not connected");
                     return;
                 }
                 if (this.__connected === false) {
-                    console.log("[WS] 未连接成功");
+                    console.log("[WS] Failed connection");
                     return;
                 }
                 this.__instance.close();
             },
+
+            /**
+             * 获取消息描述
+             * @param content
+             * @returns {string}
+             */
+            getMsgDesc(content) {
+                let desc;
+                switch (content.type) {
+                    case 'text':
+                        desc = content.text;
+                        break;
+                    case 'image':
+                        desc = $A.app.$L('[图片]');
+                        break;
+                    case 'taskB':
+                        desc = content.text + " " + $A.app.$L("[来自关注任务]");
+                        break;
+                    case 'report':
+                        desc = content.text + " " + $A.app.$L("[来自工作报告]");
+                        break;
+                    default:
+                        desc = $A.app.$L('[未知类型]');
+                        break;
+                }
+                return desc;
+            }
         }
     });
 

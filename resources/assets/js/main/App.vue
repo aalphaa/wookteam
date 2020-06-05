@@ -157,7 +157,21 @@
                         if (msgDetail.sender == $A.getUserName()) {
                             return;
                         }
-                        if (msgDetail.messageType != 'send') {
+                        if (msgDetail.messageType == 'forced') {
+                            $A.token("");
+                            $A.storage("userInfo", {});
+                            $A.triggerUserInfoListener({});
+                            //
+                            let content = $A.jsonParse(msgDetail.content)
+                            this.$Modal.warning({
+                                title: this.$L("系统提示"),
+                                content: this.$L('您的帐号在其他地方（%）登录，您被迫退出，如果这不是您本人的操作，请注意帐号安全！', content.ip),
+                                onOk: () => {
+                                    this.goForward({path: '/'}, true);
+                                }
+                            });
+                            return;
+                        } else if (msgDetail.messageType != 'send') {
                             return;
                         }
                         let content = $A.jsonParse(msgDetail.content)

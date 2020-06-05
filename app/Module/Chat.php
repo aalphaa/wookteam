@@ -126,9 +126,12 @@ class Chat
                 break;
         }
         if ($lastText) {
-            $upArray = Base::DBUP([
-                ($dialog['recField'] == 1 ? 'unread1' : 'unread2') => 1,
-            ]);
+            $upArray = [];
+            if ($username != $receive) {
+                $upArray = Base::DBUP([
+                    ($dialog['recField'] == 1 ? 'unread1' : 'unread2') => 1,
+                ]);
+            }
             $upArray['lasttext'] = $lastText;
             $upArray['lastdate'] = $indate;
             if ($dialog['del1']) {

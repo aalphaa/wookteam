@@ -358,15 +358,17 @@
             }
         },
         mounted() {
+            if ($A.getToken() === false) {
+                this.goForward({path: '/'}, true);
+                return;
+            }
+            this.refreshTask();
             this.userInfo = $A.getUserInfo((res, isLogin) => {
                 if (this.userInfo.id != res.id) {
                     this.userInfo = res;
                     isLogin && this.refreshTask();
                 }
             }, false);
-            if ($A.getToken() !== false) {
-                this.refreshTask();
-            }
             //
             $A.setOnTaskInfoListener('pages/todo',(act, detail) => {
                 if (detail.username != $A.getUserName()) {

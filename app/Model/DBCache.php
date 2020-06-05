@@ -22,6 +22,7 @@ class DBCache
     protected $builder = null;
 
     private $__cache = true;               //启用缓存（默认启用）
+    private $__cacheKeyname = null;        //缓存名称（默认自动生成）
     private $__cacheMinutes = 1;           //缓存时间（分钟, 默认1分钟）
     private $__removeCache = false;        //删除缓存
     private $__join = [];
@@ -73,6 +74,18 @@ class DBCache
     public function noCache()
     {
         $this->__cache = false;
+        return $this;
+    }
+
+    /**
+     * 缓存名称
+     *
+     * @param $name
+     * @return $this
+     */
+    public function cacheKeyname($name)
+    {
+        $this->__cacheKeyname = $name ?: null;
         return $this;
     }
 
@@ -228,6 +241,7 @@ class DBCache
      */
     private function initParameter() {
         $this->__cache = true;
+        $this->__cacheKeyname = null;
         $this->__cacheMinutes = 1;
         $this->__removeCache = false;
         //
@@ -250,6 +264,10 @@ class DBCache
      * @return string
      */
     private function identify($type, $attach = '') {
+        if ($this->__cacheKeyname) {
+            return $this->__cacheKeyname;
+        }
+        //
         $identify = $this->addEncode($this->attributes);
         $identify.= $this->addEncode($this->__join);
         $identify.= $this->addEncode($this->__take);

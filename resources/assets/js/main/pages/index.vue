@@ -366,6 +366,7 @@
                 ruleLogin: {},
 
                 systemConfig: $A.jsonParse($A.storage("systemSetting"), {
+                    logo: '',
                     github: '',
                     reg: '',
                 }),

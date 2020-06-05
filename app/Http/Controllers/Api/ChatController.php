@@ -83,7 +83,7 @@ class ChatController extends Controller
         }
         $dialog = $res['data'];
         $lastMsg = Base::DBC2A(DB::table('chat_msg')
-            ->select('id')
+            ->select(['id'])
             ->where('did', $dialog['id'])
             ->orderByDesc('indate')
             ->orderByDesc('id')

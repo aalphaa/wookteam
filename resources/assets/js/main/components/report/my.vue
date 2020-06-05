@@ -290,7 +290,7 @@
                                 };
                                 res.data.ccuserArray.forEach((username) => {
                                     if (username != msgData.username) {
-                                        $A.WS.sendTo('user', username, msgData);
+                                        $A.WS.sendTo('user', username, msgData, 'special');
                                     }
                                 });
                             }
