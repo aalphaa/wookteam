@@ -388,4 +388,6 @@ export default {
     "显示": "Show",
     "隐藏": "Hidden",
     "注册账号": "Register",
+    "系统提示": "System prompt",
+    "您的帐号在其他地方（%）登录，您被迫退出，如果这不是您本人的操作，请注意帐号安全！": "Your account is logged in elsewhere (%), you are forced to log out, if this is not your own operation, please pay attention to account security!",
 }
