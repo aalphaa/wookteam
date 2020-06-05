@@ -331,16 +331,19 @@ import '../../sass/main.scss';
                     if (tempNum === this.__autoNum) {
                         this.__autoNum++
                         if ($A.getToken() === false) {
-                            console.log("[WS] No token");
+                            this.__log("[WS] No token");
                             this.__autoLine(timeout + 5);
                         } else {
                             this.sendTo('refresh', (res) => {
-                                console.log("[WS] Connection " + (res.status ? 'success' : 'error'));
+                                this.__log("[WS] Connection " + (res.status ? 'success' : 'error'));
                                 this.__autoLine(timeout + 5);
                             });
                         }
                     }
                 }, Math.min(timeout, 30) * 1000);
+            },
+            __log(text) {
+                //console.log(text);
             },
 
             /**
@@ -350,17 +353,17 @@ import '../../sass/main.scss';
                 let url = $A.getObject(window.webSocketConfig, 'URL');
                 url += ($A.strExists(url, "?") ? "&" : "?") + "token=" + $A.getToken();
                 if (!$A.leftExists(url, "ws://") && !$A.leftExists(url, "wss://")) {
-                    console.log("[WS] No connection address");
+                    this.__log("[WS] No connection address");
                     return;
                 }
 
                 if ($A.getToken() === false) {
-                    console.log("[WS] No connected token");
+                    this.__log("[WS] No connected token");
                     return;
                 }
 
                 if (this.__instance !== null && force !== true) {
-                    console.log("[WS] Connection exists");
+                    this.__log("[WS] Connection exists");
                     return;
                 }
 
@@ -369,14 +372,14 @@ import '../../sass/main.scss';
 
                 // 连接建立时触发
                 this.__instance.onopen = (event) => {
-                    console.log("[WS] Connection opened");
+                    this.__log("[WS] Connection opened");
                 }
 
                 // 接收到服务端推送时执行
                 this.__instance.onmessage = (event) => {
                     let msgDetail = $A.jsonParse(event.data);
                     if (msgDetail.messageType === 'open') {
-                        console.log("[WS] Connection connected");
+                        this.__log("[WS] Connection connected");
                         msgDetail.openNum = this.__openNum;
                         this.__openNum++;
                         this.__connected = true;
@@ -394,7 +397,7 @@ import '../../sass/main.scss';
 
                 // 连接关闭时触发
                 this.__instance.onclose = (event) => {
-                    console.log("[WS] Connection closed");
+                    this.__log("[WS] Connection closed");
                     this.__connected = false;
                     this.__instance = null;
                     this.__autoLine(5);
@@ -402,7 +405,7 @@ import '../../sass/main.scss';
 
                 // 连接出错
                 this.__instance.onerror = (event) => {
-                    console.log("[WS] Connection error");
+                    this.__log("[WS] Connection error");
                     this.__connected = false;
                     this.__instance = null;
                     this.__autoLine(5);
@@ -504,18 +507,18 @@ import '../../sass/main.scss';
                             this.connection();
                         }
                     } else {
-                        console.log("[WS] Service not connected");
+                        this.__log("[WS] Service not connected");
                         typeof callback === "function" && callback({status: 0, message: '服务未连接'});
                     }
                     return;
                 }
                 if (this.__connected === false) {
-                    console.log("[WS] Failed connection");
+                    this.__log("[WS] Failed connection");
                     typeof callback === "function" && callback({status: 0, message: '未连接成功'});
                     return;
                 }
                 if (['refresh', 'unread', 'read', 'roger', 'user', 'team'].indexOf(type) === -1) {
-                    console.log("[WS] Wrong message type: " + type);
+                    this.__log("[WS] Wrong message type: " + type);
                     typeof callback === "function" && callback({status: 0, message: '错误的消息类型: ' + type});
                     return;
                 }
@@ -553,11 +556,11 @@ import '../../sass/main.scss';
              */
             close() {
                 if (this.__instance === null) {
-                    console.log("[WS] Service not connected");
+                    this.__log("[WS] Service not connected");
                     return;
                 }
                 if (this.__connected === false) {
-                    console.log("[WS] Failed connection");
+                    this.__log("[WS] Failed connection");
                     return;
                 }
                 this.__instance.close();

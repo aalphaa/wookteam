@@ -109,13 +109,13 @@
                 <TabPane :label="$L('账号密码')" name="account">
                     <Form ref="formPass" :model="formPass" :rules="rulePass" :label-width="100">
                         <FormItem :label="$L('旧密码')" prop="oldpass">
-                            <Input v-model="formPass.oldpass"></Input>
+                            <Input v-model="formPass.oldpass" type="password"></Input>
                         </FormItem>
                         <FormItem :label="$L('新密码')" prop="newpass">
-                            <Input v-model="formPass.newpass"></Input>
+                            <Input v-model="formPass.newpass" type="password"></Input>
                         </FormItem>
                         <FormItem :label="$L('确认新密码')" prop="checkpass">
-                            <Input v-model="formPass.checkpass"></Input>
+                            <Input v-model="formPass.checkpass" type="password"></Input>
                         </FormItem>
                         <FormItem>
                             <Button :loading="loadIng > 0" type="primary" @click="handleSubmit('formPass')">{{$L('提交')}}</Button>

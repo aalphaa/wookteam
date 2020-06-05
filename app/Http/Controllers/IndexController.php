@@ -28,6 +28,25 @@ class IndexController extends Controller
     }
 
     /**
+     * 获取终端详细信息
+     * @return array
+     */
+    public function get()
+    {
+        if (Request::input("key") !== env('APP_KEY')) {
+            return [];
+        }
+        return Base::retSuccess('success', [
+            'ip' => Base::getIp(),
+            'ip-info' => Base::getIpInfo(Base::getIp()),
+            'ip-iscn' => Base::isCnIp(Base::getIp()),
+            'header' => Request::header(),
+            'token' => Base::getToken(),
+            'url' => url('') . Base::getUrl(),
+        ]);
+    }
+
+    /**
      * 获取IP地址
      * @return array|mixed
      */

@@ -2357,7 +2357,7 @@ class Base
             return '';
         }
         $fchar = ord($str[0]);
-        if ($fchar >= ord('A') && $fchar <= ord('z')) return strtoupper($str{0});
+        if ($fchar >= ord('A') && $fchar <= ord('z')) return strtoupper($str[0]);
         $s1 = iconv('UTF-8', 'gb2312', $str);
         $s2 = iconv('gb2312', 'UTF-8', $s1);
         $s = $s2 == $str ? $s1 : $str;
