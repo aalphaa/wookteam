@@ -22,27 +22,41 @@ $ cd wookteam
 $ git remote add origin git@github.com:kuaifan/wookteam.git
 ```
 
+#### 拷贝`.env`
+
+```bash
+$ cp .env.example .env
+```
+
+#### 修改`.env`
+
+修改数据库信息、websocket
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=wookteam
+DB_USERNAME=root
+DB_PASSWORD=123456
+
+......
+
+LARAVELS_LISTEN_IP=127.0.0.1
+LARAVELS_LISTEN_PORT=5200
+LARAVELS_PROXY_URL=ws://wookteam.com/ws
+```
+
 #### 设置项目
 
 ```bash
 $ git checkout master # 如果使用dev分支进行本地开发
 $ git pull origin master # 如果使用dev分支进行本地开发
 $ composer install
-$ cp .env.example .env
 $ php artisan key:generate
-$ php artisan storage:link
 $ php artisan migrate --seed
-$ php artisan passport:install
 $ npm install
 $ npm run production
-```
-
-#### 修改 .env
-
-```env
-LARAVELS_LISTEN_IP=127.0.0.1
-LARAVELS_LISTEN_PORT=5200
-LARAVELS_PROXY_URL=ws://wookteam.com/ws
 ```
 
 #### 运行 Laravels (websocket)

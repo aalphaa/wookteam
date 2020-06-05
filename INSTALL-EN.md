@@ -22,27 +22,41 @@ $ cd wookteam
 $ git remote add origin git@github.com:kuaifan/wookteam.git
 ```
 
+#### Copy`.env`
+
+```bash
+$ cp .env.example .env
+```
+
+#### Modify`.env`
+
+database、websocket
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=wookteam
+DB_USERNAME=root
+DB_PASSWORD=123456
+
+......
+
+LARAVELS_LISTEN_IP=127.0.0.1
+LARAVELS_LISTEN_PORT=5200
+LARAVELS_PROXY_URL=ws://wookteam.com/ws
+```
+
 #### Setup application
 
 ```bash
 $ git checkout master # use dev branch for local development
 $ git pull origin master # use dev branch for local development
 $ composer install
-$ cp .env.example .env
 $ php artisan key:generate
-$ php artisan storage:link
 $ php artisan migrate --seed
-$ php artisan passport:install
 $ npm install
 $ npm run production
-```
-
-#### Modify .env
-
-```env
-LARAVELS_LISTEN_IP=127.0.0.1
-LARAVELS_LISTEN_PORT=5200
-LARAVELS_PROXY_URL=ws://wookteam.com/ws
 ```
 
 #### Run Laravels (websocket)
