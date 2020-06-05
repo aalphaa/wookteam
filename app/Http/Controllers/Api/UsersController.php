@@ -56,7 +56,7 @@ class UsersController extends Controller
             if (empty($user)) {
                 return Base::retError('账号或密码错误。');
             }
-            if ($user['userpass'] != Base::md52($userpass)) {
+            if ($user['userpass'] != Base::md52($userpass, $user['encrypt'])) {
                 return Base::retError('账号或密码错误！');
             }
         }
@@ -259,12 +259,16 @@ class UsersController extends Controller
         }
         //
         if ($user['setpass']) {
-            $verify = DB::table('users')->where(['id'=>$user['id'], 'userpass'=>Base::md52($oldpass)])->count();
+            $verify = DB::table('users')->where(['id'=>$user['id'], 'userpass'=>Base::md52($oldpass, Users::token2encrypt())])->count();
             if (empty($verify)) {
                 return Base::retError('请填写正确的旧密码！');
             }
         }
-        DB::table('users')->where('id', $user['id'])->update(['encrypt' => Base::generatePassword(6), 'userpass'=>Base::md52($newpass)]);
+        $encrypt = Base::generatePassword(6);
+        DB::table('users')->where('id', $user['id'])->update([
+            'encrypt' => $encrypt,
+            'userpass' => Base::md52($newpass, $encrypt)
+        ]);
         return Base::retSuccess('修改成功');
     }
 

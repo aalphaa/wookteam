@@ -41,9 +41,11 @@ class Users
             return Base::retError('密码最多只能设置32位数！');
         }
         //开始注册
+        $encrypt = Base::generatePassword(6);
         $inArray = [
+            'encrypt' => $encrypt,
             'username' => $username,
-            'userpass' => Base::md52($userpass),
+            'userpass' => Base::md52($userpass, $encrypt),
             'regip' => Base::getIp(),
             'regdate' => Base::time()
         ];
@@ -123,6 +125,20 @@ class Users
     }
 
     /**
+     * token获取encrypt
+     * @return mixed|string
+     */
+    public static function token2encrypt()
+    {
+        $authorization = Base::getToken();
+        $encrypt = '';
+        if ($authorization) {
+            list($id, $username, $encrypt, $timestamp) = explode("@", base64_decode($authorization) . "@@@@");
+        }
+        return $encrypt ?: '';
+    }
+
+    /**
      * 用户身份认证（获取用户信息）
      * @return array|mixed
      */
@@ -181,10 +197,6 @@ class Users
      */
     public static function token($userinfo)
     {
-        if (strlen($userinfo['encrypt']) < 6) {
-            $userinfo['encrypt'] = Base::generatePassword(6);
-            DB::table('users')->where('id', $userinfo['id'])->update(['encrypt' => $userinfo['encrypt']]);
-        }
         return base64_encode($userinfo['id'] . '@' . $userinfo['username'] . '@' . $userinfo['encrypt'] . '@' . Base::time() . '@' . Base::generatePassword(6));
     }
 
