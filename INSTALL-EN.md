@@ -46,14 +46,18 @@ LARAVELS_PROXY_URL=ws://wookteam.com/ws
 ```bash
 $ git checkout master # use dev branch for local development
 $ git pull origin master # use dev branch for local development
+
 $ composer install
 $ php artisan key:generate
 $ php artisan migrate --seed
+
 $ npm install
 $ npm run production
 ```
 
 #### Run Laravels (WebSocket)
+
+> Please confirm your environment and installation[Swoole](https://www.swoole.com/)。
 
 ```bash
 $ php bin/laravels start
@@ -63,7 +67,7 @@ $ php bin/laravels start
 
 ```
 [program:wookteam-test]
-directory=/srv/wookteam.com
+directory=/wwwroot/wookteam.com
 command=/usr/local/bin/php bin/laravels start -i
 numprocs=1
 autostart=true
@@ -91,7 +95,7 @@ server {
     
     # Don't forget to bind the host
     server_name wookteam.com;
-    root /srv/wookteam.com/public;
+    root /wwwroot/wookteam.com/public;
 
     autoindex off;
     index index.html index.htm index.php;
@@ -136,3 +140,8 @@ server {
     }
 }
 ```
+
+#### Account
+
+- admin/123456
+- system/123456

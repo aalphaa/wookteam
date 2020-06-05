@@ -1,6 +1,10 @@
 /node_modules
+/public/css
+/public/fonts
+/public/images
+/public/js
+/public/uploads/*
 /public/hot
-/public/storage
 /storage/*.key
 /vendor
 .env
@@ -13,8 +17,6 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
-public
-uploads/picture
 test.js
 test.php
 composer.lock
