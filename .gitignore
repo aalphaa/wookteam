@@ -17,3 +17,5 @@ public
 uploads/picture
 test.js
 test.php
+composer.lock
+package-lock.json
